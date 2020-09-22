@@ -1,0 +1,52 @@
+// https://dbdiagram.io/d
+Table recipe as r {
+  id int [pk, increment] // auto-increment
+  name varchar
+  creation timestamp
+}
+
+Table ingredient as i {
+  id int
+  recipe int [ref: > r.id]
+  amount float
+  ingredient int [ref: > s.id]
+}
+
+Table charge as c {
+  id int [pk, increment]
+  production datetime
+  amount int
+  recipe int [ref: > r.id]
+}
+
+Table ingr_storage as s {
+  id int [pk, increment]
+  name varchar
+  type varchar [not null]
+  unit varchar
+  amount float
+}
+
+Table beer_storage as b {
+  keg_nr int [pk, increment]
+  volume int
+  content int [ref: > c.id]
+  filling datetime
+  status varchar
+}
+
+Table step as rs {
+  id int [pk, increment]
+  recipe int [ref: > r.id]
+  step int
+  title varchar
+  description varchar
+}
+
+Table fermentation as f {
+  id int [pk, increment]
+  charge int [ref: > c.id]
+  temperature float
+  fermentation float
+  date datetime
+}
