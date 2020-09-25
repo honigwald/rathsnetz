@@ -1,0 +1,22 @@
+{% extends 'brewery/base.html' %}
+
+{% block content %}
+<h2>Login</h2>
+    {% if form.errors %}
+    <p>Something went wrong!</p>
+    {% endif %}
+
+    {% if next %}
+    <p>Forbidden!</p>
+    {% endif %}
+
+    <form method="post" action="{% url 'login' %}">
+        {% csrf_token %}
+
+        <p>User: {{ form.username }}</p>
+        <p>Password: {{ form.password }}</p>
+
+        <input type="submit" value="login">
+        <input type="hidden" name="next" value="{{ next }}">
+    </form>
+{% endblock %}

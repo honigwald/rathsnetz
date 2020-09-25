@@ -1,0 +1,10 @@
+{% extends 'brewery/base.html' %}
+{% block content %}
+<h2>Rezepte</h2>
+Name: {{ recipe.name }}</br>
+Erstellt: {{ recipe.creation }}
+{% for s in steps %}
+<p>{{ s.step }}. Schritt: {{ s.description }}</p>
+{% endfor %}
+
+{% endblock content %}

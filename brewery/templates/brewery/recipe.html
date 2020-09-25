@@ -1,0 +1,12 @@
+{% extends 'brewery/base.html' %}
+{% block content %}
+<h2>Rezepte</h2>
+
+<ol>
+    {% for r in recipes %}
+    <li><a href="{% url 'recipe_detail' r.id %}">{{ r }}</a></li>
+    {% endfor %}
+</ol>
+{% endblock content %}
+
+{% block frame %} CONTENT {% endblock %}
