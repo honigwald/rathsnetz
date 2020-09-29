@@ -1,0 +1,46 @@
+{% extends 'brewery/base.html' %}
+{% block content %}
+<h2>Bearbeiten</h2>
+<h3><u>Rezept:</u> {{ recipe.name }}</h3>
+
+<table>
+    <thead>
+        <tr>
+            <th>Schrittnr.</th> <th>Titel</th> <th>Beschreibung</th> <th>Zutaten</th> <th>Anzahl</th> <th>Dauer</th><th></th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for s in steps %}
+    <tr>
+        <td>{{ s.step }}</td>
+        <td>{{ s.title }}</td>
+        <td>{{ s.description }}</td>
+        <td>{{ s.ingredient }}</td>
+        <td>{{ s.amount }}</td>
+        <td>{{ s.duration }}</td>
+        <td>
+            <form action="" method="post" onclick="return confirm('Sure?');">
+                {% csrf_token %}
+                <input type="hidden" name="id" value="{{ s.id }}">
+                <input type="submit" name="delete" value="Löschen">
+            </form>
+        </td>
+
+    </tr>
+    {% endfor %}
+    <tr>
+        <form action="" method="post">
+            {% csrf_token %}
+            <td>{{ form.stepnr }}</td>
+            <td>{{ form.title }}</td>
+            <td>{{ form.description }}</td>
+            <td>{{ form.ingredient }}</td>
+            <td>{{ form.amount }}</td>
+            <td>{{ form.duration }}</td>
+            <td> <input name="save" type="submit" value="Speichern"> </td>
+        </form>
+    </tr>
+    </tbody>
+</table>
+
+{% endblock content %}

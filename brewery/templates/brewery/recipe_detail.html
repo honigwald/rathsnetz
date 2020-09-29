@@ -1,10 +1,36 @@
 {% extends 'brewery/base.html' %}
 {% block content %}
-<h2>Rezepte</h2>
-Name: {{ recipe.name }}</br>
-Erstellt: {{ recipe.creation }}
-{% for s in steps %}
-<p>{{ s.step }}. Schritt: {{ s.description }}</p>
-{% endfor %}
+<h2>{{ recipe.name }}</h2>
+<u>Erstellt:</u> {{ recipe.creation }}
+
+<br><br>
+<table>
+    <thead>
+        <tr>
+            <th>Schritt</th> <th>Titel</th> <th>Beschreibung</th> <th>Zutaten</th> <th>Anzahl</th> <th>Dauer</th><th></th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for s in steps %}
+    <tr>
+        <td>{{ s.step }}</td>
+        <td>{{ s.title }}</td>
+        <td>{{ s.description }}</td>
+        <td>{{ s.ingredient }}</td>
+        <td>{{ s.amount }}</td>
+        <td>{{ s.duration }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<br><br>
+<form action="{% url 'recipe_edit' recipe_id=recipe.id %}">
+    <input type="submit" name="edit" value="Bearbeiten">
+</form>
+<form action="" method="post" onclick="return confirm('Sure?');">
+    {% csrf_token %}
+    <input type="submit" name="delete" value="Löschen">
+</form>
 
 {% endblock content %}

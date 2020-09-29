@@ -1,4 +1,27 @@
 {% extends 'brewery/base.html' %}
 {% block content %}
 <h2>Brauen</h2>
+<form action="" method="post">
+    {% csrf_token %}
+    <input type="submit" name="start" value="Neue Charge">
+</form>
+
+<h3>Überblick</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Charge</th> <th>Rezept</th> <th>Menge</th> <th>Datum</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for c in charge %}
+    <tr>
+        <td>{{ c.id }}</td>
+        <td>{{ c.recipe.name }}</td>
+        <td>{{ c.amount }}</td>
+        <td>{{ c.production }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
 {% endblock content %}

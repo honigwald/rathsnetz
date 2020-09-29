@@ -1,6 +1,9 @@
 {% extends 'brewery/base.html' %}
 {% block content %}
 <h2>Rezepte</h2>
+<form action="{% url 'recipe_new' %}" method="get">
+    <input type="submit" value="Neues Rezept">
+</form>
 
 <ol>
     {% for r in recipes %}
@@ -8,5 +11,3 @@
     {% endfor %}
 </ol>
 {% endblock content %}
-
-{% block frame %} CONTENT {% endblock %}

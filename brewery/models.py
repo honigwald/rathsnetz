@@ -12,9 +12,9 @@ class Recipe(models.Model):
 
 
 class Charge(models.Model):
-    production = models.DateTimeField()
-    amount = models.IntegerField()
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
+    amount = models.IntegerField()
+    production = models.DateTimeField()
 
     def __str__(self):
         return str(self.production)
@@ -22,10 +22,10 @@ class Charge(models.Model):
 
 class BeerStorage(models.Model):
     keg_nr = models.AutoField(primary_key=True)
-    volume = models.IntegerField()
     content = models.ForeignKey(Charge, on_delete=models.CASCADE, blank=True, null=True)
-    filling = models.DateTimeField(blank=True, null=True)
     status = models.CharField(max_length=200, default='empty')
+    volume = models.IntegerField()
+    filling = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
         return "[" + str(self.keg_nr) + "] " + str(self.content)
@@ -41,30 +41,33 @@ class Fermentation(models.Model):
         return "[" + str(self.charge) + "] "
 
 
-class Step(models.Model):
-    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
-    step = models.IntegerField()
-    title = models.CharField(max_length=50)
-    description = models.CharField(max_length=200)
-
-    def __str__(self):
-        return "[" + str(self.recipe) + "] " + str(self.step) + ". " + str(self.title)
-
-
 class IngredientStorage(models.Model):
     name = models.CharField(max_length=200)
     type = models.CharField(max_length=200)
-    unit = models.CharField(max_length=200)
     amount = models.FloatField()
+    unit = models.CharField(max_length=200)
 
     def __str__(self):
         return self.name
 
 
-class Ingredient(models.Model):
+class Step(models.Model):
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
-    amount = models.FloatField()
-    ingredients = models.ForeignKey(IngredientStorage, on_delete=models.CASCADE)
+    step = models.IntegerField()
+    title = models.CharField(max_length=50)
+    description = models.CharField(max_length=200)
+    duration = models.DurationField(blank=True, null=True)
+    ingredient = models.ForeignKey(IngredientStorage, on_delete=models.CASCADE, blank=True, null=True)
+    amount = models.FloatField(blank=True, null=True)
+
 
     def __str__(self):
-        return "[" + str(self.recipe) + "] " + str(self.ingredients)
+        return "[" + str(self.recipe) + "] " + str(self.step) + ". " + str(self.title)
+
+
+#class Ingredient(models.Model):
+#    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
+#    step = models.ForeignKey(Step, on_delete=models.CASCADE)
+#
+#    def __str__(self):
+#        return "[" + str(self.recipe) + "] " + str(self.ingredients)
