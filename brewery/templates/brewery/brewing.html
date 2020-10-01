@@ -1,10 +1,12 @@
 {% extends 'brewery/base.html' %}
 {% block content %}
 <h2>Brauen</h2>
-<form action="" method="post">
+<form action="{% url 'brewing_new' %}" method="get">
     {% csrf_token %}
     <input type="submit" name="start" value="Neue Charge">
 </form>
+
+<a href="{% url 'brewing_new' %}">Neue Charge</a>
 
 <h3>Überblick</h3>
 <table>

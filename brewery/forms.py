@@ -2,7 +2,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.utils.translation import ugettext_lazy as _
 
-from .models import IngredientStorage
+from .models import IngredientStorage, Recipe
 
 
 class AddRecipe(forms.Form):
@@ -30,3 +30,7 @@ class EditRecipe(forms.Form):
         data = self.cleaned_data['amount']
         return data
 
+
+class Brewing(forms.Form):
+    recipe = forms.ModelChoiceField(queryset=Recipe.objects.all().order_by('name'))
+    amount = forms.FloatField()
