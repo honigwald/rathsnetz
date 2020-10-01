@@ -5,7 +5,7 @@ from .models import *
 # Register your models here.
 admin.site.register(Recipe)
 admin.site.register(IngredientStorage)
-#admin.site.register(Ingredient)
+admin.site.register(Protocol)
 admin.site.register(BeerStorage)
 admin.site.register(Charge)
 admin.site.register(Fermentation)

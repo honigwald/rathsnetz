@@ -60,14 +60,16 @@ class Step(models.Model):
     ingredient = models.ForeignKey(IngredientStorage, on_delete=models.CASCADE, blank=True, null=True)
     amount = models.FloatField(blank=True, null=True)
 
-
     def __str__(self):
         return "[" + str(self.recipe) + "] " + str(self.step) + ". " + str(self.title)
 
 
-#class Ingredient(models.Model):
-#    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
-#    step = models.ForeignKey(Step, on_delete=models.CASCADE)
-#
-#    def __str__(self):
-#        return "[" + str(self.recipe) + "] " + str(self.ingredients)
+class Protocol(models.Model):
+    charge = models.ForeignKey(Charge, on_delete=models.CASCADE)
+    step = models.ForeignKey(Step, on_delete=models.CASCADE)
+    start = models.TimeField()
+    end = models.TimeField()
+    comment = models.CharField(max_length=200)
+
+    def __str__(self):
+        return str(self.charge) + "." + str(self.step)
