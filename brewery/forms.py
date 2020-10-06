@@ -38,3 +38,10 @@ class BrewingCharge(forms.Form):
 
 class BrewingProtocol(forms.Form):
     comment = forms.CharField(max_length=200)
+
+    
+class StorageAddItem(ModelForm):
+    class Meta:
+        model = IngredientStorage
+        fields = ['name', 'amount', 'type', 'unit']
+    
