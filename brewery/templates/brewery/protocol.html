@@ -3,22 +3,9 @@
 <h2>Brauen</h2>
 <h3>Neue Charge</h3>
 
-{% if charge == None %}
-Wähle eine Rezept und die Menge:
-<form action="" method="post">
-    {% csrf_token %}
-    {{ form.recipe }}
-    {{ form.amount }}
-    <input type="submit" name="start" value="Weiter">
-</form>
-{% endif %}
-
-{% if charge != None %}
 <ul>Rezept:</ul> {{ charge.recipe.name }}
 <ul>Menge:</ul> {{ charge.amount }} Liter
 
-
-<br/><br/>
 <h3>Protokoll</h3>
 <form action="" method="post">
 <table>
@@ -56,6 +43,6 @@ Wähle eine Rezept und die Menge:
     {% csrf_token %}
     <input type="submit" name="next" value="Weiter">
 </form>
-{% endif %}
+
 {% endblock content %}
 

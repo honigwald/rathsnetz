@@ -65,10 +65,15 @@ class Step(models.Model):
 
 
 class Protocol(models.Model):
+    step = models.IntegerField()
     charge = models.ForeignKey(Charge, on_delete=models.CASCADE)
-    step = models.ForeignKey(Step, on_delete=models.CASCADE)
-    start = models.TimeField()
-    end = models.TimeField()
+    title = models.CharField(max_length=50)
+    description = models.CharField(max_length=200)
+    duration = models.DurationField(blank=True, null=True)
+    ingredient = models.CharField(max_length=200)
+    amount = models.FloatField(blank=True, null=True)
+    tstart = models.TimeField()
+    tend = models.TimeField()
     comment = models.CharField(max_length=200)
 
     def __str__(self):

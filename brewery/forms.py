@@ -31,6 +31,10 @@ class EditRecipe(forms.Form):
         return data
 
 
-class Brewing(forms.Form):
+class BrewingCharge(forms.Form):
     recipe = forms.ModelChoiceField(queryset=Recipe.objects.all().order_by('name'))
     amount = forms.FloatField()
+
+
+class BrewingProtocol(forms.Form):
+    comment = forms.CharField(max_length=200)
