@@ -2,6 +2,11 @@
 {% block content %}
 <h2>Lager</h2>
 
+<form>
+    <input type="button" onclick="window.location.href = '{% url 'web:storage_add' %}';" value="Neu"/>
+</form>
+
+
 <table>
     <thead>
         <tr>
@@ -12,7 +17,7 @@
         {% for item in storage %}
         <tr>
             <td>{{ item.id }}</td>
-            <td>{{ item.name }}</td>
+            <td><a href="{% url 'web:storage_edit' item.id %}">{{ item.name }}</a></td>
             <td>{{ item.type }}</td>
             <td>{{ item.amount }}</td>
             <td>{{ item.unit }}</td>
