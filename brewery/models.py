@@ -41,11 +41,24 @@ class Fermentation(models.Model):
         return "[" + str(self.charge) + "] "
 
 
+class Unit(models.Model):
+    name = models.CharField(max_length=200)
+
+    def __str__(self):
+        return self.name
+
+class Type(models.Model):
+    name = models.CharField(max_length=200)
+
+    def __str__(self):
+        return self.name
+
+
 class IngredientStorage(models.Model):
     name = models.CharField(max_length=200)
-    type = models.CharField(max_length=200)
+    type = models.ForeignKey(Type, on_delete=models.CASCADE)
+    unit = models.ForeignKey(Unit, on_delete=models.CASCADE)
     amount = models.FloatField()
-    unit = models.CharField(max_length=200)
 
     def __str__(self):
         return self.name
