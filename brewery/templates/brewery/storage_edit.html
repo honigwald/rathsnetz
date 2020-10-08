@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'brewery/base.html' %}
 {% block content %}
 <h2>Lager: Bearbeite Position</h2>
 
@@ -19,7 +19,7 @@
         </tr>
 </table>
 <br>
-<input type="button" value="Abbrechen"  onclick="window.location.href = '{% url 'web:storage' %}';">
+<input type="button" value="Abbrechen"  onclick="window.location.href = '{% url 'storage' %}';">
 <input type="submit" name="save" value="Speichern">
 <br>
 <input type="submit" name="delete" value="Löschen">

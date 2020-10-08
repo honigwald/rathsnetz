@@ -18,9 +18,34 @@ Wähle eine Rezept und die Menge:
 <ul>Menge:</ul> {{ charge.amount }} Liter
 
 
+<h3>Akutell:</h3>
+<form action="" method="post">
+<table>
+    <thead>
+    <tr>
+        <th>Schritt</th> <th>Titel</th> <th>Beschreibung</th> <th>Zutaten</th> <th>Menge</th> <th>Dauer</th> <th>Notizen</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td>{{ step.step }}</td>
+        <td>{{ step.title }}</td>
+        <td>{{ step.description }}</td>
+        <td>{{ step.ingredient }}</td>
+        <td>{{ step.amount }}</td>
+        <td>{{ step.duration }}</td>
+        <td>{{ form.comment }}</td>
+    </tr>
+    </tbody>
+</table>
+{% csrf_token %}
+<input type="submit" name="next" value="Weiter">
+<input type="hidden" name="charge" value="{{ charge }}">
+<input type="hidden" name="tstart" value="{{ tstart }} ">
+</form>
+
 <br/><br/>
 <h3>Protokoll</h3>
-<form action="" method="post">
 <table>
     <thead>
         <tr>
@@ -49,13 +74,9 @@ Wähle eine Rezept und die Menge:
         <td>{{ step.duration }}</td>
         <td>{{ step.tstart }}</td>
         <td>{{ step.tend }}</td>
-        <td>{{ form.comment }}</td>
     </tr>
     </tbody>
 </table>
-    {% csrf_token %}
-    <input type="submit" name="next" value="Weiter">
-</form>
 {% endif %}
 {% endblock content %}
 
