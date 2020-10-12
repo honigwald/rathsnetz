@@ -15,6 +15,7 @@ class Charge(models.Model):
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
     amount = models.IntegerField()
     production = models.DateTimeField()
+    duration = models.DurationField(blank=True, null=True)
 
     def __str__(self):
         return str(self.production)
@@ -84,7 +85,7 @@ class Protocol(models.Model):
     title = models.CharField(max_length=50)
     description = models.CharField(max_length=200)
     duration = models.DurationField(blank=True, null=True)
-    ingredient = models.CharField(max_length=200)
+    ingredient = models.CharField(max_length=200, blank=True, null=True)
     amount = models.FloatField(blank=True, null=True)
     tstart = models.TimeField()
     tend = models.TimeField()

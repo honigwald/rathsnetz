@@ -1,49 +1,12 @@
 {% extends 'brewery/base.html' %}
 {% block content %}
 <h2>Brauen</h2>
-<h3>Neue Charge</h3>
-
-<ul>Rezept:</ul> {{ charge.recipe.name }}
-<ul>Menge:</ul> {{ charge.amount }} Liter
-
-
 <h3>Protokoll</h3>
-<form action="" method="post">
-<table>
-    <thead>
-        <tr>
-            <th>Schritt</th> <th>Titel</th> <th>Beschreibung</th> <th>Zutaten</th> <th>Menge</th> <th>Dauer</th> <th>Start</th> <th>Ende</th> <th>Notizen</th>
-        </tr>
-    </thead>
-    <tbody>
-    {% for p in protocol %}
-    <tr>
-        <td>{{ p.step.id }}</td>
-        <td>{{ p.step.title }}</td>
-        <td>{{ p.step.description }}</td>
-        <td>{{ p.step.ingredient }}</td>
-        <td>{{ p.step.amount }}</td>
-        <td>{{ p.step.duration }}</td>
-        <td>{{ p.tstart }}</td>
-        <td>{{ p.tend }}</td>
-    </tr>
-    {% endfor %}
-    <tr>
-        <td>{{ step.step }}</td>
-        <td>{{ step.title }}</td>
-        <td>{{ step.description }}</td>
-        <td>{{ step.ingredient }}</td>
-        <td>{{ step.amount }}</td>
-        <td>{{ step.duration }}</td>
-        <td>{{ step.tstart }}</td>
-        <td>{{ step.tend }}</td>
-        <td>{{ form.comment }}</td>
-    </tr>
-    </tbody>
-</table>
-    {% csrf_token %}
-    <input type="submit" name="next" value="Weiter">
-</form>
 
+<ol>
+    {% for c in charge %}
+    <li><a href="{% url 'protocol_detail' c.id %}">{{ c }}</a></li>
+    {% endfor %}
+</ol>
 {% endblock content %}
 

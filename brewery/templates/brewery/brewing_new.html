@@ -17,11 +17,9 @@ Wähle eine Rezept und die Menge:
 <ul>Rezept:</ul> {{ charge.recipe.name }}
 <ul>Menge:</ul> {{ charge.amount }} Liter
 
-<h1> {{ tstart|date:"c" }}
-<h1> {{ tstart }}
-
 <h3>Akutell:</h3>
 <form action="" method="post">
+{% csrf_token %}
 <table>
     <thead>
     <tr>
@@ -40,8 +38,11 @@ Wähle eine Rezept und die Menge:
     </tr>
     </tbody>
 </table>
-{% csrf_token %}
-<input type="submit" name="next" value="Weiter">
+{% if end_reached %}
+    <input type="submit" name="end" value="Speichern">
+{% else %}
+    <input type="submit" name="next" value="Weiter">
+{% endif %}
 <input type="hidden" name="charge" value="{{ charge.id }}">
 <input type="hidden" name="tstart" value="{{ tstart|date:'YmdHisu' }} ">
 <input type="hidden" name="step" value="{{ step.step }} ">
@@ -66,6 +67,7 @@ Wähle eine Rezept und die Menge:
         <td>{{ p.duration }}</td>
         <td>{{ p.tstart }}</td>
         <td>{{ p.tend }}</td>
+        <td>{{ p.comment }}</td>
     </tr>
     {% endfor %}
     </tbody>
