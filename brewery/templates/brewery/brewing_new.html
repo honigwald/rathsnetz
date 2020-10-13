@@ -9,13 +9,16 @@ Wähle eine Rezept und die Menge:
     {% csrf_token %}
     {{ form.recipe }}
     {{ form.amount }}
+    {{ form.brewmaster }}
     <input type="submit" name="start" value="Weiter">
 </form>
 {% endif %}
 
 {% if charge != None %}
-<ul>Rezept:</ul> {{ charge.recipe.name }}
-<ul>Menge:</ul> {{ charge.amount }} Liter
+<u>Rezept:</u> {{ charge.recipe.name }} <br>
+<u>Menge:</u> {{ charge.amount }} Liter <br>
+<u>Braumeister:</u> {{ charge.brewmaster }}
+
 
 <h3>Akutell:</h3>
 <form action="" method="post">
