@@ -2,6 +2,7 @@ from django import forms
 from django.forms import ModelForm
 from django.core.exceptions import ValidationError
 from django.utils.translation import ugettext_lazy as _
+from django.contrib.auth.models import User
 
 from .models import IngredientStorage, Recipe
 
@@ -35,7 +36,7 @@ class EditRecipe(forms.Form):
 class BrewingCharge(forms.Form):
     recipe = forms.ModelChoiceField(queryset=Recipe.objects.all().order_by('name'))
     amount = forms.FloatField()
-
+    brewmaster = forms.ModelChoiceField(queryset=User.objects.all().order_by('username'))
 
 class BrewingProtocol(forms.Form):
     comment = forms.CharField(max_length=200)
