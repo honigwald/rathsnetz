@@ -1,6 +1,6 @@
 from django.db import models
 from django.utils import timezone
-
+from django.conf import settings
 
 # Create your models here.
 class Recipe(models.Model):
@@ -12,13 +12,15 @@ class Recipe(models.Model):
 
 
 class Charge(models.Model):
+    cid = models.CharField(max_length=200, blank=True, null=True)
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
     amount = models.IntegerField()
     production = models.DateTimeField()
     duration = models.DurationField(blank=True, null=True)
+    brewmaster = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, blank=True, null=True)
 
     def __str__(self):
-        return str(self.production)
+        return str(self.cid)
 
 
 class BeerStorage(models.Model):
