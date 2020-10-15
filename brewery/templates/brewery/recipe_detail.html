@@ -1,7 +1,8 @@
 {% extends 'brewery/base.html' %}
 {% block content %}
 <h2>{{ recipe.name }}</h2>
-<u>Erstellt:</u> {{ recipe.creation }}
+<u>Author:</u> {{ recipe.author }} <br>
+<u>Erstellt:</u> {{ recipe.creation |date:'d.M Y' }}
 
 <br><br>
 <table>

@@ -4,8 +4,9 @@ from django.conf import settings
 
 # Create your models here.
 class Recipe(models.Model):
-    name = models.CharField(max_length=200)
+    name = models.CharField(max_length=25)
     creation = models.DateTimeField(default=timezone.now)
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, blank=True, null=True)
 
     def __str__(self):
         return self.name
