@@ -16,7 +16,7 @@
     <tbody>
     {% for c in charge %}
     <tr>
-        <td><a href="{% url 'protocol_detail' c.id %}">{{ c }}</a></td>
+        <td><a href="{% url 'protocol' c.id %}">{{ c }}</a></td>
         <td>{{ c.recipe.name }}</td>
         <td>{{ c.amount }}</td>
         <td>{{ c.production }}</td>

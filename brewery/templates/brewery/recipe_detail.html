@@ -26,12 +26,10 @@
 </table>
 
 <br><br>
-<form action="{% url 'recipe_edit' recipe_id=recipe.id %}">
-    <input type="submit" name="edit" value="Bearbeiten">
-</form>
-<form action="" method="post" onclick="return confirm('Sure?');">
+<form method="post" action="">
     {% csrf_token %}
-    <input type="submit" name="delete" value="Löschen">
+    <input type="button" onclick="window.location.href = '{% url 'recipe_edit' recipe_id=recipe.id %}';" value="Bearbeiten"/>
+    <input type="submit" onclick="return confirm('Sure?');" name="delete" value="Löschen">
 </form>
 
 {% endblock content %}

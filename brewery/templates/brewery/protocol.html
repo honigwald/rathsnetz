@@ -1,12 +1,30 @@
 {% extends 'brewery/base.html' %}
 {% block content %}
-<h2>Brauen</h2>
-<h3>Protokoll</h3>
+<h2><u>Protokoll:</u> {{ charge.recipe.name }}, {{ charge.amount }} Liter </h2>
+<h4><u>Brautag:</u> {{ charge.production }}</h4>
+<h4><u>Gesamtdauer:</u> {{ charge.duration }}</h4>
 
-<ol>
-    {% for c in charge %}
-    <li><a href="{% url 'protocol_detail' c.id %}">{{ c }}</a></li>
+<table>
+    <thead>
+    <tr>
+        <th>Schritt</th> <th>Titel</th> <th>Beschreibung</th> <th>Zutaten</th> <th>Menge</th> <th>Dauer</th> <th>Start</th> <th>Ende</th> <th>Notizen</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for p in protocol %}
+    <tr>
+        <td>{{ p.step }}</td>
+        <td>{{ p.title }}</td>
+        <td>{{ p.description }}</td>
+        <td>{{ p.ingredient }}</td>
+        <td>{{ p.amount }}</td>
+        <td>{{ p.duration }}</td>
+        <td>{{ p.tstart }}</td>
+        <td>{{ p.tend }}</td>
+        <td>{{ p.comment }}</td>
+    </tr>
     {% endfor %}
-</ol>
+    </tbody>
+</table>
 {% endblock content %}
 
