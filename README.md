@@ -6,7 +6,10 @@ This projects is developed to manage all administrative tasks necessary for a ho
 It was specially designed to fit all the needs of http://bäkebräu.de.
 
 # Installation
-in progress...
+Following packages are necessary:
+- django
+- plotly
+- influxdbclient
 
 # Documentation
 in progress...
