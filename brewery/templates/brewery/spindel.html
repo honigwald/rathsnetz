@@ -1,5 +1,11 @@
 {% extends 'brewery/base.html' %}
 {% block content %}
 <h2>Spindel</h2>
-<img src="brewery/ispindel.png">
+{% autoescape off %}
+{{ plot }}
+{% endautoescape %}
+<form action="POST">
+    <input type="submit" value="Löschen">
+    <input type="submit" value="Speichern">
+</form>
 {% endblock content %}
