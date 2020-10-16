@@ -11,9 +11,9 @@
 {% if user.is_authenticated %}
     <p>Hello, {{ user.username }}</p>
         <li><a href='{% url 'index' %}'>Übersicht</a></li>
-        <li><a href='{% url 'recipe' %}'>Rezepte</a></li>
-        <li><a href='{% url 'spindel' %}'>Spindel</a></li>
         <li><a href='{% url 'brewing' %}'>Brauen</a></li>
+        <li><a href='{% url 'spindel' %}'>Spindel</a></li>
+        <li><a href='{% url 'recipe' %}'>Rezepte</a></li>
         <li><a href='{% url 'storage' %}'>Lager</a></li>
         <li><a href='{% url 'logout' %}'>Logout</a></li>
 {% else %}
