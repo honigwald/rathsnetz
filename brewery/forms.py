@@ -1,7 +1,7 @@
 from django import forms
 from django.forms import ModelForm
 from django.contrib.auth.models import User
-from .models import IngredientStorage, Recipe, Step
+from .models import IngredientStorage, Recipe, Step, Keg
 
 
 class BrewingCharge(forms.Form):
@@ -31,3 +31,8 @@ class EditRecipe(ModelForm):
         model = Step
         exclude = ('recipe',)
 
+
+class EditKegContent(ModelForm):
+    class Meta:
+        model = Keg
+        fields = ['content', 'status', 'notes', 'filling']

@@ -2,7 +2,7 @@ from django.db import models
 from django.utils import timezone
 from django.conf import settings
 
-# Create your models here.
+
 class Recipe(models.Model):
     name = models.CharField(max_length=25)
     creation = models.DateTimeField(default=timezone.now)
@@ -24,15 +24,15 @@ class Charge(models.Model):
         return str(self.cid)
 
 
-class BeerStorage(models.Model):
-    keg_nr = models.AutoField(primary_key=True)
+class Keg(models.Model):
     content = models.ForeignKey(Charge, on_delete=models.CASCADE, blank=True, null=True)
     status = models.CharField(max_length=200, default='empty')
+    notes = models.CharField(max_length=200, default='empty')
     volume = models.IntegerField()
     filling = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
-        return "[" + str(self.keg_nr) + "] " + str(self.content)
+        return "[" + str(self.id) + "] " + str(self.content)
 
 
 class Fermentation(models.Model):

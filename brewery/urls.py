@@ -5,6 +5,7 @@ from . import views
 urlpatterns = [
     path('', views.index, name='index'),
     path('spindel/', views.spindel, name='spindel'),
+    path('keg/', views.keg, name='keg'),
     path('storage/', views.storage, name='storage'),
     path('storage/add/', views.storage_add, name='storage_add'),
     path('storage/<int:s_id>/', views.storage_edit, name='storage_edit'),

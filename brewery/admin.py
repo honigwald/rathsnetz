@@ -6,7 +6,7 @@ from .models import *
 admin.site.register(Recipe)
 admin.site.register(IngredientStorage)
 admin.site.register(Protocol)
-admin.site.register(BeerStorage)
+admin.site.register(Keg)
 admin.site.register(Charge)
 admin.site.register(Fermentation)
 admin.site.register(Step)
