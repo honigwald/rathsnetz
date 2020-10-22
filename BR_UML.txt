@@ -1,52 +1,115 @@
 // https://dbdiagram.io/d
-Table recipe as r {
+Table Recipe as r {
   id int [pk, increment] // auto-increment
   name varchar
   creation timestamp
+  author varchar
 }
 
-Table ingredient as i {
-  id int
-  recipe int [ref: > r.id]
-  amount float
-  ingredient int [ref: > s.id]
-}
-
-Table charge as c {
+Table Charge as c {
   id int [pk, increment]
-  production datetime
+  cid varchar
+  recipe int [ref: > r.id]
   amount int
-  recipe int [ref: > r.id]
+  production datetime
+  duration datetime
+  brewmaster varchar
 }
 
-Table ingr_storage as s {
-  id int [pk, increment]
-  name varchar
-  type varchar [not null]
-  unit varchar
-  amount float
-}
-
-Table beer_storage as b {
-  keg_nr int [pk, increment]
-  volume int
+Table Keg as k {
+  id int [pk, increment] // auto-increment
   content int [ref: > c.id]
-  filling datetime
   status varchar
+  notes varchar 
+  volume int
+  filling datetime
 }
 
-Table step as rs {
-  id int [pk, increment]
-  recipe int [ref: > r.id]
-  step int
-  title varchar
-  description varchar
-}
-
-Table fermentation as f {
+Table Fermentation as f {
   id int [pk, increment]
   charge int [ref: > c.id]
   temperature float
   fermentation float
   date datetime
+}
+
+Table Unit as u {
+  id int [pk, increment]
+  name varchar
+}
+
+Table Type as t {
+  id int [pk, increment]
+  name varchar
+}
+
+Table IngredientStorage as is {
+  id int [pk, increment]
+  name varchar
+  type int [ref: > t.id]
+  unit int [ref: > u.id]
+  amount float
+}
+
+Table Hint as h {
+  id int [pk, increment]
+  description varchar
+}
+
+Table Step as s {
+  id int [pk, increment]
+  recipe int [ref: > r.id]
+  step int
+  title varchar
+  description varchar
+  duration datetime
+  ingredient int [ref: > is.id]
+  amount float
+}
+
+Table Recipe_Preparation as rp {
+  rid int [ref: > r.id]
+  pid int [ref: > prep.id]
+}
+
+
+Table Preparation as prep {
+  id int [pk, increment]
+  task varchar
+}
+
+Table Step_Hint as sh {
+  hid int [ref: > h.id]
+  sid int [ref: > s.id]
+}
+
+Table Protocol as p {
+  id int [pk, increment]
+  charge int [ref: > c.id]
+}
+
+Table HintProtocol as hp {
+  id int [pk, increment]
+  protocol int [ref: > p.id]
+  description varchar
+}
+
+Table PreparationProtocol as pp {
+  id int [pk, increment]
+  protocol int [ref: > p.id]
+  task varchar
+  check boolean
+}
+
+Table RecipeProtocol as rp {
+  id int [pk, increment]
+  protocol int [ref: > p.id]
+  title varchar
+  description varchar
+  duration datetime
+  ingredient varchar
+  amount float
+  tstart time
+  tend time
+  comment varchar
 }
