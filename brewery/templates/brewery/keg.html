@@ -4,10 +4,10 @@
 <form action="" method="post">
     {% csrf_token %}
     {% if kegs != None %}
-    <input type="submit" name="edit" value="Bearbeiten">
+        <input type="submit" name="edit" value="Bearbeiten">
     {% else %}
-    <input type="submit" name="save" value="Speichern">
-    <input type="button" value="Abbrechen"  onclick="window.location.href = '{% url 'keg' %}';">
+        <input type="submit" name="save" value="Speichern">
+        <input type="button" value="Abbrechen"  onclick="window.location.href = '{% url 'keg' %}';">
     {% endif %}
     <br><br>
     <table>
@@ -25,17 +25,20 @@
             <tr>
                 <td>{{ k.id }}</td>
                 <td>{{ k.volume }}</td>
-                <td>{{ k.content }}</td>
+                {% if k.content.id %}
+                    <td><a href="{% url 'protocol' k.content.id %}">{{ k.content }}</a></td>
+                {% else %}
+                    <td>{{ k.content }}</td>
+                {% endif %}
                 <td>{{ k.content.recipe }}</td>
                 <td>{{ k.filling }}</td>
                 <td>{{ k.notes }}</td>
-                <td>{{ k.status }}</td>
+                <td>{{ k.get_status_display }}</td>
             </tr>
             {% endfor %}
         {% else %}
             {% for k, f in list %}
             <tr>
-                <form>
                     <td>{{ k.id }}</td>
                     <td>{{ k.volume }}</td>
                     <td>{{ f.content }}</td>
@@ -43,8 +46,7 @@
                     <td>{{ f.filling }}</td>
                     <td>{{ f.notes }}</td>
                     <td>{{ f.status }}</td>
-                    <td><input type="reset" value="Reset the form"></td>
-                </form>
+                    <td><input type="reset" value="Reset"></td>                    
             </tr>
             {% endfor %}
         {% endif %}
