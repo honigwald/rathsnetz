@@ -1,10 +1,20 @@
 {% extends 'brewery/base.html' %}
 {% block content %}
-<h2>{{ recipe.name }}</h2>
+<h2>Rezept: {{ recipe.name }}</h2>
 <u>Author:</u> {{ recipe.author }} <br>
 <u>Erstellt:</u> {{ recipe.creation |date:'d.M Y' }}
 
-<br><br>
+<h3>Vorarbeiten</h3>
+<table>
+{% for p in preparation %}
+    <td>
+        <td>{{ p.short }}<td>
+        <td>{{ p.detail }}<td>
+    </tr>
+{% endfor %}
+</table>
+
+<h3>Braugang</h3>
 <table>
     <thead>
         <tr>

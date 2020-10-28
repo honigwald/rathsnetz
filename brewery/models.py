@@ -19,15 +19,23 @@ class Charge(models.Model):
     production = models.DateTimeField()
     duration = models.DurationField(blank=True, null=True)
     brewmaster = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, blank=True, null=True)
+    preparations = models.BooleanField()
+    finished = models.BooleanField()
 
     def __str__(self):
         return str(self.cid)
 
 
 class Keg(models.Model):
+    STATUS_CHOICES = (
+        ('F', 'Unverplant'),
+        ('E', 'Leer'),
+        ('S', 'Verkauft'),
+        ('D', 'Defekt'),
+    )
     content = models.ForeignKey(Charge, on_delete=models.CASCADE, blank=True, null=True)
-    status = models.CharField(max_length=200, default='empty')
-    notes = models.CharField(max_length=200, default='empty')
+    status = models.CharField(max_length=1, default='F', choices=STATUS_CHOICES)
+    notes = models.CharField(max_length=200, blank=True, null=True)
     volume = models.IntegerField()
     filling = models.DateTimeField(blank=True, null=True)
 
@@ -59,7 +67,7 @@ class Type(models.Model):
         return self.name
 
 
-class IngredientStorage(models.Model):
+class Storage(models.Model):
     name = models.CharField(max_length=200)
     type = models.ForeignKey(Type, on_delete=models.CASCADE)
     unit = models.ForeignKey(Unit, on_delete=models.CASCADE)
@@ -75,16 +83,33 @@ class Step(models.Model):
     title = models.CharField(max_length=50)
     description = models.CharField(max_length=200)
     duration = models.DurationField(blank=True, null=True)
-    ingredient = models.ForeignKey(IngredientStorage, on_delete=models.CASCADE, blank=True, null=True)
+    ingredient = models.ForeignKey(Storage, on_delete=models.CASCADE, blank=True, null=True)
     amount = models.FloatField(blank=True, null=True)
 
     def __str__(self):
         return "[" + str(self.recipe) + "] " + str(self.step) + ". " + str(self.title)
 
 
-class Protocol(models.Model):
-    step = models.IntegerField()
+class Hint(models.Model):
+    hint = models.CharField(max_length=50)
+    step = models.ManyToManyField(Step)
+
+    def __str__(self):
+        return self.hint
+
+
+class Preparation(models.Model):
+    short = models.CharField(max_length=20)
+    detail = models.CharField(max_length=50)
+    recipe = models.ManyToManyField(Recipe, blank=True)
+    
+    def __str__(self):
+        return self.short
+
+
+class RecipeProtocol(models.Model):
     charge = models.ForeignKey(Charge, on_delete=models.CASCADE)
+    step = models.IntegerField()
     title = models.CharField(max_length=50)
     description = models.CharField(max_length=200)
     duration = models.DurationField(blank=True, null=True)
@@ -96,3 +121,18 @@ class Protocol(models.Model):
 
     def __str__(self):
         return str(self.charge) + "." + str(self.step)
+
+class HintProtocol(models.Model):
+    charge = models.ForeignKey(Charge, on_delete=models.CASCADE)
+    description = models.CharField(max_length=50)
+
+    def __str__(self):
+        return str(self.protocol)
+
+class PreparationProtocol(models.Model):
+    charge = models.ForeignKey(Charge, on_delete=models.CASCADE)
+    preparation = models.ForeignKey(Preparation, on_delete=models.CASCADE)
+    check = models.BooleanField()
+
+    def __str__(self):
+        return str(self.charge.cid) + "_" + str(self.preparation.short)

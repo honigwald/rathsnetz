@@ -1,7 +1,10 @@
 {% extends 'brewery/base.html' %}
 {% block content %}
 <h2>Rezepte</h2>
-
+<form>
+    <input type="button" onclick="window.location.href = '{% url 'recipe_add' %}';" value="Neues Rezept"/>
+</form>
+<br>
 <table>
     <thead>
         <tr>
@@ -18,10 +21,6 @@
     {% endfor %}
     </tbody>
 </table>
-<br>
-<form>
-    <input type="button" onclick="window.location.href = '{% url 'recipe_add' %}';" value="Neues Rezept"/>
-</form>
 
 
 {% endblock content %}

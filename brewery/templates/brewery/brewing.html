@@ -1,27 +1,96 @@
 {% extends 'brewery/base.html' %}
 {% block content %}
 <h2>Brauen</h2>
+<h3>Neu</h3>
 
-<form>
-    <input type="button" onclick="window.location.href = '{% url 'brewing_add' %}';" value="Neue Charge"/>
-</form>
+{% if charge and charge.preparations %}
+    <u>Rezept:</u> {{ charge.recipe.name }} <br>
+    <u>Menge:</u> {{ charge.amount }} Liter <br>
+    <u>Braumeister:</u> {{ charge.brewmaster }}
 
-<h3>Überblick</h3>
-<table>
-    <thead>
+    <h3>Akutell:</h3>
+    <form action="" method="post">
+    {% csrf_token %}
+    <table>
+        <thead>
         <tr>
-            <th>Charge</th> <th>Rezept</th> <th>Menge</th> <th>Datum</th>
+            <th>Schritt</th> <th>Titel</th> <th>Beschreibung</th> <th>Zutaten</th> <th>Menge</th> <th>Dauer</th> <th>Notizen</th>
         </tr>
-    </thead>
-    <tbody>
-    {% for c in charge %}
+        </thead>
+        <tbody>
+        <tr>
+            <td>{{ step.step }}</td>
+            <td>{{ step.title }}</td>
+            <td>{{ step.description }}</td>
+            <td>{{ step.ingredient }}</td>
+            <td>{{ step.amount }}</td>
+            <td>{{ step.duration }}</td>
+            <td>{{ form.comment }}</td>
+        </tr>
+        </tbody>
+    </table>
+    {% if next %}
+        <input type="submit" name="next" value="Weiter">
+    {% else %}
+        <input type="submit" name="end" value="Speichern">
+    {% endif %}
+    <input type="hidden" name="charge" value="{{ charge.id }}">
+    <input type="hidden" name="tstart" value="{{ tstart|date:'YmdHisu' }} ">
+    <input type="hidden" name="step" value="{{ step.step }} ">
+    </form>
+
+    <br/><br/>
+    <h3>Protokoll</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Schritt</th> <th>Titel</th> <th>Beschreibung</th> <th>Zutaten</th> <th>Menge</th> <th>Dauer</th> <th>Start</th> <th>Ende</th> <th>Notizen</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for p in protocol %}
+        <tr>
+            <td>{{ p.step }}</td>
+            <td>{{ p.title }}</td>
+            <td>{{ p.description }}</td>
+            <td>{{ p.ingredient }}</td>
+            <td>{{ p.amount }}</td>
+            <td>{{ p.duration }}</td>
+            <td>{{ p.tstart }}</td>
+            <td>{{ p.tend }}</td>
+            <td>{{ p.comment }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% elif charge and not charge.preparations %}
+    <h3>Vorarbeiten</h3>
+    <table>
     <tr>
-        <td><a href="{% url 'protocol' c.id %}">{{ c }}</a></td>
-        <td>{{ c.recipe.name }}</td>
-        <td>{{ c.amount }}</td>
-        <td>{{ c.production }}</td>
+        <th>Kategorie</th><th>Beschreibung</th><th>Erledigt</th>
+    </tr>
+    <form action="" method="post">
+    {% csrf_token %}
+    {% for p, f in list %}
+    <tr>
+        <td>{{ p.preparation.short }}</td>
+        <td>{{ p.preparation.detail}}</td>
+        <td>{{ f.check }}</td>
     </tr>
     {% endfor %}
-    </tbody>
-</table>
+    </table>
+    <input type="submit" name="preps_save" value="Speichern">
+    <input type="submit" name="preps_next" value="Weiter">
+    </form>
+{% else %}
+    Wähle eine Rezept und die Menge:
+    <form action="" method="post">
+        {% csrf_token %}
+        {{ form.recipe }}
+        {{ form.amount }}
+        {{ form.brewmaster }}
+        <input type="submit" name="create" value="Erstellen">
+    </form>
+{% endif %}
+
 {% endblock content %}
