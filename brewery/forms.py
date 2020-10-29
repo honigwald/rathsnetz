@@ -1,7 +1,7 @@
 from django import forms
 from django.forms import Form, ModelForm, Select
 from django.contrib.auth.models import User
-from .models import Storage, Recipe, Step, Keg, Preparation, PreparationProtocol
+from .models import Storage, Recipe, Step, Keg, Preparation, PreparationProtocol, FermentationProtocol
 
 
 class BrewingCharge(forms.Form):
@@ -45,3 +45,9 @@ class PreparationProtocolForm(ModelForm):
     class Meta:
         model = PreparationProtocol
         fields = ['check']
+
+
+class FermentationProtocolForm(ModelForm):
+    class Meta:
+        model = FermentationProtocol
+        fields = ['temperature', 'plato', 'date']

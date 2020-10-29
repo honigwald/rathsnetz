@@ -19,9 +19,11 @@ class Charge(models.Model):
     production = models.DateTimeField()
     duration = models.DurationField(blank=True, null=True)
     brewmaster = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, blank=True, null=True)
-    preps_finished = models.BooleanField()
-    brewing_finished = models.BooleanField()
-    finished = models.BooleanField()
+    preps_finished = models.BooleanField(default=False)
+    brewing_finished = models.BooleanField(default=False)
+    finished = models.BooleanField(default=False)
+    ispindel = models.BooleanField(default=False)
+    fermentation = models.BooleanField(default=False)
 
     def __str__(self):
         return str(self.cid)
@@ -44,10 +46,10 @@ class Keg(models.Model):
         return "[" + str(self.id) + "] " + str(self.content)
 
 
-class Fermentation(models.Model):
+class FermentationProtocol(models.Model):
     charge = models.ForeignKey(Charge, on_delete=models.CASCADE)
     temperature = models.FloatField()
-    fermentation = models.FloatField()
+    plato = models.FloatField()
     date = models.DateTimeField()
 
     def __str__(self):
@@ -123,12 +125,6 @@ class RecipeProtocol(models.Model):
     def __str__(self):
         return str(self.charge) + "." + str(self.step)
 
-class HintProtocol(models.Model):
-    charge = models.ForeignKey(Charge, on_delete=models.CASCADE)
-    description = models.CharField(max_length=50)
-
-    def __str__(self):
-        return str(self.protocol)
 
 class PreparationProtocol(models.Model):
     charge = models.ForeignKey(Charge, on_delete=models.CASCADE)

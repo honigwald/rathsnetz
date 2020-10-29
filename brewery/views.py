@@ -12,7 +12,7 @@ import base64
 from math import pow
 from os import environ
 
-from .models import Recipe, Step, Charge, RecipeProtocol, Keg, Hint
+from .models import Recipe, Step, Charge, RecipeProtocol, Keg, Hint, FermentationProtocol
 from .forms import *
 
 
@@ -41,7 +41,7 @@ def protocol_step(charge, step, starttime):
 
 @login_required
 def brewing_overview(request):
-    c = Charge.objects.all()
+    c = Charge.objects.filter(finished=True)
     active = Charge.objects.filter(finished=False)
     context = {
         'charge': c,
@@ -60,7 +60,7 @@ def brewing(request, cid):
         return HttpResponseRedirect(reverse('protocol', kwargs={'cid': c.id}))
     # Fermentation: Starting point
     elif c.preps_finished and c.brewing_finished:
-        return HttpResponseRedirect(reverse('spindel'))
+        return HttpResponseRedirect(reverse('fermentation', kwargs={'cid': c.id}))
     # Brewing: Restore session
     elif c.preps_finished and not request.POST:
         last_step = RecipeProtocol.objects.filter(charge=cid).last()
@@ -104,6 +104,7 @@ def brewing(request, cid):
                 context['step'] = first_step
                 context['tstart'] = datetime.now()
                 context['next'] = Step.objects.filter(recipe=c.recipe).filter(step=(first_step.step+1)).exists()
+                context['hint'] = Hint.objects.filter(step__id=first_step.id)
                 context['form'] = BrewingProtocol()
                 return render(request, 'brewery/brewing.html', context)
             else:
@@ -111,7 +112,6 @@ def brewing(request, cid):
 
         # Brewing: get next step
         if request.POST.get('brew_next'):
-            print('brewing_next')
             cid = request.POST.get('charge')
             c = Charge.objects.get(pk=cid)
             pform = BrewingProtocol(request.POST)
@@ -124,22 +124,23 @@ def brewing(request, cid):
                 pstep.save()
                 next_step_exists = Step.objects.filter(recipe=c.recipe).filter(step=step + 1)
                 if next_step_exists:
+                    step = Step.objects.filter(recipe=c.recipe).get(step=step + 1)
                     context['charge'] = c
                     context['tstart'] = datetime.now()
-                    context['step'] = Step.objects.filter(recipe=c.recipe).get(step=step+1)
-                    context['next'] = Step.objects.filter(recipe=c.recipe).filter(step=step + 2)
+                    context['step'] = step
+                    context['next'] = Step.objects.filter(recipe=c.recipe).filter(step=step.step + 2)
+                    context['hint'] = Hint.objects.filter(step__id=step.id)
                     context['protocol'] = RecipeProtocol.objects.filter(charge=cid)
                     context['form'] = BrewingProtocol()
                     return render(request, 'brewery/brewing.html', context)
                 else:
                     # Calculate overall duration time
-                    print("finish it!")
                     c.duration = datetime.now() - c.production.replace(tzinfo=None)
                     c.brewing_finished = True
                     c.save()
                     context['charge'] = c
                     context['protocol'] = RecipeProtocol.objects.filter(charge=cid)
-                    return render(request, 'brewery/protocol.html', context)
+                    return HttpResponseRedirect(reverse('fermentation', kwargs={'cid': c.id}))
             else:
                 print("pform not valid")
         # Preparations: start preparations
@@ -168,7 +169,6 @@ def brewing_add(request):
                 c.amount = charge_form.cleaned_data['amount']
                 c.brewmaster = charge_form.cleaned_data['brewmaster']
                 c.production = datetime.now()
-                c.brewing_finished = c.preps_finished = c.finished = False
                 c.save()
 
                 # Create required preparations
@@ -203,6 +203,39 @@ def protocol(request, cid):
 
     return render(request, 'brewery/protocol.html', context)
 
+
+@login_required
+def fermentation(request, cid):
+    c = Charge.objects.get(pk=cid)
+    f = FermentationProtocol.objects.filter(charge=c)
+    context = {}
+    context['charge'] = c
+    context['fermentation'] = f
+    context['form'] = FermentationProtocolForm()
+    if request.POST:
+        if request.POST.get('spindel') == "True":
+            c.ispindel = True
+            c.save()
+        if request.POST.get('save'):
+            form = FermentationProtocolForm(request.POST)
+            if form.is_valid():
+                form = form.save(commit=False)
+                form.charge = c
+                form.save()
+            context['form'] = FermentationProtocolForm()
+            context['fermentation'] = FermentationProtocol.objects.filter(charge=c)
+            if request.POST.get('finished'):
+                c.finished = True
+                c.save()
+                return HttpResponseRedirect(reverse('brewing_overview'))
+            return render(request, 'brewery/fermentation.html', context)
+        else:
+            if not c.fermentation:
+                c.fermentation = True
+                c.save()
+        return render(request, 'brewery/fermentation.html', context)
+    else:
+        return render(request, 'brewery/fermentation.html', context)
 
 @login_required
 def spindel(request):

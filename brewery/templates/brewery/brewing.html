@@ -75,7 +75,8 @@
         </tbody>
     </table>
 {% elif charge and not charge.preparations %}
-    <h3>Vorarbeiten</h3>
+<div style="margin-top:10px; padding:5px; max-width:700px; border:1px solid black;">
+    <h3><u>Vorarbeiten</u></h3>
     <table>
     <tr>
         <th>Kategorie</th><th>Beschreibung</th><th>Erledigt</th>
@@ -90,9 +91,11 @@
     </tr>
     {% endfor %}
     </table>
+    <br>
     <input type="submit" name="preps_save" value="Speichern">
     <input type="submit" name="preps_next" value="Weiter">
     </form>
+</div>
 {% else %}
     Wähle eine Rezept und die Menge:
     <form action="" method="post">

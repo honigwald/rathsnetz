@@ -1,0 +1,50 @@
+{% extends 'brewery/base.html' %}
+{% block content %}
+<h2>Fermentation</h2>
+<div style="margin-top:10px; padding:5px; max-width:700px; border:1px solid black;">
+    <h3><u>Charge:</u> {{ charge.cid }}</h3>
+    <form action="" method="post">
+    {% csrf_token %}
+    {% if charge.fermentation %}
+        Messpunkt eintragen oder Fermentation abschlie&szlig;en<br><br>
+        <table>
+            <thead>
+            <tr>
+                <th>Datum</th> <th>Temperatur</th> <th>Plato</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for f in fermentation %}
+            <tr>
+                <td>{{ f.date }}</td>
+                <td>{{ f.plato }}</td>
+                <td>{{ f.temperature }}</td>
+            </tr>
+            {% endfor %}
+            <tr>
+                <td>{{ form.date }}</td>
+                <td>{{ form.plato }}</td>
+                <td>{{ form.temperature }}</td>
+            </tr>
+            </tbody>
+        </table>
+        <br/>
+        Abgeschlossen?<input type="checkbox" name="finished"> <br><br>
+        <input type="submit" name="save" value="Speichern">
+        <br/>
+    {% elif charge.ispindel %}
+            ISPINDEL
+    {% else %}
+        Willst du die iSpindel benutzen?
+        <br><br>
+        <input type="radio" id="yes" name="spindel" value=True>
+        <label for="yes">Ja</label>
+        <input type="radio" id="no" name="spindel" value=False>
+        <label for="no">Nein</label>
+        <br><br>
+        <input type="submit" name="next" value="Weiter">
+        <br><br>
+    {% endif %}
+    </form>
+</div>
+{% endblock content %}
