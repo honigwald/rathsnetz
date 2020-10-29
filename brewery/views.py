@@ -12,7 +12,7 @@ import base64
 from math import pow
 from os import environ
 
-from .models import Recipe, Step, Charge, RecipeProtocol, Keg
+from .models import Recipe, Step, Charge, RecipeProtocol, Keg, Hint
 from .forms import *
 
 
@@ -53,88 +53,97 @@ def brewing_overview(request):
 @login_required
 def brewing(request, cid):
     c = get_object_or_404(Charge, pk=cid)
+    preps = PreparationProtocol.objects.filter(charge=c)
+    context = {}
+    # Charge complete
     if c.finished:
         return HttpResponseRedirect(reverse('protocol', kwargs={'cid': c.id}))
+    # Fermentation: Starting point
+    elif c.preps_finished and c.brewing_finished:
+        return HttpResponseRedirect(reverse('spindel'))
+    # Brewing: Restore session
+    elif c.preps_finished and not request.POST:
+        last_step = RecipeProtocol.objects.filter(charge=cid).last()
+        if last_step:
+            last_step = last_step.step
+        else:
+            last_step = 0
+        step = Step.objects.filter(recipe=c.recipe).get(step=last_step + 1)
+        context['charge'] = c
+        context['tstart'] = datetime.now()
+        context['step'] = step
+        context['hint'] = Hint.objects.filter(step__id=step.id)
+        context['next'] = Step.objects.filter(recipe=c.recipe).filter(step=(last_step + 2)).exists()
+        context['protocol'] = RecipeProtocol.objects.filter(charge=cid)
+        context['form'] = BrewingProtocol()
+
+        return render(request, 'brewery/brewing.html', context)
+    # Brewing: Start process if not already finished
     else:
+        # Preparations: save current result
         if request.POST.get('preps_save'):
-            preps = PreparationProtocol.objects.filter(charge=c)
             preps_form = [PreparationProtocolForm(request.POST, prefix=str(item), instance=item) for item in preps]
             for pf in preps_form:
                 if pf.is_valid():
                     pf.save()
             return HttpResponseRedirect(reverse('brewing_overview'))
 
+        # Preparations: if finished, continue brewing
         if request.POST.get('preps_next'):
-            preps = PreparationProtocol.objects.filter(charge=c)
             preps_form = [PreparationProtocolForm(request.POST, prefix=str(item), instance=item) for item in preps]
             for pf in preps_form:
                 if pf.is_valid():
                     pf.save()
-            # check if preps are finished
-            not_finished = PreparationProtocol.objects.filter(charge=c).filter(check=False)
+            # Check for finished preps
+            finished = not(preps.filter(check=False).exists())
             context = {'charge': c, 'list': zip(preps, preps_form)}
-            if not not_finished:
-                print("True")
-                c.preparations = True                
-                return render(request, 'brewery/brewing.html', context)    
+            if finished:
+                c.preps_finished = True
+                c.save()
+                first_step = Step.objects.filter(recipe=c.recipe).get(step=1)
+                context['step'] = first_step
+                context['tstart'] = datetime.now()
+                context['next'] = Step.objects.filter(recipe=c.recipe).filter(step=(first_step.step+1)).exists()
+                context['form'] = BrewingProtocol()
+                return render(request, 'brewery/brewing.html', context)
             else:
-                return render(request, 'brewery/brewing.html', context)    
+                return render(request, 'brewery/brewing.html', context)
 
-        if request.POST.get('next'):
+        # Brewing: get next step
+        if request.POST.get('brew_next'):
+            print('brewing_next')
             cid = request.POST.get('charge')
             c = Charge.objects.get(pk=cid)
-            if protocol_form.is_valid():
-                step = int(request.POST.get('step'))
-                tstart = datetime.strptime(request.POST.get('tstart')[:-1], "%Y%m%d%H%M%S%f")
-
+            pform = BrewingProtocol(request.POST)
+            step = int(request.POST.get('step'))
+            tstart = datetime.strptime(request.POST.get('tstart')[:-1], "%Y%m%d%H%M%S%f")
+            if pform.is_valid():
                 # Create step of protocol
                 pstep = protocol_step(c, step, tstart)
-                pstep.comment = protocol_form.cleaned_data['comment']
+                pstep.comment = pform.cleaned_data['comment']
                 pstep.save()
-                # Get all steps of current protocol
-                protocol_steps = RecipeProtocol.objects.filter(charge=cid)
-
-                tstart = datetime.now()
-                step = step + 1
-                active_step = Step.objects.filter(recipe=c.recipe).get(step=step)
-
-                end_reached = False
-                try:
-                    Step.objects.filter(recipe=c.recipe).get(step=step+1)
-                except Step.DoesNotExist:
-                    end_reached = True
-
-                # Generate new form
-                protocol_form = BrewingProtocol()
-
-                context = {
-                    'charge': c,
-                    'protocol': protocol_steps,
-                    'step': active_step,
-                    'tstart': tstart,
-                    'form': protocol_form,
-                    'end_reached': end_reached,
-                }
-                return render(request, 'brewery/brewing.html', context)
-        if request.POST.get('end'):
-            if protocol_form.is_valid():
-                step = int(request.POST.get('step'))
-                tstart = datetime.strptime(request.POST.get('tstart')[:-1], "%Y%m%d%H%M%S%f")
-
-                # Create step of protocol
-                pstep = protocol_step(c, step, tstart)
-                pstep.comment = protocol_form.cleaned_data['comment']
-                pstep.save()
-
-                p = RecipeProtocol.objects.filter(charge=c.id)
-
-                # Calculate overall duration time
-                c.duration = datetime.now() - c.production.replace(tzinfo=None)
-                c.save()
-                context = {'protocol': p, 'charge': c}
-                return render(request, 'brewery/protocol.html', context)
+                next_step_exists = Step.objects.filter(recipe=c.recipe).filter(step=step + 1)
+                if next_step_exists:
+                    context['charge'] = c
+                    context['tstart'] = datetime.now()
+                    context['step'] = Step.objects.filter(recipe=c.recipe).get(step=step+1)
+                    context['next'] = Step.objects.filter(recipe=c.recipe).filter(step=step + 2)
+                    context['protocol'] = RecipeProtocol.objects.filter(charge=cid)
+                    context['form'] = BrewingProtocol()
+                    return render(request, 'brewery/brewing.html', context)
+                else:
+                    # Calculate overall duration time
+                    print("finish it!")
+                    c.duration = datetime.now() - c.production.replace(tzinfo=None)
+                    c.brewing_finished = True
+                    c.save()
+                    context['charge'] = c
+                    context['protocol'] = RecipeProtocol.objects.filter(charge=cid)
+                    return render(request, 'brewery/protocol.html', context)
+            else:
+                print("pform not valid")
+        # Preparations: start preparations
         else:
-            preps = PreparationProtocol.objects.filter(charge=c.id)
             preps_form = [PreparationProtocolForm(prefix=str(item), instance=item) for item in preps]
             zipped_list = zip(preps, preps_form)
             context = {'charge': c, 'list': zipped_list}
@@ -159,7 +168,7 @@ def brewing_add(request):
                 c.amount = charge_form.cleaned_data['amount']
                 c.brewmaster = charge_form.cleaned_data['brewmaster']
                 c.production = datetime.now()
-                c.preparations = c.finished = False
+                c.brewing_finished = c.preps_finished = c.finished = False
                 c.save()
 
                 # Create required preparations
@@ -171,13 +180,8 @@ def brewing_add(request):
                     preps_protocol.check = False
                     preps_protocol.save()
 
-                # Get first step
-                active_step = Step.objects.filter(recipe=c.recipe).get(step=1)
-                tstart = datetime.now()
                 context = {
                     'charge': c,
-                    'step': active_step,
-                    'tstart': tstart,
                     'form': protocol_form,
                     'next': True,
                 }
@@ -202,68 +206,70 @@ def protocol(request, cid):
 
 @login_required
 def spindel(request):
-    # client = InfluxDBClient(host='braurat.de', port=8086, username='admin', password=environ['INFLUXDB_PASS'])
-    # client.switch_database('ispindel')
-    # q = client.query('SELECT "tilt","temperature", "battery" FROM "measurements"')
-    # # ['time', 'RSSI', 'battery', 'gravity', 'interval', 'source', 'temp_units', 'temperature', 'tilt'],
-    # time = []
-    # tilt = []
-    # temperature = []
-    # battery = []
-    # points = q.get_points()
-    # for item in points:
-    #     time.append(item['time'])
-    #     # Ploynom: 0.000166916x^3 + -0.01470147x^2 + 0.679876283x + -10.536229152
-    #     x = item['tilt']
-    #     plato = (0.000166916 * pow(x, 3))
-    #     plato = plato - (0.01470147 * pow(x, 2))
-    #     plato = plato + (0.679876283 * x)
-    #     plato = plato - 10.536229152
-    #     tilt.append(plato)
+    """"
+    client = InfluxDBClient(host='braurat.de', port=8086, username='admin', password=environ['INFLUXDB_PASS'])
+    client.switch_database('ispindel')
+    q = client.query('SELECT "tilt","temperature", "battery" FROM "measurements"')
+    # ['time', 'RSSI', 'battery', 'gravity', 'interval', 'source', 'temp_units', 'temperature', 'tilt'],
+    time = []
+    tilt = []
+    temperature = []
+    battery = []
+    points = q.get_points()
+    for item in points:
+        time.append(item['time'])
+        # Ploynom: 0.000166916x^3 + -0.01470147x^2 + 0.679876283x + -10.536229152
+        x = item['tilt']
+        plato = (0.000166916 * pow(x, 3))
+        plato = plato - (0.01470147 * pow(x, 2))
+        plato = plato + (0.679876283 * x)
+        plato = plato - 10.536229152
+        tilt.append(plato)
 
-    #     temperature.append(item['temperature'])
-    #     battery.append(item['battery'])
+        temperature.append(item['temperature'])
+        battery.append(item['battery'])
 
-    # fig = make_subplots(specs=[[{"secondary_y": True}]])
-    # fig.update_layout(
-    #     title="iSpindel",
-    #     xaxis_title="Zeit",
-    #     yaxis_title="Vergärungsgrad",
-    #     yaxis_range=[-10, 40],
-    #     yaxis2=dict(
-    #         title="Grad Celius",
-    #         overlaying='y',
-    #         side='right',
-    #         range=[2, 30]
-    #     ),
-    #     legend_title="Legende",
-    #     font=dict(
-    #         family="Courier New, monospace",
-    #         size=18,
-    #         color="RebeccaPurple"
-    #     )
-    # )
-    # fig.add_trace(go.Scatter(x=time, y=tilt,
-    #                          line_shape='spline',
-    #                          mode='lines',
-    #                          name='Plato'),
-    #               secondary_y=False)
-    # fig.add_trace(go.Scatter(x=time, y=temperature,
-    #                          line_shape='spline',
-    #                          mode='lines',
-    #                          name='Temepratur'),
-    #               secondary_y=True)
-    # fig.add_trace(go.Scatter(x=time, y=battery,
-    #                          line_shape='spline',
-    #                          mode='lines',
-    #                          name='Batterie'))
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+    fig.update_layout(
+        title="iSpindel",
+        xaxis_title="Zeit",
+        yaxis_title="Vergärungsgrad",
+        yaxis_range=[-10, 40],
+        yaxis2=dict(
+            title="Grad Celius",
+            overlaying='y',
+            side='right',
+            range=[2, 30]
+        ),
+        legend_title="Legende",
+        font=dict(
+            family="Courier New, monospace",
+            size=18,
+            color="RebeccaPurple"
+        )
+    )
+    fig.add_trace(go.Scatter(x=time, y=tilt,
+                             line_shape='spline',
+                             mode='lines',
+                             name='Plato'),
+                  secondary_y=False)
+    fig.add_trace(go.Scatter(x=time, y=temperature,
+                             line_shape='spline',
+                             mode='lines',
+                             name='Temepratur'),
+                  secondary_y=True)
+    fig.add_trace(go.Scatter(x=time, y=battery,
+                             line_shape='spline',
+                             mode='lines',
+                             name='Batterie'))
 
-    # plt_div = plot(fig, output_type='div')
-    # client.close()
+    plt_div = plot(fig, output_type='div')
+    client.close()
 
-    # print(len(time))
+    print(len(time))
 
-    # return render(request, 'brewery/spindel.html', {'plot': plt_div})
+    return render(request, 'brewery/spindel.html', {'plot': plt_div})
+    """
     plt_div = None
     return render(request, 'brewery/spindel.html', {'plot': plt_div})
 

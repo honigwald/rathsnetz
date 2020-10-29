@@ -19,7 +19,8 @@ class Charge(models.Model):
     production = models.DateTimeField()
     duration = models.DurationField(blank=True, null=True)
     brewmaster = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, blank=True, null=True)
-    preparations = models.BooleanField()
+    preps_finished = models.BooleanField()
+    brewing_finished = models.BooleanField()
     finished = models.BooleanField()
 
     def __str__(self):

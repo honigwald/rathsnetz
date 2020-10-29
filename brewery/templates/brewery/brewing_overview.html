@@ -3,10 +3,11 @@
 <h2>Brauen</h2>
 
 {% if active %}
-    <u>Aktuelle Charge:</u> <br>
+    <u>Aktive Charge:</u>
     {% for c in active %}
-        <a href="{% url 'brewing' c.id %}"> {{ c }}</a>
+        <a href="{% url 'brewing' c.id %}">{{ c }}</a>&nbsp;
     {% endfor %}
+    <br><br>
     <form>
         <input type="button" onclick="window.location.href = '{% url 'brewing_add' %}';" value="Neue Charge"/>
     </form>

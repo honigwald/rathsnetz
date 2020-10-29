@@ -1,45 +1,56 @@
 {% extends 'brewery/base.html' %}
 {% block content %}
 <h2>Brauen</h2>
-<h3>Neu</h3>
 
-{% if charge and charge.preparations %}
+{% if charge and charge.preps_finished %}
     <u>Rezept:</u> {{ charge.recipe.name }} <br>
     <u>Menge:</u> {{ charge.amount }} Liter <br>
     <u>Braumeister:</u> {{ charge.brewmaster }}
 
-    <h3>Akutell:</h3>
-    <form action="" method="post">
-    {% csrf_token %}
-    <table>
-        <thead>
-        <tr>
-            <th>Schritt</th> <th>Titel</th> <th>Beschreibung</th> <th>Zutaten</th> <th>Menge</th> <th>Dauer</th> <th>Notizen</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr>
-            <td>{{ step.step }}</td>
-            <td>{{ step.title }}</td>
-            <td>{{ step.description }}</td>
-            <td>{{ step.ingredient }}</td>
-            <td>{{ step.amount }}</td>
-            <td>{{ step.duration }}</td>
-            <td>{{ form.comment }}</td>
-        </tr>
-        </tbody>
-    </table>
-    {% if next %}
-        <input type="submit" name="next" value="Weiter">
-    {% else %}
-        <input type="submit" name="end" value="Speichern">
-    {% endif %}
-    <input type="hidden" name="charge" value="{{ charge.id }}">
-    <input type="hidden" name="tstart" value="{{ tstart|date:'YmdHisu' }} ">
-    <input type="hidden" name="step" value="{{ step.step }} ">
-    </form>
+    <div style="margin-top:10px; padding:5px; max-width:700px; border:1px solid black;">
+        <h3><u>Aktuell:</u></h3>
+        <form action="" method="post">
+            {% csrf_token %}
+            <table>
+                <thead>
+                <tr>
+                    <th>Schritt</th> <th>Titel</th> <th>Beschreibung</th> <th>Zutaten</th> <th>Menge</th> <th>Dauer</th> <th>Notizen</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>{{ step.step }}</td>
+                    <td>{{ step.title }}</td>
+                    <td>{{ step.description }}</td>
+                    <td>{{ step.ingredient }}</td>
+                    <td>{{ step.amount }}</td>
+                    <td>{{ step.duration }}</td>
+                    <td>{{ form.comment }}</td>
+                </tr>
+                </tbody>
+            </table>
+            {% if hint %}
+            <h3><u>Hinweis:</u></h3>
+            <ul>
+                {% for h in hint %}
+                <li>{{ h }}</li>
+                {% endfor %}
+            </ul>
+            <br>
+            {% endif %}
+            <br/>
+            {% if next %}
+            <input type="submit" name="brew_next" value="Weiter">
+            {% else %}
+            <input type="submit" name="brew_next" value="Speichern">
+            {% endif %}
+            <input type="hidden" name="charge" value="{{ charge.id }}">
+            <input type="hidden" name="tstart" value="{{ tstart|date:'YmdHisu' }} ">
+            <input type="hidden" name="step" value="{{ step.step }} ">
+        </form>
+        <br/>
+    </div>
 
-    <br/><br/>
     <h3>Protokoll</h3>
     <table>
         <thead>
