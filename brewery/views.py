@@ -15,6 +15,8 @@ from os import environ
 from .models import Recipe, Step, Charge, RecipeProtocol, Keg, Hint, FermentationProtocol
 from .forms import *
 
+# Used for recipe scaling
+AMOUNT_FACTOR = 100
 
 def index(request):
     return render(request, 'brewery/index.html')
@@ -23,20 +25,26 @@ def index(request):
 
 def protocol_step(charge, step, starttime):
     c = charge
-    s = step
+    s = Step.objects.filter(recipe=c.recipe).get(step=step)
     tstart = starttime
     pstep = RecipeProtocol()
     pstep.charge = Charge.objects.get(id=c.id)
-    pstep.step = Step.objects.filter(recipe=c.recipe).get(step=s).step
-    pstep.title = Step.objects.filter(recipe=c.recipe).get(step=s).title
-    pstep.description = Step.objects.filter(recipe=c.recipe).get(step=s).description
-    pstep.duration = Step.objects.filter(recipe=c.recipe).get(step=s).duration
-    pstep.ingredient = Step.objects.filter(recipe=c.recipe).get(step=s).ingredient
-    pstep.amount = Step.objects.filter(recipe=c.recipe).get(step=s).amount
-    pstep.amount = Step.objects.filter(recipe=c.recipe).get(step=s).amount
+    pstep.step = s.step
+    pstep.title = s.title
+    pstep.description = s.description
+    pstep.duration = s.duration
+    pstep.ingredient = s.ingredient
+    pstep.amount = (s.amount * c.amount) / AMOUNT_FACTOR if s.amount else s.amount
     pstep.tstart = tstart
     pstep.tend = datetime.now()
     return pstep
+
+
+def storage_delta(charge, step):
+    required = charge.amount * step.amount / AMOUNT_FACTOR
+    available = Storage.objects.get(name=step.ingredient).amount
+    delta = available - required
+    return delta
 
 
 @login_required
@@ -69,6 +77,7 @@ def brewing(request, cid):
         else:
             last_step = 0
         step = Step.objects.filter(recipe=c.recipe).get(step=last_step + 1)
+        step.amount = (step.amount * c.amount) / AMOUNT_FACTOR if step.amount else step.amount
         context['charge'] = c
         context['tstart'] = datetime.now()
         context['step'] = step
@@ -100,11 +109,12 @@ def brewing(request, cid):
             if finished:
                 c.preps_finished = True
                 c.save()
-                first_step = Step.objects.filter(recipe=c.recipe).get(step=1)
-                context['step'] = first_step
+                step = Step.objects.filter(recipe=c.recipe).get(step=1)
+                step.amount = (step.amount * c.amount) / AMOUNT_FACTOR if step.amount else step.amount
+                context['step'] = step
                 context['tstart'] = datetime.now()
-                context['next'] = Step.objects.filter(recipe=c.recipe).filter(step=(first_step.step+1)).exists()
-                context['hint'] = Hint.objects.filter(step__id=first_step.id)
+                context['next'] = Step.objects.filter(recipe=c.recipe).filter(step=(step.step+1)).exists()
+                context['hint'] = Hint.objects.filter(step__id=step.id)
                 context['form'] = BrewingProtocol()
                 return render(request, 'brewery/brewing.html', context)
             else:
@@ -115,16 +125,22 @@ def brewing(request, cid):
             cid = request.POST.get('charge')
             c = Charge.objects.get(pk=cid)
             pform = BrewingProtocol(request.POST)
-            step = int(request.POST.get('step'))
+            step = Step.objects.filter(recipe=c.recipe).get(step=int(request.POST.get('step')))
             tstart = datetime.strptime(request.POST.get('tstart')[:-1], "%Y%m%d%H%M%S%f")
             if pform.is_valid():
                 # Create step of protocol
-                pstep = protocol_step(c, step, tstart)
+                pstep = protocol_step(c, step.step, tstart)
                 pstep.comment = pform.cleaned_data['comment']
                 pstep.save()
-                next_step_exists = Step.objects.filter(recipe=c.recipe).filter(step=step + 1)
+                # Update storage
+                if step.amount:
+                    item = Storage.objects.get(name=step.ingredient)
+                    item.amount = storage_delta(c, step)
+                    item.save()
+                next_step_exists = Step.objects.filter(recipe=c.recipe).filter(step=step.step + 1)
                 if next_step_exists:
-                    step = Step.objects.filter(recipe=c.recipe).get(step=step + 1)
+                    step = Step.objects.filter(recipe=c.recipe).get(step=step.step + 1)
+                    step.amount = (step.amount * c.amount) / AMOUNT_FACTOR if step.amount else step.amount
                     context['charge'] = c
                     context['tstart'] = datetime.now()
                     context['step'] = step
@@ -147,6 +163,9 @@ def brewing(request, cid):
         else:
             preps_form = [PreparationProtocolForm(prefix=str(item), instance=item) for item in preps]
             zipped_list = zip(preps, preps_form)
+            for s in Step.objects.filter(recipe=c.recipe):
+                if s.amount:
+                    delta = storage_delta(c, s)
             context = {'charge': c, 'list': zipped_list}
             return render(request, 'brewery/brewing.html', context)
 

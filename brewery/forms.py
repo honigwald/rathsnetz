@@ -23,7 +23,7 @@ class StorageAddItem(ModelForm):
 class AddRecipe(ModelForm):
     class Meta:
         model = Recipe
-        fields = ['name']
+        fields = ['name', 'hg', 'ng']
 
 
 class EditRecipe(ModelForm):
