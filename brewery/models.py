@@ -7,6 +7,8 @@ class Recipe(models.Model):
     name = models.CharField(max_length=25)
     creation = models.DateTimeField(default=timezone.now)
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, blank=True, null=True)
+    hg = models.FloatField()
+    ng = models.FloatField()
 
     def __str__(self):
         return self.name
@@ -36,7 +38,7 @@ class Keg(models.Model):
         ('S', 'Verkauft'),
         ('D', 'Defekt'),
     )
-    content = models.ForeignKey(Charge, on_delete=models.CASCADE, blank=True, null=True)
+    content = models.ForeignKey(Charge, on_delete=models.CASCADE, blank=True, null=True, limit_choices_to={'finished': True})
     status = models.CharField(max_length=1, default='F', choices=STATUS_CHOICES)
     notes = models.CharField(max_length=200, blank=True, null=True)
     volume = models.IntegerField()

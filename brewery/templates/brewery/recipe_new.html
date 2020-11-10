@@ -1,17 +1,28 @@
 {% extends 'brewery/base.html' %}
 {% block content %}
 <h2>Neues Rezept</h2>
-Wähle einen Rezeptnamen.
+<b><u>Hinweis:</u></b> Das Rezept skaliert automatisch. 
+Hiefür muss das Rezept zwingend für <u>100 Liter</u> eingepflegt werden.<br><br>
+
 <form action="" method="post">
     {% csrf_token %}
     <table>
-        {{ add_recipe }}
+    <tr>
+        <td>Rezeptname:</td><td>{{ add_recipe.name }}</td>
+    </tr>
+    <tr>
+        <td>Hauptguss:</td><td>{{ add_recipe.hg }}</td>
+    </tr>
+    <tr>
+        <td>Nachguss:</td><td>{{ add_recipe.ng }}</td>
+    </tr>
     </table>
     <h3>Vorarbeiten</h3>
-    Definiere die Standart-Vorarbeiten
-    <br>
-    {{ select_preparation.as_p }}
-    <br>
+    <b><u>Hinweis:</u></b> Die Vorarbeiten müssen vor jedem Braugang durchgeführt werden.<br><br>
+
+    Wähle die Vorarbeiten (Mehrfach: Strg + Klick):<br>
+    {{ select_preparation.preparation }}
+    <br><br>
     <input type="submit" value="Erstellen">
 </form>
 {% endblock content %}
