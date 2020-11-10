@@ -97,12 +97,18 @@
     </form>
 </div>
 {% else %}
-    Wähle eine Rezept und die Menge:
+    <b><u>Hinweis:</u></b> Wähle Rezept, Menge und Braumeister.<br><br>
     <form action="" method="post">
         {% csrf_token %}
-        {{ form.recipe }}
-        {{ form.amount }}
-        {{ form.brewmaster }}
+        <table>
+        <tr>
+            <td>Rezept:</td><td>{{ form.recipe }}</td>
+        </tr><tr>
+            <td>Menge:</td><td>{{ form.amount }}</td>
+        </tr><tr>
+            <td>Braumeister:</td><td>{{ form.brewmaster }}</td>
+        </tr>
+        </table>
         <input type="submit" name="create" value="Erstellen">
     </form>
 {% endif %}
