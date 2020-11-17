@@ -51,3 +51,12 @@ class FermentationProtocolForm(ModelForm):
     class Meta:
         model = FermentationProtocol
         fields = ['temperature', 'plato', 'date']
+
+
+class StepForm(ModelForm):
+    description = forms.CharField(required=False)
+    duration = forms.DurationField(required=False)
+
+    class Meta:
+        model = Step
+        fields = ['step', 'prev', 'title', 'description', 'duration', 'ingredient', 'amount']

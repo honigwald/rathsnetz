@@ -38,7 +38,7 @@
 <br><br>
 <form method="post" action="">
     {% csrf_token %}
-    <input type="button" onclick="window.location.href = '{% url 'recipe_edit' recipe_id=recipe.id %}';" value="Bearbeiten"/>
+    <input type="button" onclick="window.location.href = '{% url 'recipe_steps' recipe_id=recipe.id %}';" value="Bearbeiten"/>
     <input type="submit" onclick="return confirm('Sure?');" name="delete" value="Löschen">
 </form>
 

@@ -84,6 +84,8 @@ class Storage(models.Model):
 
 class Step(models.Model):
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
+    prev = models.OneToOneField('self', on_delete=models.SET_NULL, null=True, blank=True)
+    next = models.OneToOneField('self', on_delete=models.SET_NULL, null=True, blank=True)
     step = models.IntegerField()
     title = models.CharField(max_length=50)
     description = models.CharField(max_length=200)

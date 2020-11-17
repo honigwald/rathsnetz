@@ -19,6 +19,8 @@ from .forms import *
 AMOUNT_FACTOR = 100
 
 def index(request):
+    r = Recipe.objects.get(id=1)
+    s = Step.objects.filter(recipe=r).get(step=1)
     return render(request, 'brewery/index.html')
 
 
@@ -338,7 +340,6 @@ def recipe_detail(request, recipe_id):
     r = Recipe.objects.get(pk=recipe_id)
     s = Step.objects.filter(recipe=recipe_id)
     p = Preparation.objects.filter(recipe=r)
-    print(p)
     if request.method == 'POST':
         if request.POST.get('delete'):
             r.delete()
@@ -363,7 +364,7 @@ def recipe_add(request):
                 for item in select_preparation.cleaned_data['preparation']:
                     prep = get_object_or_404(Preparation, short=item)
                     prep.recipe.add(ar)
-            return HttpResponseRedirect(reverse('recipe_edit', kwargs={'recipe_id': ar.id}))
+            return HttpResponseRedirect(reverse('recipe_steps', kwargs={'recipe_id': ar.id}))
 
     add_recipe = AddRecipe()
     select_preparation = SelectPreparation()
@@ -373,28 +374,49 @@ def recipe_add(request):
 
 
 @login_required
-def recipe_edit(request, recipe_id):
+def recipe_steps(request, recipe_id):
     r = Recipe.objects.get(pk=recipe_id)
     s = Step.objects.filter(recipe=recipe_id)
     if request.method == 'POST':
-        form = EditRecipe(request.POST)
-        if request.POST.get('delete'):
-            sid = request.POST.get('id')
-            dataset = Step.objects.get(id=sid)
-            dataset.delete()
-            return HttpResponseRedirect(reverse('recipe_edit', kwargs={'recipe_id': r.id}))
-
-        if request.POST.get('save'):
-            if form.is_valid():
-                s = form.save(commit=False)
-                s.recipe = r
-                s.save()
-                return HttpResponseRedirect(reverse('recipe_edit', kwargs={'recipe_id': r.id}))
+        if request.POST.get('add'):
+            return HttpResponseRedirect(reverse('step_add', kwargs={'recipe_id': r.id}))
 
     form = EditRecipe()
-    context = {'form': form, 'steps': s}
+    context = {'form': form, 'steps': s, 'recipe': r}
 
-    return render(request, 'brewery/recipe_edit.html', context)
+    return render(request, 'brewery/recipe_steps.html', context)
+
+
+def step_predecessor(rid, sid):
+    r = Recipe.objects.get(pk=rid)
+    s = Step.objects.get(pk=sid)
+    print(r)
+    print(s)
+    print(s.prev)
+    print(s.prev)
+    return True
+
+
+def step_edit(request, recipe_id, step_id=None):
+    r = Recipe.objects.get(pk=recipe_id)
+    if step_id is None:
+        form = StepForm()
+    else:
+        s = Step.objects.filter(recipe=recipe_id).get(step=step_id)
+        form = StepForm(instance=s)
+    if request.method == 'POST':
+        if step_id is None:
+            form = StepForm(request.POST)
+        else:
+            form = StepForm(request.POST, instance=s)
+        if form.is_valid():
+            step = form.save(commit=False)
+            step.recipe = r
+            step_predecessor(r.id, step.id)
+            step.save()
+            return HttpResponseRedirect(reverse('recipe_steps', kwargs={'recipe_id': r.id}))
+    context = {'form': form, 'recipe': r}
+    return render(request, 'brewery/step_edit.html', context)
 
 
 @login_required
