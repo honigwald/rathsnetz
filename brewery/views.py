@@ -387,13 +387,9 @@ def recipe_steps(request, recipe_id):
     return render(request, 'brewery/recipe_steps.html', context)
 
 
-def step_predecessor(rid, sid):
+def step_predecessor(rid, s):
     r = Recipe.objects.get(pk=rid)
-    s = Step.objects.get(pk=sid)
-    print(r)
-    print(s)
-    print(s.prev)
-    print(s.prev)
+    print("Current: {} Previous: {} Prev_Next: {}".format(s, s.prev, s.prev.next))
     return True
 
 
@@ -412,11 +408,33 @@ def step_edit(request, recipe_id, step_id=None):
         if form.is_valid():
             step = form.save(commit=False)
             step.recipe = r
+            if step.prev:
+                step_predecessor(r.id, step)
+            step.save()
+            return HttpResponseRedirect(reverse('recipe_steps', kwargs={'recipe_id': r.id}))
+        elif "prev" in dict(form.errors):
+            print("Kettenproblemo")
+            step = form.save(commit=False)
+            return HttpResponseRedirect(reverse('recipe_steps', kwargs={'recipe_id': r.id}))
+    # Filter choosable steps for specified recipe
+    form.fields["prev"].queryset = Step.objects.filter(recipe=recipe_id)
+    context = {'form': form, 'recipe': r}
+    return render(request, 'brewery/step_edit.html', context)
+
+
+def step_add(request, recipe_id):
+    r = Recipe.objects.get(pk=recipe_id)
+    form = StepForm()
+    if request.method == 'POST':
+        if form.is_valid():
+            step = form.save(commit=False)
+            step.recipe = r
             step_predecessor(r.id, step.id)
             step.save()
             return HttpResponseRedirect(reverse('recipe_steps', kwargs={'recipe_id': r.id}))
     context = {'form': form, 'recipe': r}
     return render(request, 'brewery/step_edit.html', context)
+
 
 
 @login_required

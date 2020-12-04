@@ -59,4 +59,4 @@ class StepForm(ModelForm):
 
     class Meta:
         model = Step
-        fields = ['step', 'prev', 'title', 'description', 'duration', 'ingredient', 'amount']
+        fields = ['step', 'title', 'description', 'duration', 'ingredient', 'amount']
