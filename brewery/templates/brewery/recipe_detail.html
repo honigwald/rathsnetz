@@ -24,7 +24,7 @@
     <tbody>
     {% for s in steps %}
     <tr>
-        <td>{{ s.step }}</td>
+        <td>{{ forloop.counter }}</td>
         <td>{{ s.title }}</td>
         <td>{{ s.description }}</td>
         <td>{{ s.ingredient }}</td>
@@ -38,8 +38,7 @@
 <br><br>
 <form method="post" action="">
     {% csrf_token %}
-    <input type="button" onclick="window.location.href = '{% url 'recipe_steps' recipe_id=recipe.id %}';" value="Bearbeiten"/>
-    <input type="submit" onclick="return confirm('Sure?');" name="delete" value="Löschen">
+    <input type="button" onclick="window.location.href = '{% url 'recipe_edit' recipe_id=recipe.id %}';" value="Bearbeiten"/>
 </form>
 
 {% endblock content %}

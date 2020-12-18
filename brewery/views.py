@@ -19,19 +19,16 @@ from .forms import *
 AMOUNT_FACTOR = 100
 
 def index(request):
-    r = Recipe.objects.get(id=1)
-    s = Step.objects.filter(recipe=r).get(step=1)
     return render(request, 'brewery/index.html')
-
 
 
 def protocol_step(charge, step, starttime):
     c = charge
-    s = Step.objects.filter(recipe=c.recipe).get(step=step)
+    s = step
     tstart = starttime
     pstep = RecipeProtocol()
     pstep.charge = Charge.objects.get(id=c.id)
-    pstep.step = s.step
+    pstep.step = s.id
     pstep.title = s.title
     pstep.description = s.description
     pstep.duration = s.duration
@@ -73,18 +70,12 @@ def brewing(request, cid):
         return HttpResponseRedirect(reverse('fermentation', kwargs={'cid': c.id}))
     # Brewing: Restore session
     elif c.preps_finished and not request.POST:
-        last_step = RecipeProtocol.objects.filter(charge=cid).last()
-        if last_step:
-            last_step = last_step.step
-        else:
-            last_step = 0
-        step = Step.objects.filter(recipe=c.recipe).get(step=last_step + 1)
+        step = c.current_step
         step.amount = (step.amount * c.amount) / AMOUNT_FACTOR if step.amount else step.amount
         context['charge'] = c
         context['tstart'] = datetime.now()
         context['step'] = step
         context['hint'] = Hint.objects.filter(step__id=step.id)
-        context['next'] = Step.objects.filter(recipe=c.recipe).filter(step=(last_step + 2)).exists()
         context['protocol'] = RecipeProtocol.objects.filter(charge=cid)
         context['form'] = BrewingProtocol()
 
@@ -111,11 +102,10 @@ def brewing(request, cid):
             if finished:
                 c.preps_finished = True
                 c.save()
-                step = Step.objects.filter(recipe=c.recipe).get(step=1)
+                step = Step.objects.get(pk=c.recipe.first)
                 step.amount = (step.amount * c.amount) / AMOUNT_FACTOR if step.amount else step.amount
                 context['step'] = step
                 context['tstart'] = datetime.now()
-                context['next'] = Step.objects.filter(recipe=c.recipe).filter(step=(step.step+1)).exists()
                 context['hint'] = Hint.objects.filter(step__id=step.id)
                 context['form'] = BrewingProtocol()
                 return render(request, 'brewery/brewing.html', context)
@@ -127,31 +117,33 @@ def brewing(request, cid):
             cid = request.POST.get('charge')
             c = Charge.objects.get(pk=cid)
             pform = BrewingProtocol(request.POST)
-            step = Step.objects.filter(recipe=c.recipe).get(step=int(request.POST.get('step')))
+            step = c.current_step
+            print("Get next: {}".format(step))
             tstart = datetime.strptime(request.POST.get('tstart')[:-1], "%Y%m%d%H%M%S%f")
             if pform.is_valid():
                 # Create step of protocol
-                pstep = protocol_step(c, step.step, tstart)
+                pstep = protocol_step(c, step, tstart)
                 pstep.comment = pform.cleaned_data['comment']
                 pstep.save()
                 # Update storage
                 if step.amount:
                     item = Storage.objects.get(name=step.ingredient)
                     item.amount = storage_delta(c, step)
-                    item.save()
-                next_step_exists = Step.objects.filter(recipe=c.recipe).filter(step=step.step + 1)
-                if next_step_exists:
-                    step = Step.objects.filter(recipe=c.recipe).get(step=step.step + 1)
+                    item.save()                
+                try:
+                    print("TRY: {}".format(step.next))
+                    step = step.next
                     step.amount = (step.amount * c.amount) / AMOUNT_FACTOR if step.amount else step.amount
                     context['charge'] = c
                     context['tstart'] = datetime.now()
                     context['step'] = step
-                    context['next'] = Step.objects.filter(recipe=c.recipe).filter(step=step.step + 2)
                     context['hint'] = Hint.objects.filter(step__id=step.id)
                     context['protocol'] = RecipeProtocol.objects.filter(charge=cid)
                     context['form'] = BrewingProtocol()
+                    c.current_step = step
+                    c.save()
                     return render(request, 'brewery/brewing.html', context)
-                else:
+                except:
                     # Calculate overall duration time
                     c.duration = datetime.now() - c.production.replace(tzinfo=None)
                     c.brewing_finished = True
@@ -190,6 +182,7 @@ def brewing_add(request):
                 c.amount = charge_form.cleaned_data['amount']
                 c.brewmaster = charge_form.cleaned_data['brewmaster']
                 c.production = datetime.now()
+                c.current_step = Step.objects.get(pk=c.recipe.first)
                 c.save()
 
                 # Create required preparations
@@ -237,6 +230,7 @@ def fermentation(request, cid):
         if request.POST.get('spindel') == "True":
             c.ispindel = True
             c.save()
+            return render(request, 'brewery/fermentation.html', context)
         if request.POST.get('save'):
             form = FermentationProtocolForm(request.POST)
             if form.is_valid():
@@ -334,12 +328,28 @@ def recipe(request):
     context = {'recipes': r}
     return render(request, 'brewery/recipe.html', context)
 
+### HELPER FUNCTION
+def get_steps(recipe):
+    try:
+        step = Step.objects.get(pk=recipe.first)
+    except:
+        step = None
+    s = []
+    while step:
+        s.append(step)
+        try:
+            step = step.next
+        except:
+            step = None
+    return s
+
 
 @login_required
 def recipe_detail(request, recipe_id):
     r = Recipe.objects.get(pk=recipe_id)
-    s = Step.objects.filter(recipe=recipe_id)
+    s = get_steps(r)    
     p = Preparation.objects.filter(recipe=r)
+
     if request.method == 'POST':
         if request.POST.get('delete'):
             r.delete()
@@ -364,33 +374,39 @@ def recipe_add(request):
                 for item in select_preparation.cleaned_data['preparation']:
                     prep = get_object_or_404(Preparation, short=item)
                     prep.recipe.add(ar)
-            return HttpResponseRedirect(reverse('recipe_steps', kwargs={'recipe_id': ar.id}))
+            return HttpResponseRedirect(reverse('recipe_edit', kwargs={'recipe_id': ar.id}))
 
     add_recipe = AddRecipe()
     select_preparation = SelectPreparation()
     context = {'add_recipe': add_recipe, 'select_preparation': select_preparation}
 
-    return render(request, 'brewery/recipe_new.html', context)
+    return render(request, 'brewery/recipe_add.html', context)
 
 
 @login_required
-def recipe_steps(request, recipe_id):
+def recipe_edit(request, recipe_id):
     r = Recipe.objects.get(pk=recipe_id)
-    s = Step.objects.filter(recipe=recipe_id)
+    s = get_steps(r)
+    preps = SelectPreparation()
+
+    # Get steps which are not properly linked
+    unused_steps = Step.objects.filter(recipe=r)
+    used_steps = Step.objects.get(pk=r.first)
+    while used_steps:
+        unused_steps = unused_steps.exclude(pk=used_steps.id)
+        try:
+            used_steps = used_steps.next
+        except:
+            used_steps = None
+    
     if request.method == 'POST':
         if request.POST.get('add'):
             return HttpResponseRedirect(reverse('step_add', kwargs={'recipe_id': r.id}))
 
     form = EditRecipe()
-    context = {'form': form, 'steps': s, 'recipe': r}
+    context = {'form': form, 'steps': s, 'recipe': r, 'unused': unused_steps, 'preps': preps}
 
-    return render(request, 'brewery/recipe_steps.html', context)
-
-
-def step_predecessor(rid, s):
-    r = Recipe.objects.get(pk=rid)
-    print("Current: {} Previous: {} Prev_Next: {}".format(s, s.prev, s.prev.next))
-    return True
+    return render(request, 'brewery/recipe_edit.html', context)
 
 
 def step_edit(request, recipe_id, step_id=None):
@@ -398,43 +414,45 @@ def step_edit(request, recipe_id, step_id=None):
     if step_id is None:
         form = StepForm()
     else:
-        s = Step.objects.filter(recipe=recipe_id).get(step=step_id)
+        s = Step.objects.filter(recipe=recipe_id).get(pk=step_id)
         form = StepForm(instance=s)
     if request.method == 'POST':
         if step_id is None:
             form = StepForm(request.POST)
         else:
             form = StepForm(request.POST, instance=s)
+        # Update linked list
+        try:
+            prev = Step.objects.get(pk=form.data['prev'])
+        except:
+            prev = None
+        try:
+            old_next = prev.next
+            old_next.prev = None
+            old_next.save()
+        except:
+            old_next = None
+
         if form.is_valid():
             step = form.save(commit=False)
             step.recipe = r
-            if step.prev:
-                step_predecessor(r.id, step)
             step.save()
-            return HttpResponseRedirect(reverse('recipe_steps', kwargs={'recipe_id': r.id}))
-        elif "prev" in dict(form.errors):
-            print("Kettenproblemo")
-            step = form.save(commit=False)
-            return HttpResponseRedirect(reverse('recipe_steps', kwargs={'recipe_id': r.id}))
+            # Update linked list
+            if old_next:
+                old_next.prev = step
+                old_next.save()
+            if not prev:
+                r.first = step.id
+                r.save()
+            return HttpResponseRedirect(reverse('recipe_edit', kwargs={'recipe_id': r.id}))
+        else:
+            print(dict(form.errors))
+            return HttpResponseRedirect(reverse('recipe_edit', kwargs={'recipe_id': r.id}))
     # Filter choosable steps for specified recipe
     form.fields["prev"].queryset = Step.objects.filter(recipe=recipe_id)
+
     context = {'form': form, 'recipe': r}
     return render(request, 'brewery/step_edit.html', context)
-
-
-def step_add(request, recipe_id):
-    r = Recipe.objects.get(pk=recipe_id)
-    form = StepForm()
-    if request.method == 'POST':
-        if form.is_valid():
-            step = form.save(commit=False)
-            step.recipe = r
-            step_predecessor(r.id, step.id)
-            step.save()
-            return HttpResponseRedirect(reverse('recipe_steps', kwargs={'recipe_id': r.id}))
-    context = {'form': form, 'recipe': r}
-    return render(request, 'brewery/step_edit.html', context)
-
 
 
 @login_required

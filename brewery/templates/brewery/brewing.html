@@ -39,14 +39,14 @@
             <br>
             {% endif %}
             <br/>
-            {% if next %}
+            {% if step.next %}
             <input type="submit" name="brew_next" value="Weiter">
             {% else %}
             <input type="submit" name="brew_next" value="Speichern">
             {% endif %}
             <input type="hidden" name="charge" value="{{ charge.id }}">
             <input type="hidden" name="tstart" value="{{ tstart|date:'YmdHisu' }} ">
-            <input type="hidden" name="step" value="{{ step.step }} ">
+            <input type="hidden" name="step" value="{{ step.id }} ">
         </form>
         <br/>
     </div>

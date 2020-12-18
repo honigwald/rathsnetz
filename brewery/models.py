@@ -3,15 +3,54 @@ from django.utils import timezone
 from django.conf import settings
 
 
+class Unit(models.Model):
+    name = models.CharField(max_length=200)
+
+    def __str__(self):
+        return self.name
+
+
+class Type(models.Model):
+    name = models.CharField(max_length=200)
+
+    def __str__(self):
+        return self.name
+
+
+class Storage(models.Model):
+    name = models.CharField(max_length=200)
+    type = models.ForeignKey(Type, on_delete=models.CASCADE)
+    unit = models.ForeignKey(Unit, on_delete=models.CASCADE)
+    amount = models.FloatField()
+
+    def __str__(self):
+        return self.name
+
+
 class Recipe(models.Model):
     name = models.CharField(max_length=25)
     creation = models.DateTimeField(default=timezone.now)
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, blank=True, null=True)
     hg = models.FloatField()
     ng = models.FloatField()
+    first = models.IntegerField(default=None, blank=True, null=True)
 
     def __str__(self):
         return self.name
+
+
+class Step(models.Model):
+    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
+    prev = models.OneToOneField('self', null=True, blank=True, related_name="next", on_delete=models.DO_NOTHING)
+    step = models.IntegerField(blank=True, null=True)
+    title = models.CharField(max_length=50)
+    description = models.CharField(max_length=200)
+    duration = models.DurationField(blank=True, null=True)
+    ingredient = models.ForeignKey(Storage, on_delete=models.CASCADE, blank=True, null=True)
+    amount = models.FloatField(blank=True, null=True)
+
+    def __str__(self):
+        return "[" + str(self.recipe) + "] " + str(self.step) + ". " + str(self.title)
 
 
 class Charge(models.Model):
@@ -26,6 +65,7 @@ class Charge(models.Model):
     finished = models.BooleanField(default=False)
     ispindel = models.BooleanField(default=False)
     fermentation = models.BooleanField(default=False)
+    current_step = models.ForeignKey(Step, on_delete=models.DO_NOTHING, blank=True, null=True)
 
     def __str__(self):
         return str(self.cid)
@@ -56,44 +96,6 @@ class FermentationProtocol(models.Model):
 
     def __str__(self):
         return "[" + str(self.charge) + "] "
-
-
-class Unit(models.Model):
-    name = models.CharField(max_length=200)
-
-    def __str__(self):
-        return self.name
-
-
-class Type(models.Model):
-    name = models.CharField(max_length=200)
-
-    def __str__(self):
-        return self.name
-
-
-class Storage(models.Model):
-    name = models.CharField(max_length=200)
-    type = models.ForeignKey(Type, on_delete=models.CASCADE)
-    unit = models.ForeignKey(Unit, on_delete=models.CASCADE)
-    amount = models.FloatField()
-
-    def __str__(self):
-        return self.name
-
-
-class Step(models.Model):
-    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
-    prev = models.OneToOneField('self', null=True, blank=True, related_name="next", on_delete=models.DO_NOTHING)
-    step = models.IntegerField()
-    title = models.CharField(max_length=50)
-    description = models.CharField(max_length=200)
-    duration = models.DurationField(blank=True, null=True)
-    ingredient = models.ForeignKey(Storage, on_delete=models.CASCADE, blank=True, null=True)
-    amount = models.FloatField(blank=True, null=True)
-
-    def __str__(self):
-        return "[" + str(self.recipe) + "] " + str(self.step) + ". " + str(self.title)
 
 
 class Hint(models.Model):

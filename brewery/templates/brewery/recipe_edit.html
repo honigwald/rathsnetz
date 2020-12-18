@@ -1,0 +1,58 @@
+{% extends 'brewery/base.html' %}
+{% block content %}
+<h2>Bearbeiten</h2>
+<h3><u>Rezeptname:</u> {{ recipe.name }}</h3>
+<!--
+<h3><u>Vorarbeiten</u></h3>
+<b><u>Hinweis:</u></b> Die Vorarbeiten müssen vor jedem Braugang durchgeführt werden.<br><br>
+
+Wähle die Vorarbeiten (Mehrfach: Strg + Klick):<br>
+{{ preps.preparation }}
+<br><br>
+-->
+
+<h3><u>Rezeptschritte</u></h3>
+{% if unused%}
+    <u><b style="font-size: 15px">Unzugeordnet:</b></u>
+    {% for step in unused %}
+        <a href='{% url 'step_edit' recipe_id=recipe.id step_id=step.id %}'>{{ step.title }}</a>, 
+    {% endfor %}
+{% endif %}
+
+<table>
+    <thead>
+        <tr>
+            <th>Schritt</th> <th>Titel</th> <th>Beschreibung</th> <th>Zutaten</th> <th>Anzahl</th> <th>Dauer</th><th></th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for s in steps %}
+    <tr>
+        <td>{{ forloop.counter }}</td>
+        <td>{{ s.title }}</td>
+        <td>{{ s.description }}</td>
+        <td>{{ s.ingredient }}</td>
+        <td>{{ s.amount }}</td>
+        <td>{{ s.duration }}</td>
+        <td>
+            <form action="" method="post">
+                {% csrf_token %}
+                <input type="button" onclick="window.location.href = '{% url 'step_edit' recipe_id=recipe.id step_id=s.id %}';" value="Bearbeiten"/>
+            </form>
+        </td>
+    </tr>
+    {% endfor %}
+        <form action="" method="post">
+            {% csrf_token %}
+            <tr>
+                <td><input type="submit" name="add" value="Schritt hinzufügen"> </td>
+                <td><input type="button" value="Zur&uuml;ck"  onclick="window.location.href = '{% url 'recipe_detail' recipe_id=recipe.id %}';"></td>
+            </tr>
+            <tr>
+                <td><input type="submit" onclick="return confirm('Sure?');" name="delete" value="Rezept löschen"></td>
+            </tr>
+        </form>
+    </tbody>
+</table>
+
+{% endblock content %}
