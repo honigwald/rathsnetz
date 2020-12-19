@@ -391,7 +391,11 @@ def recipe_edit(request, recipe_id):
 
     # Get steps which are not properly linked
     unused_steps = Step.objects.filter(recipe=r)
-    used_steps = Step.objects.get(pk=r.first)
+    try:
+        used_steps = Step.objects.get(pk=r.first)
+    except:
+        used_steps = None
+
     while used_steps:
         unused_steps = unused_steps.exclude(pk=used_steps.id)
         try:
