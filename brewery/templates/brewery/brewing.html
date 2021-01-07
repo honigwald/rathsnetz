@@ -1,6 +1,6 @@
 {% extends 'brewery/base.html' %}
 {% block content %}
-<h2>Brauen</h2>
+<h2>Brauen: {{ charge.amount }} Liter {{ charge.recipe }}</h2>
 
 {% if charge and charge.preps_finished %}
     <u>Rezept:</u> {{ charge.recipe.name }} <br>
@@ -18,7 +18,7 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr>
+                <tr style="vertical-align: top;">
                     <td>{{ step.step }}</td>
                     <td>{{ step.title }}</td>
                     <td>{{ step.description }}</td>
@@ -45,7 +45,7 @@
             <input type="submit" name="brew_next" value="Speichern">
             {% endif %}
             <input type="hidden" name="charge" value="{{ charge.id }}">
-            <input type="hidden" name="tstart" value="{{ tstart|date:'YmdHisu' }} ">
+            <input type="hidden" name="t_start" value="{{ t_start|date:'YmdHisu' }} ">
             <input type="hidden" name="step" value="{{ step.id }} ">
         </form>
         <br/>
@@ -67,7 +67,7 @@
             <td>{{ p.ingredient }}</td>
             <td>{{ p.amount }}</td>
             <td>{{ p.duration }}</td>
-            <td>{{ p.tstart }}</td>
+            <td>{{ p.t_start }}</td>
             <td>{{ p.tend }}</td>
             <td>{{ p.comment }}</td>
         </tr>
@@ -76,15 +76,37 @@
     </table>
 {% elif charge and not charge.preparations %}
 <div style="margin-top:10px; padding:5px; max-width:700px; border:1px solid black;">
+    <h3><u>Kalkulierte Zutaten</u></h3>
+    <table style="vertical-align:top;">
+        <tr>
+            <th>Kategorie</th><th>Zutat</th><th>Menge</th><th>Einheit</th>
+        </tr>
+        {% for key, value in ingredients.items %}
+        <tr>
+            <td>{{ key }} </td>
+            {% for ingr in value %}
+                {% if forloop.counter > 1 %}
+                    </tr><tr><td></td>
+                {% endif %}
+                <td>{{ ingr.0 }}</td>
+                <td>{{ ingr.1 }}</td>
+                <td>{{ ingr.2 }}</td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+<div style="margin-top:10px; padding:5px; max-width:700px; border:1px solid black;">
     <h3><u>Vorarbeiten</u></h3>
-    <table>
+    <form action="" method="post">
+        {% csrf_token %}
+    <table align="left">
     <tr>
         <th>Kategorie</th><th>Beschreibung</th><th>Erledigt</th>
     </tr>
-    <form action="" method="post">
-    {% csrf_token %}
     {% for p, f in list %}
-    <tr>
+    <tr style="vertical-align:top;">
         <td>{{ p.preparation.short }}</td>
         <td>{{ p.preparation.detail}}</td>
         <td>{{ f.check }}</td>

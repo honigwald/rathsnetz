@@ -3,6 +3,8 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from datetime import datetime
+import logging, sys
+from django.db import transaction
 #from influxdb import InfluxDBClient
 #import plotly.graph_objects as go
 #from plotly.offline import plot
@@ -18,25 +20,28 @@ from .forms import *
 # Used for recipe scaling
 AMOUNT_FACTOR = 100
 
+# Configure log level
+logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
+
 def index(request):
     return render(request, 'brewery/index.html')
 
 
-def protocol_step(charge, step, starttime):
+def protocol_step(charge, step, start_time):
     c = charge
     s = step
-    tstart = starttime
-    pstep = RecipeProtocol()
-    pstep.charge = Charge.objects.get(id=c.id)
-    pstep.step = s.id
-    pstep.title = s.title
-    pstep.description = s.description
-    pstep.duration = s.duration
-    pstep.ingredient = s.ingredient
-    pstep.amount = (s.amount * c.amount) / AMOUNT_FACTOR if s.amount else s.amount
-    pstep.tstart = tstart
-    pstep.tend = datetime.now()
-    return pstep
+    t_start = start_time
+    p_step = RecipeProtocol()
+    p_step.charge = Charge.objects.get(id=c.id)
+    p_step.step = s.id
+    p_step.title = s.title
+    p_step.description = s.description
+    p_step.duration = s.duration
+    p_step.ingredient = s.ingredient
+    p_step.amount = (s.amount * c.amount) / AMOUNT_FACTOR if s.amount else s.amount
+    p_step.tstart = t_start
+    p_step.tend = datetime.now()
+    return p_step
 
 
 def storage_delta(charge, step):
@@ -62,80 +67,97 @@ def brewing(request, cid):
     c = get_object_or_404(Charge, pk=cid)
     preps = PreparationProtocol.objects.filter(charge=c)
     context = {}
-    # Charge complete
+    # Charge finished. Goto protocol
     if c.finished:
+        logging.debug("brewing: Charge finished [Finished: Preparations, Brewing, Fermentation]")
         return HttpResponseRedirect(reverse('protocol', kwargs={'cid': c.id}))
-    # Fermentation: Starting point
+
+    # Preparation and Brewing finished. Goto fermentation
     elif c.preps_finished and c.brewing_finished:
+        logging.debug("brewing: Continue with fermentation [Finished: Preparations, Brewing]")
         return HttpResponseRedirect(reverse('fermentation', kwargs={'cid': c.id}))
-    # Brewing: Restore session
+
+    # Restore session
     elif c.preps_finished and not request.POST:
+        logging.debug("brewing: Restoring session [Finished: Preparations]")
         step = c.current_step
         step.amount = (step.amount * c.amount) / AMOUNT_FACTOR if step.amount else step.amount
         context['charge'] = c
-        context['tstart'] = datetime.now()
+        context['t_start'] = datetime.now()
         context['step'] = step
         context['hint'] = Hint.objects.filter(step__id=step.id)
         context['protocol'] = RecipeProtocol.objects.filter(charge=cid)
         context['form'] = BrewingProtocol()
 
         return render(request, 'brewery/brewing.html', context)
-    # Brewing: Start process if not already finished
+
+    # Start or continue with process
     else:
-        # Preparations: save current result
+        logging.debug("brewing: Starting process.")
+
+        # Preparations: save session
         if request.POST.get('preps_save'):
+            logging.debug("brewing: Saving preparation status to DB")
             preps_form = [PreparationProtocolForm(request.POST, prefix=str(item), instance=item) for item in preps]
             for pf in preps_form:
                 if pf.is_valid():
                     pf.save()
             return HttpResponseRedirect(reverse('brewing_overview'))
 
-        # Preparations: if finished, continue brewing
+        # Preparations: validate preparations and continue
         if request.POST.get('preps_next'):
+            logging.debug("brewing: Check if preparations finished")
             preps_form = [PreparationProtocolForm(request.POST, prefix=str(item), instance=item) for item in preps]
             for pf in preps_form:
                 if pf.is_valid():
                     pf.save()
-            # Check for finished preps
             finished = not(preps.filter(check=False).exists())
             context = {'charge': c, 'list': zip(preps, preps_form)}
+
+            # Check if preps are finished
             if finished:
+                logging.debug("brewing: preparations finished")
                 c.preps_finished = True
                 c.save()
                 step = Step.objects.get(pk=c.recipe.first)
                 step.amount = (step.amount * c.amount) / AMOUNT_FACTOR if step.amount else step.amount
                 context['step'] = step
-                context['tstart'] = datetime.now()
+                context['t_start'] = datetime.now()
                 context['hint'] = Hint.objects.filter(step__id=step.id)
                 context['form'] = BrewingProtocol()
                 return render(request, 'brewery/brewing.html', context)
             else:
+                logging.debug("brewing: there are still preparations todo.")
                 return render(request, 'brewery/brewing.html', context)
 
         # Brewing: get next step
         if request.POST.get('brew_next'):
+            logging.debug("brewing: get next step")
             cid = request.POST.get('charge')
             c = Charge.objects.get(pk=cid)
-            pform = BrewingProtocol(request.POST)
+            p_form = BrewingProtocol(request.POST)
             step = c.current_step
-            print("Get next: {}".format(step))
-            tstart = datetime.strptime(request.POST.get('tstart')[:-1], "%Y%m%d%H%M%S%f")
-            if pform.is_valid():
+            logging.debug("brewing: step: %s", step)
+            t_start = datetime.strptime(request.POST.get('t_start')[:-1], "%Y%m%d%H%M%S%f")
+            if p_form.is_valid():
                 # Create step of protocol
-                pstep = protocol_step(c, step, tstart)
-                pstep.comment = pform.cleaned_data['comment']
-                pstep.save()
+                logging.debug("brewing: saving finished step to protocol")
+                p_step = protocol_step(c, step, t_start)
+                p_step.comment = p_form.cleaned_data['comment']
+                p_step.save()
                 # Update storage
                 if step.amount:
+                    logging.debug("brewing: calculate remaining amount of storage item.")
                     item = Storage.objects.get(name=step.ingredient)
                     item.amount = storage_delta(c, step)
-                    item.save()                
+                    item.save()
+                # Check if there is a next step
                 try:
-                    print("TRY: {}".format(step.next))
                     step = step.next
+                    logging.debug("brewing: get next step: %s", step.next)
                     step.amount = (step.amount * c.amount) / AMOUNT_FACTOR if step.amount else step.amount
                     context['charge'] = c
-                    context['tstart'] = datetime.now()
+                    context['t_start'] = datetime.now()
                     context['step'] = step
                     context['hint'] = Hint.objects.filter(step__id=step.id)
                     context['protocol'] = RecipeProtocol.objects.filter(charge=cid)
@@ -143,7 +165,9 @@ def brewing(request, cid):
                     c.current_step = step
                     c.save()
                     return render(request, 'brewery/brewing.html', context)
-                except:
+                # Brewing: Finished
+                except AttributeError:
+                    logging.debug("brewing: brewing process finished. continue with fermentation")
                     # Calculate overall duration time
                     c.duration = datetime.now() - c.production.replace(tzinfo=None)
                     c.brewing_finished = True
@@ -151,16 +175,46 @@ def brewing(request, cid):
                     context['charge'] = c
                     context['protocol'] = RecipeProtocol.objects.filter(charge=cid)
                     return HttpResponseRedirect(reverse('fermentation', kwargs={'cid': c.id}))
+            # form validation error
             else:
-                print("pform not valid")
+                logging.debug("brewing: something went wrong! seems that p_form is not valid.")
+
         # Preparations: start preparations
         else:
+            # Collecting all necessary ingredients
+            logging.debug("brewing: calculate necessary ingredients")
+            step = Step.objects.get(pk=c.recipe.first)
+            ingredients = {}
+            while step:
+                data = list()
+                if step.ingredient:
+                    required = c.amount * step.amount / AMOUNT_FACTOR
+                    data.append(step.ingredient.name)
+                    data.append(required)
+                    data.append(step.ingredient.unit.name)
+                    if step.ingredient.type in ingredients:
+                        tmp = ingredients[step.ingredient.type]
+                        tmp.append(data)
+                        ingredients[step.ingredient.type] = tmp
+                    else:
+                        tmp = list()
+                        tmp.append(data)
+                        ingredients[step.ingredient.type] = tmp
+                    logging.debug("ID: %s Ingredient: %s Type: %s Amount: %s", step.id, step.ingredient.name, step.ingredient.type, required)
+                if hasattr(step, 'next'):
+                    step = step.next
+                else:
+                    break
+            ingredients['Wasser'] = [['Hauptguss', c.recipe.hg * c.amount / AMOUNT_FACTOR, 'Liter'], ['Nachguss', c.recipe.ng * c.amount  / AMOUNT_FACTOR, 'Liter']]
+            logging.debug("brewing: ingredients: %s", ingredients.values())
+            # Collecting all necessary preparations (finished and not finished)
+            logging.debug("brewing: collecting necessary preparations")
             preps_form = [PreparationProtocolForm(prefix=str(item), instance=item) for item in preps]
             zipped_list = zip(preps, preps_form)
             for s in Step.objects.filter(recipe=c.recipe):
                 if s.amount:
                     delta = storage_delta(c, s)
-            context = {'charge': c, 'list': zipped_list}
+            context = {'charge': c, 'list': zipped_list, 'ingredients': ingredients}
             return render(request, 'brewery/brewing.html', context)
 
 @login_required
@@ -194,14 +248,8 @@ def brewing_add(request):
                     preps_protocol.check = False
                     preps_protocol.save()
 
-                context = {
-                    'charge': c,
-                    'form': protocol_form,
-                    'next': True,
-                }
                 return HttpResponseRedirect(reverse('brewing', kwargs={'cid': c.id}))
 
-        
     else:
         charge_form = BrewingCharge()
     context = {'form': charge_form}
@@ -222,10 +270,7 @@ def protocol(request, cid):
 def fermentation(request, cid):
     c = Charge.objects.get(pk=cid)
     f = FermentationProtocol.objects.filter(charge=c)
-    context = {}
-    context['charge'] = c
-    context['fermentation'] = f
-    context['form'] = FermentationProtocolForm()
+    context = {'charge': c, 'fermentation': f, 'form': FermentationProtocolForm()}
     if request.POST:
         if request.POST.get('spindel') == "True":
             c.ispindel = True
@@ -251,6 +296,7 @@ def fermentation(request, cid):
         return render(request, 'brewery/fermentation.html', context)
     else:
         return render(request, 'brewery/fermentation.html', context)
+
 
 @login_required
 def spindel(request):
@@ -329,17 +375,17 @@ def recipe(request):
     return render(request, 'brewery/recipe.html', context)
 
 ### HELPER FUNCTION
-def get_steps(recipe):
+def get_steps(rid):
     try:
-        step = Step.objects.get(pk=recipe.first)
-    except:
+        step = Step.objects.get(pk=rid.first)
+    except AttributeError:
         step = None
     s = []
     while step:
         s.append(step)
         try:
             step = step.next
-        except:
+        except AttributeError:
             step = None
     return s
 
@@ -389,23 +435,26 @@ def recipe_edit(request, recipe_id):
     s = get_steps(r)
     preps = SelectPreparation()
 
-    # Get steps which are not properly linked
+    # Get steps which aren't properly linked
     unused_steps = Step.objects.filter(recipe=r)
     try:
         used_steps = Step.objects.get(pk=r.first)
-    except:
+    except AttributeError:
         used_steps = None
 
     while used_steps:
         unused_steps = unused_steps.exclude(pk=used_steps.id)
         try:
             used_steps = used_steps.next
-        except:
+        except AttributeError:
             used_steps = None
     
     if request.method == 'POST':
         if request.POST.get('add'):
             return HttpResponseRedirect(reverse('step_add', kwargs={'recipe_id': r.id}))
+        if request.POST.get('delete'):
+            r.delete()
+            return HttpResponseRedirect(reverse('recipe'))
 
     form = EditRecipe()
     context = {'form': form, 'steps': s, 'recipe': r, 'unused': unused_steps, 'preps': preps}
@@ -413,47 +462,169 @@ def recipe_edit(request, recipe_id):
     return render(request, 'brewery/recipe_edit.html', context)
 
 
+@login_required
 def step_edit(request, recipe_id, step_id=None):
+    logging.debug("step_edit(request, recipe_id: %s, step_id: %s)", recipe_id, step_id)
     r = Recipe.objects.get(pk=recipe_id)
     if step_id is None:
         form = StepForm()
+        # Filter recipe steps
+        form.fields["prev"].queryset = Step.objects.filter(recipe=recipe_id).order_by('step')
+        s = None
     else:
         s = Step.objects.filter(recipe=recipe_id).get(pk=step_id)
         form = StepForm(instance=s)
+        # Filter recipe steps and exclude current
+        form.fields["prev"].queryset = Step.objects.filter(recipe=recipe_id).exclude(pk=step_id).order_by('step')
     if request.method == 'POST':
         if step_id is None:
             form = StepForm(request.POST)
         else:
             form = StepForm(request.POST, instance=s)
-        # Update linked list
+
+        # Get previous step
         try:
             prev = Step.objects.get(pk=form.data['prev'])
-        except:
-            prev = None
+        except ValueError:
+            prev = False
+
+        # Get successor of previous step
         try:
-            old_next = prev.next
-            old_next.prev = None
-            old_next.save()
-        except:
-            old_next = None
+            prev_next = prev.next
+        except AttributeError:
+            prev_next = False
+
+        # Get values out of step
+        if s:
+            try:
+                s_has_next = s.next
+                s_next_id = s.next.id
+                s_prev_id = s.prev.id
+            except AttributeError:
+                s_has_next = False
+                s_prev_id = False
+            if s.prev == "":
+                s_prev = False
+            else:
+                s_prev = Step.objects.get(pk=s.id).prev
+        else:
+            s_has_next = False
+            s_prev = False
+            s_next_id = False
 
         if form.is_valid():
             step = form.save(commit=False)
             step.recipe = r
-            step.save()
+            # check if step is already present and is changed
+            if prev == s_prev and s:
+                logging.debug("linked list is not updated")
+                step.save()
+
             # Update linked list
-            if old_next:
-                old_next.prev = step
-                old_next.save()
-            if not prev:
-                r.first = step.id
-                r.save()
+            else:
+                logging.debug("linked list will get updated")
+
+                # Insert as first element of list
+                if not prev:
+                    logging.debug("step gets inserted as first element")
+                    logging.debug("step.next: %s", s_has_next)
+                    if s_has_next:
+                        successor = Step.objects.get(pk=s_next_id)
+                        predecessor = Step.objects.get(pk=s_prev_id)
+                        step.prev = None
+                        step.save()
+                        successor.prev = predecessor
+                        successor.save()
+                        logging.debug("predecessor: %s -> %s\t successor: %s <- %s", predecessor.id, predecessor.next.id, successor.id, successor.prev.id)
+                    step.save()
+                    # moving old ll-first to successor of new ll-first
+                    if r.first:
+                        old_first = Step.objects.get(pk=r.first)
+                        old_first.prev = step
+                        old_first.save()
+                        old_first_id = old_first.id
+                        r.first = step.id
+                        r.save()
+                    else:
+                        old_first_id = None
+                    r.first = step.id
+                    r.save()
+                    logging.debug("old_first: %s\t new_first: %s\t first_in_recipe: %s", old_first_id, step.id, r.first)
+
+                # previous element is linked with successor
+                elif prev_next and step_id != r.first:
+                    logging.debug("step gets inserted between first and last element")
+                    logging.debug("step.next: %s", s_has_next)
+                    if s_has_next:
+                        successor = Step.objects.get(pk=s_next_id)
+                        predecessor = Step.objects.get(pk=s_prev_id)
+                        step.prev = None
+                        step.save()
+                        successor.prev = predecessor
+                        successor.save()
+                        logging.debug("predecessor: %s -> %s\t successor: %s <- %s", predecessor.id, predecessor.next.id, successor.id, successor.prev.id)
+                    prev_next.prev = None
+                    prev_next.save()
+                    step.prev = prev
+                    step.save()
+                    prev_next.prev = step
+                    prev_next.save()
+                    logging.debug("pred: %s -> %s\t curr: %s -> %s\t succ: %s", prev.id, prev.next.id, step.id, step.next.id, prev_next.id)
+
+                # customized element is head of the list
+                elif prev_next and step_id == r.first:
+                    logging.debug("first step gets inserted between first and last element")
+                    successor = Step.objects.get(pk=s_next_id)
+                    successor.prev = None
+                    r.first = successor.id
+                    r.save()
+                    successor.save()
+                    logging.debug("successor moved to first. succ: %s, succ.prev: %s, r.first: %s", successor.id, successor.prev, r.first)
+                    prev.next.prev = step
+                    prev.next.save()
+                    step.prev = prev
+                    step.save()
+                    logging.debug("pred: %s -> %s\t curr: %s -> %s\t succ: %s", prev.id, prev.next.id, step.id, step.next.id, prev_next.id)
+
+                # previous element is at the end of the list
+                elif not prev_next:
+                    logging.debug("step gets inserted as last element")
+                    logging.debug("step.next: %s", s_has_next)
+                    if s_has_next:
+                        successor = Step.objects.get(pk=s_next_id)
+                        predecessor = Step.objects.get(pk=s_prev_id)
+                        step.prev = None
+                        step.save()
+                        successor.prev = predecessor
+                        successor.save()
+                        logging.debug("predecessor: %s -> %s\t successor: %s <- %s", predecessor.id, predecessor.next.id, successor.id, successor.prev.id)
+                    step.prev = prev
+                    step.save()
+
+                # default case
+                else:
+                    logging.debug("Something went wrong! This is the default case, so nothing happened...")
+
+            # Update recipe steps
+            elem = Step.objects.get(pk=r.first)
+            snr = 1
+            recipe_steps = Step.objects.all().filter(recipe=r).count()
+            logging.debug("Updating step numbers")
+            while True or snr == recipe_steps:
+                elem.step = snr
+                elem.save()
+                if not hasattr(elem, 'next'):
+                    logging.debug("step: %2.d id: %s -> %s", snr, elem.id, None)
+                    break
+                logging.debug("step: %2.d id: %s -> %s", snr, elem.id, elem.next.id)
+                elem = elem.next
+                snr = snr + 1
+
             return HttpResponseRedirect(reverse('recipe_edit', kwargs={'recipe_id': r.id}))
         else:
-            print(dict(form.errors))
-            return HttpResponseRedirect(reverse('recipe_edit', kwargs={'recipe_id': r.id}))
-    # Filter choosable steps for specified recipe
-    form.fields["prev"].queryset = Step.objects.filter(recipe=recipe_id)
+            logging.debug(dict(form.errors))
+            context = {'form': form, 'recipe': r}
+            return render(request, 'brewery/step_edit.html', context)
 
     context = {'form': form, 'recipe': r}
     return render(request, 'brewery/step_edit.html', context)

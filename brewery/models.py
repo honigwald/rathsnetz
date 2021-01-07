@@ -22,6 +22,8 @@ class Storage(models.Model):
     type = models.ForeignKey(Type, on_delete=models.CASCADE)
     unit = models.ForeignKey(Unit, on_delete=models.CASCADE)
     amount = models.FloatField()
+    threshold = models.IntegerField(default=-1)
+    warning = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name
@@ -108,7 +110,7 @@ class Hint(models.Model):
 
 class Preparation(models.Model):
     short = models.CharField(max_length=20)
-    detail = models.CharField(max_length=50)
+    detail = models.CharField(max_length=600)
     recipe = models.ManyToManyField(Recipe, blank=True)
     
     def __str__(self):
@@ -125,7 +127,7 @@ class RecipeProtocol(models.Model):
     amount = models.FloatField(blank=True, null=True)
     tstart = models.TimeField()
     tend = models.TimeField()
-    comment = models.CharField(max_length=200)
+    comment = models.CharField(max_length=200, blank=True, null=True)
 
     def __str__(self):
         return str(self.charge) + "." + str(self.step)

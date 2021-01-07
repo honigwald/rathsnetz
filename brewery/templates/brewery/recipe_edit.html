@@ -49,7 +49,7 @@ Wähle die Vorarbeiten (Mehrfach: Strg + Klick):<br>
                 <td><input type="button" value="Zur&uuml;ck"  onclick="window.location.href = '{% url 'recipe_detail' recipe_id=recipe.id %}';"></td>
             </tr>
             <tr>
-                <td><input type="submit" onclick="return confirm('Sure?');" name="delete" value="Rezept löschen"></td>
+                <td><input type="submit" onclick="return confirm('ACHTUNG! Löschen kann nicht rückgängig gemacht werden.');" name="delete" value="Rezept löschen"></td>
             </tr>
         </form>
     </tbody>
