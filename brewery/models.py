@@ -92,12 +92,13 @@ class Keg(models.Model):
 
 class FermentationProtocol(models.Model):
     charge = models.ForeignKey(Charge, on_delete=models.CASCADE)
+    step = models.IntegerField()
     temperature = models.FloatField()
     plato = models.FloatField()
     date = models.DateTimeField()
 
     def __str__(self):
-        return "[" + str(self.charge) + "] "
+        return "[" + str(self.charge) + "] " + str(self.step)
 
 
 class Hint(models.Model):

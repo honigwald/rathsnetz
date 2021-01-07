@@ -25,14 +25,22 @@
                 <td>{{ form.date }}</td>
                 <td>{{ form.plato }}</td>
                 <td>{{ form.temperature }}</td>
+                <td><input type="submit" name="add_mp" value="Hinzufügen"></td>
             </tr>
             </tbody>
         </table>
         <br/>
-        Abgeschlossen?<input type="checkbox" name="finished"> <br><br>
-        <input type="submit" name="save" value="Speichern">
+        </form>
+        <form action="" method="post">
+            {% csrf_token %}
+            Fermentation beendet?<input type="checkbox" name="finished"> <br><br>
+            <input type="submit" name="save" value="Speichern">
+        </form>
         <br/>
     {% elif charge.ispindel %}
+        {% autoescape off %}
+        {{ plot }}
+        {% endautoescape %}
         ISPINDEL
         <br/>
         Abgeschlossen?<input type="checkbox" name="finished"> <br><br>

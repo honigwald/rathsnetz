@@ -5,10 +5,10 @@ from django.urls import reverse
 from datetime import datetime
 import logging, sys
 from django.db import transaction
-#from influxdb import InfluxDBClient
-#import plotly.graph_objects as go
-#from plotly.offline import plot
-#from plotly.subplots import make_subplots
+from influxdb import InfluxDBClient
+import plotly.graph_objects as go
+from plotly.offline import plot
+from plotly.subplots import make_subplots
 
 import base64
 from math import pow
@@ -268,42 +268,73 @@ def protocol(request, cid):
 
 @login_required
 def fermentation(request, cid):
+    logging.debug("fermentation: starting")
     c = Charge.objects.get(pk=cid)
     f = FermentationProtocol.objects.filter(charge=c)
     context = {'charge': c, 'fermentation': f, 'form': FermentationProtocolForm()}
+
     if request.POST:
+        # checking if ispindel is activated
         if request.POST.get('spindel') == "True":
             c.ispindel = True
             c.save()
+            context['plot'] = spindel(request)
+            logging.debug("fermentation: ispindel activated")
             return render(request, 'brewery/fermentation.html', context)
-        if request.POST.get('save'):
+
+        # checking if fermentation is finished
+        if request.POST.get('finished'):
+            c.finished = True
+            c.save()
+            logging.debug("fermentation: fermentation is finished. beer is ready for storing.")
+            return HttpResponseRedirect(reverse('brewing_overview'))
+
+        # checking for new measure point
+        if request.POST.get('add_mp'):
+            logging.debug("fermentation: adding new measure point")
             form = FermentationProtocolForm(request.POST)
             if form.is_valid():
                 form = form.save(commit=False)
                 form.charge = c
+                form.step = FermentationProtocol.objects.filter(charge=c).count() + 1
                 form.save()
             context['form'] = FermentationProtocolForm()
             context['fermentation'] = FermentationProtocol.objects.filter(charge=c)
+            logging.debug("fermentation: rendering manual fermentation-protocol and -form.")
+            return render(request, 'brewery/fermentation.html', context)
+
+        # checking for closure of fermentation protocol
+        if request.POST.get('save'):
             if request.POST.get('finished'):
                 c.finished = True
                 c.save()
+                logging.debug("fermentation: fermentation is finished. beer is ready for storing.")
                 return HttpResponseRedirect(reverse('brewing_overview'))
-            return render(request, 'brewery/fermentation.html', context)
+
+        # default case - this maybe obsolete
         else:
             if not c.fermentation:
                 c.fermentation = True
                 c.save()
         return render(request, 'brewery/fermentation.html', context)
     else:
+        # Check if ispindel should be used
+        logging.debug("fermentation: using ispindel: %s", c.ispindel)
+        if c.ispindel:
+            context['plot'] = spindel(request)
+
         return render(request, 'brewery/fermentation.html', context)
 
 
 @login_required
 def spindel(request):
-    """"
+    logging.debug("spindel: starting process")
+    logging.debug("spindel: connecting to influx db")
     client = InfluxDBClient(host='braurat.de', port=8086, username='admin', password=environ['INFLUXDB_PASS'])
     client.switch_database('ispindel')
+    logging.debug("spindel: querying data from db")
     q = client.query('SELECT "tilt","temperature", "battery" FROM "measurements"')
+    logging.debug("spindel: result: %s", q)
     # ['time', 'RSSI', 'battery', 'gravity', 'interval', 'source', 'temp_units', 'temperature', 'tilt'],
     time = []
     tilt = []
@@ -312,7 +343,7 @@ def spindel(request):
     points = q.get_points()
     for item in points:
         time.append(item['time'])
-        # Ploynom: 0.000166916x^3 + -0.01470147x^2 + 0.679876283x + -10.536229152
+        # Polynomial: 0.000166916x^3 + -0.01470147x^2 + 0.679876283x + -10.536229152
         x = item['tilt']
         plato = (0.000166916 * pow(x, 3))
         plato = plato - (0.01470147 * pow(x, 2))
@@ -350,7 +381,7 @@ def spindel(request):
     fig.add_trace(go.Scatter(x=time, y=temperature,
                              line_shape='spline',
                              mode='lines',
-                             name='Temepratur'),
+                             name='Temperatur'),
                   secondary_y=True)
     fig.add_trace(go.Scatter(x=time, y=battery,
                              line_shape='spline',
@@ -360,12 +391,13 @@ def spindel(request):
     plt_div = plot(fig, output_type='div')
     client.close()
 
-    print(len(time))
+    #logging.debug("spindel: generated plt_div: %s", plt_div)
+    logging.debug("spindel: time: %s", len(time))
+    logging.debug("spindel: process finished")
 
-    return render(request, 'brewery/spindel.html', {'plot': plt_div})
-    """
-    plt_div = None
-    return render(request, 'brewery/spindel.html', {'plot': plt_div})
+    return plt_div
+
+    #return render(request, 'brewery/spindel.html', {'plot': plt_div})
 
 
 @login_required
