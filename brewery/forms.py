@@ -50,6 +50,7 @@ class PreparationProtocolForm(ModelForm):
 
 
 class FermentationProtocolForm(ModelForm):
+    date = forms.DateTimeField(initial="2020-10-10 12:00:00")
     class Meta:
         model = FermentationProtocol
         fields = ['temperature', 'plato', 'date']

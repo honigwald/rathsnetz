@@ -1,27 +1,27 @@
+import logging, sys, json
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from datetime import datetime
-import logging, sys
-from django.db import transaction
-from influxdb import InfluxDBClient
-import plotly.graph_objects as go
-from plotly.offline import plot
-from plotly.subplots import make_subplots
-
-import base64
 from math import pow
-from os import environ
-
 from .models import Recipe, Step, Charge, RecipeProtocol, Keg, Hint, FermentationProtocol
 from .forms import *
 
+import plotly.graph_objects as go
+from plotly.offline import plot
+from plotly.subplots import make_subplots
+from influxdb import InfluxDBClient
+
+### STARTING WITH SOME CONFIGURATIONS
 # Used for recipe scaling
 AMOUNT_FACTOR = 100
+CONFIG_FILE = './brewery/config.json'
 
 # Configure log level
 logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
+### END OF CONFIGURATIONS
+
 
 def index(request):
     return render(request, 'brewery/index.html')
@@ -154,7 +154,7 @@ def brewing(request, cid):
                 # Check if there is a next step
                 try:
                     step = step.next
-                    logging.debug("brewing: get next step: %s", step.next)
+                    logging.debug("brewing: get next step: %s", step)
                     step.amount = (step.amount * c.amount) / AMOUNT_FACTOR if step.amount else step.amount
                     context['charge'] = c
                     context['t_start'] = datetime.now()
@@ -329,12 +329,22 @@ def fermentation(request, cid):
 @login_required
 def spindel(request):
     logging.debug("spindel: starting process")
+
+    # Getting credentials
+    with open(CONFIG_FILE) as json_file:
+        data = json.load(json_file)
+        for ifdb in data['influxdb']:
+            ifdb_host = ifdb['host']
+            ifdb_port = ifdb['port']
+            ifdb_user = ifdb['user']
+            ifdb_pass = ifdb['password']
+
     logging.debug("spindel: connecting to influx db")
-    client = InfluxDBClient(host='braurat.de', port=8086, username='admin', password=environ['INFLUXDB_PASS'])
+    client = InfluxDBClient(host=ifdb_host, port=ifdb_port, username=ifdb_user, password=ifdb_pass)
     client.switch_database('ispindel')
     logging.debug("spindel: querying data from db")
     q = client.query('SELECT "tilt","temperature", "battery" FROM "measurements"')
-    logging.debug("spindel: result: %s", q)
+    #logging.debug("spindel: result: %s", q)
     # ['time', 'RSSI', 'battery', 'gravity', 'interval', 'source', 'temp_units', 'temperature', 'tilt'],
     time = []
     tilt = []
