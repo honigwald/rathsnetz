@@ -499,14 +499,14 @@ def step_edit(request, recipe_id, step_id=None):
             try:
                 s_has_next = s.next
                 s_next_id = s.next.id
-                s_prev_id = s.prev.id
             except AttributeError:
                 s_has_next = False
-                s_prev_id = False
-            if s.prev == "":
-                s_prev = False
-            else:
+            try:
                 s_prev = Step.objects.get(pk=s.id).prev
+                s_prev_id = s.prev.id
+            except AttributeError:
+                s_prev = False
+                s_prev_id = False
         else:
             s_has_next = False
             s_prev = False
