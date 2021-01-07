@@ -27,9 +27,9 @@
         <td>{{ forloop.counter }}</td>
         <td>{{ s.title }}</td>
         <td>{{ s.description }}</td>
-        <td>{{ s.ingredient }}</td>
-        <td>{{ s.amount }}</td>
-        <td>{{ s.duration }}</td>
+        <td>{% if s.ingredient %}{{ s.ingredient }}{% endif %}</td>
+        <td>{% if s.amount %}{{ s.amount }}{% endif %}</td>
+        <td>{% if s.duration %}{{ s.duration }}{% endif %}</td>
     </tr>
     {% endfor %}
     </tbody>
