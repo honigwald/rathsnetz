@@ -2,20 +2,18 @@
 {% block content %}
 <h2>Lager</h2>
 
-<form>
-    <input type="button" onclick="window.location.href = '{% url 'storage_add' %}';" value="Neue Pos."/>
-</form>
 <br>
+<div class="container-sm">
 
-<table>
+<table class="table table-sm table-hover table-bordered mx-auto" id="storage">
     <thead>
         <tr>
-            <th>ID</th><th>Name</th> <th>Typ</th> <th>Anzahl</th> <th>Einheit</th>
+            <th data-sortable="true">ID</th><th>Name</th> <th>Typ</th> <th>Anzahl</th> <th>Einheit</th>
         </tr>
     </thead>
     <tbody>
         {% for item in storage %}
-        <tr>
+        {% if item.amount < 0 %} <tr class="table-danger"> {% else %} <tr> {% endif %}
             <td>{{ item.id }}</td>
             <td><a href="{% url 'storage_edit' item.id %}">{{ item.name }}</a></td>
             <td>{{ item.type }}</td>
@@ -24,6 +22,14 @@
         </tr>
         {% endfor %}
     </tbody>
-
 </table>
+
+<form>
+    <input type="button" onclick="window.location.href = '{% url 'storage_add' %}';" value="Neue Pos."/>
+</form>
+</div>
+
+<script>
+$('#storage').DataTable();
+</script>
 {% endblock content %}

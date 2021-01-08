@@ -2,15 +2,7 @@
 {% block content %}
 <h2>Liste des ewigen Bieres</h2>
 <form action="" method="post">
-    {% csrf_token %}
-    {% if kegs != None %}
-        <input type="submit" name="edit" value="Bearbeiten">
-    {% else %}
-        <input type="submit" name="save" value="Speichern">
-        <input type="button" value="Abbrechen"  onclick="window.location.href = '{% url 'keg' %}';">
-    {% endif %}
-    <br><br>
-    <table>
+    <table class="table table-sm table-hover">
         <thead>
         <tr>
             <th>Keg</th> <th>Volumen</th> <th>Charge</th> <th>Inhalt</th> <th>Abfüllung</th> <th>Notizen</th> <th>Status</th>
@@ -52,5 +44,13 @@
         {% endif %}
         </tbody>
     </table>
+    <br>
+    {% csrf_token %}
+    {% if kegs != None %}
+    <input type="submit" name="edit" value="Bearbeiten">
+    {% else %}
+    <input type="submit" name="save" value="Speichern">
+    <input type="button" value="Abbrechen"  onclick="window.location.href = '{% url 'keg' %}';">
+    {% endif %}
 </form>
 {% endblock content %}
