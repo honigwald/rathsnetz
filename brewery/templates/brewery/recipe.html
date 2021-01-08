@@ -1,26 +1,28 @@
 {% extends 'brewery/base.html' %}
 {% block content %}
-<h2>Rezepte</h2>
-<form>
-    <input type="button" onclick="window.location.href = '{% url 'recipe_add' %}';" value="Neues Rezept"/>
-</form>
-<br>
-<table>
-    <thead>
-        <tr>
-            <th>Name</th> <th>Erstellt</th> <th>Author</th> <th>
-        </tr>
-    </thead>
-    <tbody>
-    {% for r in recipes %}
-    <tr>
-        <td><a href="{% url 'recipe_detail' r.id %}">{{ r.name }}</a></td>
-        <td>{{ r.creation|date:'d.M Y' }}</td>
-        <td>{{ r.author }}</td>
-    </tr>
-    {% endfor %}
-    </tbody>
-</table>
 
+<div class="container-sm">
+    <h2>Rezepte</h2>
+    <table class="table table-sm table-hover table-bordered" id="datatable">
+        <thead class="thead-dark">
+            <tr>
+                <th>Name</th> <th>Author</th> <th>Erstellt</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for r in recipes %}
+        <tr>
+            <td><a href="{% url 'recipe_detail' r.id %}">{{ r.name }}</a></td>
+            <td>{{ r.author }}</td>
+            <td>{{ r.creation|date:'d.M Y' }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <br>
+    <form>
+        <input type="button" onclick="window.location.href = '{% url 'recipe_add' %}';" value="Neues Rezept"/>
+    </form>
+</div>
 
 {% endblock content %}
