@@ -1,62 +1,64 @@
 {% extends 'brewery/base.html' %}
 {% block content %}
-<h2>Fermentation</h2>
-<div style="margin-top:10px; padding:5px; max-width:700px; border:1px solid black;">
-    <h3><u>Charge:</u> {{ charge.cid }}</h3>
-    <form action="" method="post">
-    {% csrf_token %}
-    {% if charge.fermentation %}
-        Messpunkt eintragen oder Fermentation abschlie&szlig;en<br><br>
-        <table>
-            <thead>
-            <tr>
-                <th>Datum</th> <th>Temperatur</th> <th>Plato</th>
-            </tr>
-            </thead>
-            <tbody>
-            {% for f in fermentation %}
-            <tr>
-                <td>{{ f.date }}</td>
-                <td>{{ f.plato }}</td>
-                <td>{{ f.temperature }}</td>
-            </tr>
-            {% endfor %}
-            <tr>
-                <td>{{ form.date }}</td>
-                <td>{{ form.plato }}</td>
-                <td>{{ form.temperature }}</td>
-                <td><input type="submit" name="add_mp" value="Hinzufügen"></td>
-            </tr>
-            </tbody>
-        </table>
-        <br/>
-        </form>
+<div class="container-sm">
+    <h2>Fermentation</h2>
+    <div style="margin-top:10px; padding:5px; border:1px solid black;">
+        <h3><u>Charge:</u> {{ charge.cid }}</h3>
         <form action="" method="post">
-            {% csrf_token %}
-            Fermentation beendet?<input type="checkbox" name="finished"> <br><br>
+        {% csrf_token %}
+        {% if charge.fermentation %}
+            Messpunkt eintragen oder Fermentation abschlie&szlig;en<br><br>
+            <table class="table table-sm table-hover" style="vertical-align:top;">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Datum</th> <th>Temperatur</th> <th>Plato</th> <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for f in fermentation %}
+                <tr>
+                    <td>{{ f.date }}</td>
+                    <td>{{ f.plato }}</td>
+                    <td>{{ f.temperature }}</td>
+                </tr>
+                {% endfor %}
+                <tr>
+                    <td>{{ form.date }}</td>
+                    <td>{{ form.plato }}</td>
+                    <td>{{ form.temperature }}</td>
+                    <td><input type="submit" name="add_mp" value="Hinzufügen"></td>
+                </tr>
+                </tbody>
+            </table>
+            <br/>
+            </form>
+            <form action="" method="post">
+                {% csrf_token %}
+                Fermentation beendet?<input type="checkbox" name="finished"> <br><br>
+                <input type="submit" name="save" value="Speichern">
+            </form>
+            <br/>
+        {% elif charge.ispindel %}
+            {% autoescape off %}
+            {{ plot }}
+            {% endautoescape %}
+            ISPINDEL
+            <br/>
+            Abgeschlossen?<input type="checkbox" name="finished"> <br><br>
             <input type="submit" name="save" value="Speichern">
+            <br/>
+        {% else %}
+            Willst du die iSpindel benutzen?
+            <br><br>
+            <input type="radio" id="yes" name="spindel" value=True>
+            <label for="yes">Ja</label>
+            <input type="radio" id="no" name="spindel" value=False>
+            <label for="no">Nein</label>
+            <br><br>
+            <input type="submit" name="next" value="Weiter">
+            <br><br>
+        {% endif %}
         </form>
-        <br/>
-    {% elif charge.ispindel %}
-        {% autoescape off %}
-        {{ plot }}
-        {% endautoescape %}
-        ISPINDEL
-        <br/>
-        Abgeschlossen?<input type="checkbox" name="finished"> <br><br>
-        <input type="submit" name="save" value="Speichern">
-        <br/>
-    {% else %}
-        Willst du die iSpindel benutzen?
-        <br><br>
-        <input type="radio" id="yes" name="spindel" value=True>
-        <label for="yes">Ja</label>
-        <input type="radio" id="no" name="spindel" value=False>
-        <label for="no">Nein</label>
-        <br><br>
-        <input type="submit" name="next" value="Weiter">
-        <br><br>
-    {% endif %}
-    </form>
+    </div>
 </div>
 {% endblock content %}

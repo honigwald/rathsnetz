@@ -366,7 +366,7 @@ def spindel(request):
 
     fig = make_subplots(specs=[[{"secondary_y": True}]])
     fig.update_layout(
-        title="iSpindel",
+        #title="iSpindel",
         xaxis_title="Zeit",
         yaxis_title="Vergärungsgrad",
         yaxis_range=[-10, 40],
@@ -387,12 +387,12 @@ def spindel(request):
                              line_shape='spline',
                              mode='lines',
                              name='Plato'),
-                  secondary_y=False)
+                             secondary_y=False)
     fig.add_trace(go.Scatter(x=time, y=temperature,
                              line_shape='spline',
                              mode='lines',
                              name='Temperatur'),
-                  secondary_y=True)
+                             secondary_y=True)
     fig.add_trace(go.Scatter(x=time, y=battery,
                              line_shape='spline',
                              mode='lines',
@@ -402,12 +402,9 @@ def spindel(request):
     client.close()
 
     #logging.debug("spindel: generated plt_div: %s", plt_div)
-    logging.debug("spindel: time: %s", len(time))
     logging.debug("spindel: process finished")
 
     return plt_div
-
-    #return render(request, 'brewery/spindel.html', {'plot': plt_div})
 
 
 @login_required

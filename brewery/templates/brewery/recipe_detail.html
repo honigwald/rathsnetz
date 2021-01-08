@@ -5,17 +5,19 @@
 <u>Erstellt:</u> {{ recipe.creation |date:'d.M Y' }}
 
 <h3>Vorarbeiten</h3>
-<table>
-{% for p in preparation %}
-    <td>
+<table class="table table-sm table-hover">
+    <tbody>
+    {% for p in preparation %}
+    <tr>
         <td>{{ p.short }}<td>
         <td>{{ p.detail }}<td>
     </tr>
-{% endfor %}
+    {% endfor %}
+    </tbody>
 </table>
 
 <h3>Braugang</h3>
-<table>
+<table class="table table-sm table-hover">
     <thead>
         <tr>
             <th>Schritt</th> <th>Titel</th> <th>Beschreibung</th> <th>Zutaten</th> <th>Anzahl</th> <th>Dauer</th><th></th>

@@ -1,39 +1,33 @@
 {% extends 'brewery/base.html' %}
 {% block content %}
-<h2>Brauen</h2>
-
-{% if active %}
-    <u>Aktive Charge:</u>
-    {% for c in active %}
-        <a href="{% url 'brewing' c.id %}">{{ c }}</a>&nbsp;
-    {% endfor %}
-    <br><br>
-    <form>
-        <input type="button" onclick="window.location.href = '{% url 'brewing_add' %}';" value="Neue Charge"/>
-    </form>
-{% else %}
-    <form>
-        <input type="button" onclick="window.location.href = '{% url 'brewing_add' %}';" value="Neue Charge"/>
-    </form>
-{% endif %}
-
-
-<h3>Überblick</h3>
-<table>
-    <thead>
+<div class="container-sm">
+    <h2>Brauen</h2>
+    {% if active %}
+        <u>Aktive Charge:</u>
+        {% for c in active %}
+            <a href="{% url 'brewing' c.id %}">{{ c }}</a>&nbsp;
+        {% endfor %}
+        <br> <br>
+    {% endif %}
+    <table class="table table-sm table-hover table-bordered" id="datatable">
+        <thead class="thead-dark">
+            <tr>
+                <th>Charge</th> <th>Rezept</th> <th>Menge</th> <th>Datum</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for c in charge %}
         <tr>
-            <th>Charge</th> <th>Rezept</th> <th>Menge</th> <th>Datum</th>
+            <td><a href="{% url 'protocol' c.id %}">{{ c }}</a></td>
+            <td>{{ c.recipe.name }}</td>
+            <td>{{ c.amount }}</td>
+            <td>{{ c.production }}</td>
         </tr>
-    </thead>
-    <tbody>
-    {% for c in charge %}
-    <tr>
-        <td><a href="{% url 'protocol' c.id %}">{{ c }}</a></td>
-        <td>{{ c.recipe.name }}</td>
-        <td>{{ c.amount }}</td>
-        <td>{{ c.production }}</td>
-    </tr>
-    {% endfor %}
-    </tbody>
-</table>
+        {% endfor %}
+        </tbody>
+    </table>
+    <form>
+        <input type="button" onclick="window.location.href = '{% url 'brewing_add' %}';" value="Neue Charge"/>
+    </form>
+</div>
 {% endblock content %}

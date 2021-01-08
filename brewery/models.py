@@ -22,8 +22,9 @@ class Storage(models.Model):
     type = models.ForeignKey(Type, on_delete=models.CASCADE)
     unit = models.ForeignKey(Unit, on_delete=models.CASCADE)
     amount = models.FloatField()
-    threshold = models.IntegerField(default=-1)
-    warning = models.BooleanField(default=False)
+    threshold = models.BooleanField(default=False)
+    warning = models.IntegerField(default=-1)
+    danger = models.IntegerField(default=-1)
 
     def __str__(self):
         return self.name
