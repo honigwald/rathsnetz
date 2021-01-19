@@ -33,7 +33,7 @@ def protocol_step(charge, step, start_time):
     t_start = start_time
     p_step = RecipeProtocol()
     p_step.charge = Charge.objects.get(id=c.id)
-    p_step.step = s.id
+    p_step.step = s.step
     p_step.title = s.title
     p_step.description = s.description
     p_step.duration = s.duration
@@ -60,6 +60,34 @@ def brewing_overview(request):
         'active': active
     }
     return render(request, 'brewery/brewing_overview.html', context)
+
+
+def calculate_ingredients(charge):
+    step = Step.objects.get(pk=charge.recipe.first)
+    ingredients = {}
+    while step:
+        data = list()
+        if step.ingredient:
+            required = charge.amount * step.amount / AMOUNT_FACTOR
+            data.append(step.ingredient.name)
+            data.append(required)
+            data.append(step.ingredient.unit.name)
+            if step.ingredient.type in ingredients:
+                tmp = ingredients[step.ingredient.type]
+                tmp.append(data)
+                ingredients[step.ingredient.type] = tmp
+            else:
+                tmp = list()
+                tmp.append(data)
+                ingredients[step.ingredient.type] = tmp
+            logging.debug("ID: %s Ingredient: %s Type: %s Amount: %s", step.id, step.ingredient.name, step.ingredient.type, required)
+        if hasattr(step, 'next'):
+            step = step.next
+        else:
+            break
+    ingredients['Wasser'] = [['Hauptguss', charge.recipe.hg * charge.amount / AMOUNT_FACTOR, 'Liter'],
+                             ['Nachguss', charge.recipe.ng * charge.amount  / AMOUNT_FACTOR, 'Liter']]
+    return ingredients
 
 
 @login_required
@@ -128,6 +156,8 @@ def brewing(request, cid):
                 return render(request, 'brewery/brewing.html', context)
             else:
                 logging.debug("brewing: there are still preparations todo.")
+                context['ingredients'] = calculate_ingredients(c)
+                print(calculate_ingredients(c))
                 return render(request, 'brewery/brewing.html', context)
 
         # Brewing: get next step
@@ -183,29 +213,7 @@ def brewing(request, cid):
         else:
             # Collecting all necessary ingredients
             logging.debug("brewing: calculate necessary ingredients")
-            step = Step.objects.get(pk=c.recipe.first)
-            ingredients = {}
-            while step:
-                data = list()
-                if step.ingredient:
-                    required = c.amount * step.amount / AMOUNT_FACTOR
-                    data.append(step.ingredient.name)
-                    data.append(required)
-                    data.append(step.ingredient.unit.name)
-                    if step.ingredient.type in ingredients:
-                        tmp = ingredients[step.ingredient.type]
-                        tmp.append(data)
-                        ingredients[step.ingredient.type] = tmp
-                    else:
-                        tmp = list()
-                        tmp.append(data)
-                        ingredients[step.ingredient.type] = tmp
-                    logging.debug("ID: %s Ingredient: %s Type: %s Amount: %s", step.id, step.ingredient.name, step.ingredient.type, required)
-                if hasattr(step, 'next'):
-                    step = step.next
-                else:
-                    break
-            ingredients['Wasser'] = [['Hauptguss', c.recipe.hg * c.amount / AMOUNT_FACTOR, 'Liter'], ['Nachguss', c.recipe.ng * c.amount  / AMOUNT_FACTOR, 'Liter']]
+            ingredients = calculate_ingredients(c)
             logging.debug("brewing: ingredients: %s", ingredients.values())
             # Collecting all necessary preparations (finished and not finished)
             logging.debug("brewing: collecting necessary preparations")
@@ -263,6 +271,11 @@ def protocol(request, cid):
     d = c.duration
     context = {'protocol': p, 'charge': c, 'duration': d}
 
+    if c.ispindel:
+        context['plot'] = get_plot(c)
+    else:
+        context['fermentation'] = FermentationProtocol.objects.filter(charge=c.id)
+
     return render(request, 'brewery/protocol.html', context)
 
 
@@ -278,7 +291,7 @@ def fermentation(request, cid):
         if request.POST.get('spindel') == "True":
             c.ispindel = True
             c.save()
-            context['plot'] = spindel(request)
+            context['plot'] = get_plot(c)
             logging.debug("fermentation: ispindel activated")
             return render(request, 'brewery/fermentation.html', context)
 
@@ -286,6 +299,9 @@ def fermentation(request, cid):
         if request.POST.get('finished'):
             c.finished = True
             c.save()
+            if c.ispindel:
+                logging.debug("fermentation: saving fermentation data")
+                save_plot(c)
             logging.debug("fermentation: fermentation is finished. beer is ready for storing.")
             return HttpResponseRedirect(reverse('brewing_overview'))
 
@@ -303,14 +319,6 @@ def fermentation(request, cid):
             logging.debug("fermentation: rendering manual fermentation-protocol and -form.")
             return render(request, 'brewery/fermentation.html', context)
 
-        # checking for closure of fermentation protocol
-        if request.POST.get('save'):
-            if request.POST.get('finished'):
-                c.finished = True
-                c.save()
-                logging.debug("fermentation: fermentation is finished. beer is ready for storing.")
-                return HttpResponseRedirect(reverse('brewing_overview'))
-
         # default case - this maybe obsolete
         else:
             if not c.fermentation:
@@ -321,14 +329,13 @@ def fermentation(request, cid):
         # Check if ispindel should be used
         logging.debug("fermentation: using ispindel: %s", c.ispindel)
         if c.ispindel:
-            context['plot'] = spindel(request)
+            context['plot'] = get_plot(c)
 
         return render(request, 'brewery/fermentation.html', context)
 
-
-@login_required
-def spindel(request):
-    logging.debug("spindel: starting process")
+def save_plot(charge):
+    # Get charge
+    logging.debug("save_plot: saving measurements of charge: %s", charge.cid)
 
     # Getting credentials
     with open(CONFIG_FILE) as json_file:
@@ -339,12 +346,48 @@ def spindel(request):
             ifdb_user = ifdb['user']
             ifdb_pass = ifdb['password']
 
-    logging.debug("spindel: connecting to influx db")
+    logging.debug("save_plot: connecting to influx db")
     client = InfluxDBClient(host=ifdb_host, port=ifdb_port, username=ifdb_user, password=ifdb_pass)
     client.switch_database('ispindel')
-    logging.debug("spindel: querying data from db")
-    q = client.query('SELECT "tilt","temperature", "battery" FROM "measurements"')
-    #logging.debug("spindel: result: %s", q)
+
+    # Build query
+    query = 'SELECT * INTO "' + charge.cid + '" FROM "measurements"'
+    logging.debug("save_plot: query: %s", query)
+    client.query(query)
+    logging.debug("save_plot: done.")
+
+    # Cleanup
+    query = 'DROP measurement "measurements"'
+    client.query(query)
+    logging.debug("save_plot: cleaning up.")
+
+
+def get_plot(charge):
+    # Get charge
+    logging.debug("get_plot: plot for charge: %s", charge.cid)
+
+    # Getting credentials
+    with open(CONFIG_FILE) as json_file:
+        data = json.load(json_file)
+        for ifdb in data['influxdb']:
+            ifdb_host = ifdb['host']
+            ifdb_port = ifdb['port']
+            ifdb_user = ifdb['user']
+            ifdb_pass = ifdb['password']
+
+    logging.debug("get_plot: connecting to influx db")
+    client = InfluxDBClient(host=ifdb_host, port=ifdb_port, username=ifdb_user, password=ifdb_pass)
+    client.switch_database('ispindel')
+
+    # Build query
+    if charge.finished:
+        query = 'SELECT "tilt","temperature", "battery" FROM ' + '"' + charge.cid + '"'
+        q = client.query(query)
+    else:
+        q = client.query('SELECT "tilt","temperature", "battery" FROM "measurements"')
+
+    logging.debug("get_plot: querying data from db")
+    #logging.debug("get_plot: result: %s", q)
     # ['time', 'RSSI', 'battery', 'gravity', 'interval', 'source', 'temp_units', 'temperature', 'tilt'],
     time = []
     tilt = []
@@ -401,8 +444,7 @@ def spindel(request):
     plt_div = plot(fig, output_type='div')
     client.close()
 
-    #logging.debug("spindel: generated plt_div: %s", plt_div)
-    logging.debug("spindel: process finished")
+    logging.debug("get_plot: process finished")
 
     return plt_div
 
