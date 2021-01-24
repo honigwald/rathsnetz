@@ -426,17 +426,17 @@ def get_plot(charge):
             color="RebeccaPurple"
         )
     )
-    fig.add_trace(go.Scatter(x=time, y=tilt,
+    fig.add_trace(go.Scatter(x=time[1:-5], y=tilt[1:-15],
                              line_shape='spline',
                              mode='lines',
                              name='Plato'),
                              secondary_y=False)
-    fig.add_trace(go.Scatter(x=time, y=temperature,
+    fig.add_trace(go.Scatter(x=time[1:-5], y=temperature[1:-15],
                              line_shape='spline',
                              mode='lines',
                              name='Temperatur'),
                              secondary_y=True)
-    fig.add_trace(go.Scatter(x=time, y=battery,
+    fig.add_trace(go.Scatter(x=time[1:-5], y=battery[1:-15],
                              line_shape='spline',
                              mode='lines',
                              name='Batterie'))
@@ -459,7 +459,7 @@ def recipe(request):
 def get_steps(rid):
     try:
         step = Step.objects.get(pk=rid.first)
-    except AttributeError:
+    except Step.DoesNotExist:
         step = None
     s = []
     while step:
@@ -520,7 +520,7 @@ def recipe_edit(request, recipe_id):
     unused_steps = Step.objects.filter(recipe=r)
     try:
         used_steps = Step.objects.get(pk=r.first)
-    except AttributeError:
+    except Step.DoesNotExist:
         used_steps = None
 
     while used_steps:
