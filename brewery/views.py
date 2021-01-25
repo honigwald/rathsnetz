@@ -673,12 +673,21 @@ def step_edit(request, recipe_id, step_id=None):
                     logging.debug("step.next: %s", s_has_next)
                     if s_has_next:
                         successor = Step.objects.get(pk=s_next_id)
-                        predecessor = Step.objects.get(pk=s_prev_id)
-                        step.prev = None
-                        step.save()
-                        successor.prev = predecessor
-                        successor.save()
-                        logging.debug("predecessor: %s -> %s\t successor: %s <- %s", predecessor.id, predecessor.next.id, successor.id, successor.prev.id)
+                        try:
+                            predecessor = Step.objects.get(pk=s_prev_id)
+                        except Step.DoesNotExist:
+                            predecessor = None
+                        if predecessor:
+                            step.prev = None
+                            step.save()
+                            successor.prev = predecessor
+                            successor.save()
+                            logging.debug("predecessor: %s -> %s\t successor: %s <- %s", predecessor.id, predecessor.next.id, successor.id, successor.prev.id)
+                        else:
+                            successor.prev = None
+                            successor.save()
+                            r.first = successor.id
+                            r.save()
                     step.prev = prev
                     step.save()
 
