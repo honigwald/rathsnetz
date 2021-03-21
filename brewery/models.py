@@ -51,6 +51,7 @@ class Step(models.Model):
     duration = models.DurationField(blank=True, null=True)
     ingredient = models.ForeignKey(Storage, on_delete=models.CASCADE, blank=True, null=True)
     amount = models.FloatField(blank=True, null=True)
+    unit = models.ForeignKey(Unit, on_delete=models.CASCADE, blank=True, null=True)
 
     def __str__(self):
         return "[" + str(self.recipe) + "] " + str(self.step) + ". " + str(self.title)
