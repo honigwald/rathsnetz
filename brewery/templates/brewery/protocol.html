@@ -3,6 +3,7 @@
 
 <div class="container-sm">
     <h2><u>Protokoll:</u> {{ charge.recipe.name }}, {{ charge.amount }} Liter </h2>
+    <u>Charge:</u> {{ charge.cid }} <br>
     <u>Brautag:</u> {{ charge.production }} <br>
     <u>Gesamtdauer:</u> {{ charge.duration }} <br><br>
 
@@ -28,6 +29,34 @@
         {% endfor %}
         </tbody>
     </table>
+
+    <h2><u>Gärung:</u></h2>
+
+    {% if plot %}
+        {% autoescape off %}
+        {{ plot }}
+        {% endautoescape %}
+
+    {% elif fermentation %}
+        <table class="table table-sm table-hover" style="vertical-align:top;">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Schritt</th> <th>Temperatur</th> <th>Plato</th> <th>Datum</th>
+                </tr>
+            </thead>
+        <tbody>
+        {% for f in fermentation %}
+        <tr>
+            <td>{{ f.step }}</td>
+            <td>{{ f.temperature }}</td>
+            <td>{{ f.plato }}</td>
+            <td>{{ f.date }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+
 </div>
 {% endblock content %}
 
