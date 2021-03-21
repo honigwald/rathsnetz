@@ -114,6 +114,7 @@ def brewing(request, cid):
         context['t_start'] = datetime.now()
         context['step'] = step
         context['hint'] = Hint.objects.filter(step__id=step.id)
+        context['recipe'] = get_steps(c.recipe)
         context['protocol'] = RecipeProtocol.objects.filter(charge=cid)
         context['form'] = BrewingProtocol()
 
@@ -153,6 +154,7 @@ def brewing(request, cid):
                 context['t_start'] = datetime.now()
                 context['hint'] = Hint.objects.filter(step__id=step.id)
                 context['form'] = BrewingProtocol()
+                context['recipe'] = get_steps(c.recipe)
                 return render(request, 'brewery/brewing.html', context)
             else:
                 logging.debug("brewing: there are still preparations todo.")
@@ -192,8 +194,10 @@ def brewing(request, cid):
                     context['hint'] = Hint.objects.filter(step__id=step.id)
                     context['protocol'] = RecipeProtocol.objects.filter(charge=cid)
                     context['form'] = BrewingProtocol()
+                    context['recipe'] = get_steps(c.recipe)
                     c.current_step = step
                     c.save()
+                    logging.debug("brewing: context[recipe]: %s", context['recipe'])
                     return render(request, 'brewery/brewing.html', context)
                 # Brewing: Finished
                 except AttributeError:
