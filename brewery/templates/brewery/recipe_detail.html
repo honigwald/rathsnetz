@@ -18,7 +18,7 @@
 
 <h3>Braugang</h3>
 <table class="table table-sm table-hover">
-    <thead>
+    <thead class="thead-dark">
         <tr>
             <th>Schritt</th> <th>Titel</th> <th>Beschreibung</th> <th>Zutaten</th> <th>Anzahl</th> <th>Dauer</th><th></th>
         </tr>
@@ -30,7 +30,7 @@
         <td>{{ s.title }}</td>
         <td>{{ s.description }}</td>
         <td>{% if s.ingredient %}{{ s.ingredient }}{% endif %}</td>
-        <td>{% if s.amount %}{{ s.amount }}{% endif %}</td>
+        <td style="white-space:nowrap;">{% if s.amount %}{{ s.amount }} {{ s.unit }}{% endif %}</td>
         <td>{% if s.duration %}{{ s.duration }}{% endif %}</td>
     </tr>
     {% endfor %}
