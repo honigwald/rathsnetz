@@ -6,9 +6,10 @@
     {% if charge and charge.preps_finished %}
         <u>Rezept:</u> {{ charge.recipe.name }} <br>
         <u>Menge:</u> {{ charge.amount }} Liter <br>
+        <u>Wasser:</u> (HG: {{ hg }}l / NG: {{ ng }}l) <br>
         <u>Braumeister:</u> {{ charge.brewmaster }}
 
-        <div style="margin-top:10px; padding:5px; border:1px solid black;">
+        <div style="margin-top:10px; padding:5px; border:1px solid black; background-color:white;">
             <h3><u>Aktuell:</u></h3>
             <form action="" method="post">
                 {% csrf_token %}
@@ -23,17 +24,9 @@
                         <td>{{ step.step }}</td>
                         <td>{{ step.title }}</td>
                         <td>{{ step.description }}</td>
-                        {% if step.ingredient %}
-                            <td>{{ step.ingredient }}</td>
-                            <td>{{ step.amount }}</td>
-                        {% else %}
-                            <td></td><td></td>
-                        {% endif %}
-                        {% if step.duration %}
-                            <td>{{ step.duration }}</td>
-                        {% else %}
-                            <td></td>
-                        {% endif %}
+                        <td>{% if step.ingredient %}{{ step.ingredient }}{% endif %}</td>
+                        <td>{% if step.amount %}{{ step.amount }} {{ step.unit }}{% endif %}</td>
+                        <td>{% if step.duration %}{{ step.duration }}{% endif %}</td>
                         <td>{{ form.comment }}</td>
                     </tr>
                     </tbody>
@@ -61,7 +54,7 @@
         </div>
 
         {% if step.next %}
-        <div style="margin-top:10px; padding:5px; border:1px solid black; opacity:0.7">
+        <div style="margin-top:10px; padding:5px; border:1px solid black; background-color:white; opacity:0.5;">
             <h3><u>Nächster Schritt:</u></h3>
                 <table class="table table-sm table-hover" style="vertical-align:top;">
                     <thead class="thead-dark">
@@ -71,12 +64,12 @@
                     </thead>
                     <tbody>
                         <tr style="background-color:white;">
-                            <td>{{ step.next.step }}</td>
-                            <td>{{ step.next.title }}</td>
-                            <td>{{ step.next.description }}</td>
-                            <td>{% if step.next.ingredient %}{{ step.next.ingredient }}{% endif %}</td>
-                            <td>{% if step.next.amount %}{{ step.next.amount }}{% endif %}</td>
-                            <td>{% if step.next.duration %}{{ step.next.duration }}{% endif %}</td>
+                            <td>{{ s_next.step }}</td>
+                            <td>{{ s_next.title }}</td>
+                            <td>{{ s_next.description }}</td>
+                            <td>{% if s_next.ingredient %}{{ s_next.ingredient }}{% endif %}</td>
+                            <td>{% if s_next.amount %}{{ s_next.amount }} {{ s_next.unit }}{% endif %}</td>
+                            <td>{% if s_next.duration %}{{ s_next.duration }}{% endif %}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -89,16 +82,16 @@
                 </thead>
                 <tbody>
                 {% for s in recipe %}
-                {% if forloop.counter > step.next.step %}
-                    <tr>
-                        <td>{{ forloop.counter }}</td>
-                        <td>{{ s.title }}</td>
-                        <td>{{ s.description }}</td>
-                        <td>{% if s.ingredient %}{{ s.ingredient }}{% endif %}</td>
-                        <td>{% if s.amount %}{{ s.amount }}{% endif %}</td>
-                        <td>{% if s.duration %}{{ s.duration }}{% endif %}</td>
-                    </tr>
-                {% endif %}
+                    {% if forloop.counter > step.next.step %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ s.title }}</td>
+                            <td>{{ s.description }}</td>
+                            <td>{% if s.ingredient %}{{ s.ingredient }}{% endif %}</td>
+                            <td style="white-space:nowrap;">{% if s.amount %}{{ s.amount }} {{ s.unit }}{% endif %}</td>
+                            <td>{% if s.duration %}{{ s.duration }}{% endif %}</td>
+                        </tr>
+                    {% endif %}
                 {% endfor %}
                 </tbody>
             </table>
@@ -106,7 +99,7 @@
         </div>
         {% endif %}
 
-        <div style="margin-top:10px; padding:5px; border:1px solid black;">
+        <div style="margin-top:10px; padding:5px; border:1px solid black; background-color:white;">
           <a data-toggle="collapse" href="#collapseProtocol" aria-expanded="false" aria-controls="collapseProtocol">
             <h3><u>Protokoll:</u></h3>
           </a>
