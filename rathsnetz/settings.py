@@ -125,7 +125,3 @@ STATICFILES_DIRS = ('/home/simon/Documents/develop/develop/django/rathsnetz/stat
 
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
-
-BOOTSTRAP4 = {
-    "include_jquery": False
-}

@@ -1,6 +1,7 @@
 from django import forms
-from django.forms import Form, ModelForm, Select
+from django.forms import Form, ModelForm, Select, TextInput
 from django.contrib.auth.models import User
+from bootstrap_datepicker_plus import DateTimePickerInput, DatePickerInput
 from .models import Storage, Recipe, Step, Keg, Preparation, PreparationProtocol, FermentationProtocol
 from django.core.validators import EMPTY_VALUES, ValidationError
 from django.core import validators
@@ -13,7 +14,11 @@ class BrewingCharge(forms.Form):
 
 
 class BrewingProtocol(forms.Form):
-    comment = forms.CharField(widget=forms.Textarea(attrs={"rows":3, "cols":30}), max_length=200, required=False)
+    comment = forms.CharField(widget=forms.Textarea(
+                                attrs={'class': 'form-control',
+                                       'rows': 3,
+                                       'cols': 30
+                                       }), max_length=200, required=False)
 
 
 class StorageAddItem(ModelForm):
@@ -38,6 +43,12 @@ class EditKegContent(ModelForm):
     class Meta:
         model = Keg
         fields = ['content', 'status', 'notes', 'filling']
+        widgets = {'filling': DateTimePickerInput(),
+                   'content': Select(attrs={'class': 'custom-select mr-sm'}),
+                   'notes': TextInput(attrs={'class': 'form-control mr-sm'}),
+                   'status': Select(attrs={'class': 'custom-select mr-sm'})
+                   }
+
 
 class SelectPreparation(Form):
     preparation = forms.ModelMultipleChoiceField(queryset=Preparation.objects.all(), required=False)

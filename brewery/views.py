@@ -285,10 +285,12 @@ def brewing_add(request):
 
 @login_required
 def protocol(request, cid):
+    context = {}
     c = Charge.objects.get(pk=cid)
-    p = RecipeProtocol.objects.filter(charge=c.id)
-    d = c.duration
-    context = {'protocol': p, 'charge': c, 'duration': d}
+    context['charge'] = c
+    context['protocol'] = RecipeProtocol.objects.filter(charge=c.id)
+    context['hg'] = c.amount * c.recipe.hg / AMOUNT_FACTOR
+    context['ng'] = c.amount * c.recipe.ng / AMOUNT_FACTOR
 
     if c.ispindel:
         context['plot'] = get_plot(c)
