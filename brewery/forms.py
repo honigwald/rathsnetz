@@ -62,13 +62,17 @@ class StepForm(ModelForm):
 
     class Meta:
         model = Step
-        fields = ['prev', 'title', 'description', 'duration', 'ingredient', 'amount']
+        fields = ['prev', 'title', 'description', 'duration', 'ingredient', 'amount', 'unit']
 
     def clean(self):
         ingredient = self.cleaned_data.get('ingredient', None)
         amount = self.cleaned_data.get('amount', None)
+        unit = self.cleaned_data.get('unit', None)
         if ingredient and not amount:
             self.errors['amount'] = self.error_class(['Mengenangabe wird benötigt!'])
         if amount and not ingredient:
             self.errors['ingredient'] = self.error_class(['Zutat muss gewählt werden.'])
+        if amount and not unit:
+            self.errors['unit'] = self.error_class(['Einheit wird benötigt!'])
+
         return self.cleaned_data
