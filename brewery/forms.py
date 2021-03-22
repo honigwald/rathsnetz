@@ -7,10 +7,19 @@ from django.core.validators import EMPTY_VALUES, ValidationError
 from django.core import validators
 
 
-class BrewingCharge(forms.Form):
-    recipe = forms.ModelChoiceField(queryset=Recipe.objects.all().order_by('name'))
-    amount = forms.FloatField()
-    brewmaster = forms.ModelChoiceField(queryset=User.objects.all().order_by('username'))
+#class BrewingCharge(forms.Form):
+#    recipe = forms.ModelChoiceField(queryset=Recipe.objects.all().order_by('name'))
+#    amount = forms.FloatField()
+#    brewmaster = forms.ModelChoiceField(queryset=User.objects.all().order_by('username'))
+
+class BrewingCharge(ModelForm):
+    class Meta:
+        model = Charge
+        fields = ['recipe', 'brewmaster', 'amount']
+        widgets = {'recipe': Select(attrs={'class': 'custom-select mr-sm'}),
+                   'amount': TextInput(attrs={'class': 'form-control mr-sm', 'placeholder': 'Menge in Liter'}),
+                   'brewmaster': Select(attrs={'class': 'custom-select mr-sm'})
+                   }
 
 
 class BrewingProtocol(forms.Form):

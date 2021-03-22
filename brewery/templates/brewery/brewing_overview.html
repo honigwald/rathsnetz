@@ -26,8 +26,9 @@
         {% endfor %}
         </tbody>
     </table>
+    <br>
     <form>
-        <input type="button" onclick="window.location.href = '{% url 'brewing_add' %}';" value="Neue Charge"/>
+        <input type="button" class="btn btn-primary btn-lg btn-block" onclick="window.location.href = '{% url 'brewing_add' %}';" value="Neue Charge">
     </form>
 </div>
 {% endblock content %}

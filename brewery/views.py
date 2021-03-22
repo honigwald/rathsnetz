@@ -197,8 +197,12 @@ def brewing(request, cid):
                     step = step.next
                     logging.debug("brewing: get next step: %s", step)
                     step.amount = (step.amount * c.amount) / AMOUNT_FACTOR if step.amount else step.amount
-                    s_next = step.next
-                    s_next.amount = (s_next.amount * c.amount) / AMOUNT_FACTOR if s_next.amount else s_next.amount
+                    try:
+                        s_next = step.next
+                        logging.debug("brewing: get new next step: %s", s_next)
+                        s_next.amount = (s_next.amount * c.amount) / AMOUNT_FACTOR if s_next.amount else s_next.amount
+                    except AttributeError:
+                        s_next = None
                     context['charge'] = c
                     context['t_start'] = datetime.now()
                     context['step'] = step

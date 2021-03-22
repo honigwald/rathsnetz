@@ -1,6 +1,6 @@
 {% extends 'brewery/base.html' %}
-{% block content %}
 
+{% block content %}
 <div class="container-sm">
     <h2>Brauen: {{ charge.amount }} Liter {{ charge.recipe }}</h2>
     {% if charge and charge.preps_finished %}
@@ -9,9 +9,9 @@
         <u>Wasser:</u> (HG: {{ hg }}l / NG: {{ ng }}l) <br>
         <u>Braumeister:</u> {{ charge.brewmaster }}
 
+    <form action="" method="post">
         <div style="margin-top:10px; padding:5px; border:1px solid black; background-color:white;">
             <h3><u>Aktuell:</u></h3>
-            <form action="" method="post">
                 {% csrf_token %}
                 <table class="table table-sm table-hover" style="vertical-align:top;">
                     <thead class="thead-dark">
@@ -32,24 +32,14 @@
                     </tbody>
                 </table>
                 {% if hint %}
-                <h3><u>Hinweis:</u></h3>
-                <ul>
-                    {% for h in hint %}
-                    <li>{{ h }}</li>
-                    {% endfor %}
-                </ul>
-                <br>
+                    <h3><u>Hinweis:</u></h3>
+                    <ul>
+                        {% for h in hint %}
+                        <li>{{ h }}</li>
+                        {% endfor %}
+                    </ul>
+                    <br>
                 {% endif %}
-                <br/>
-                {% if step.next %}
-                <input type="submit" name="brew_next" value="Weiter">
-                {% else %}
-                <input type="submit" name="brew_next" value="Speichern">
-                {% endif %}
-                <input type="hidden" name="charge" value="{{ charge.id }}">
-                <input type="hidden" name="t_start" value="{{ t_start|date:'YmdHisu' }} ">
-                <input type="hidden" name="step" value="{{ step.id }} ">
-            </form>
             <br/>
         </div>
 
@@ -128,6 +118,17 @@
                 </table>
           </div>
         </div>
+        <br/>
+        {% if step.next %}
+            <input type="submit" class="btn btn-primary btn-lg btn-block" name="brew_next" value="Weiter">
+        {% else %}
+            <input type="submit" class="btn btn-primary btn-lg btn-block" name="brew_next" value="Gärung starten">
+        {% endif %}
+
+        <input type="hidden" name="charge" value="{{ charge.id }}">
+        <input type="hidden" name="t_start" value="{{ t_start|date:'YmdHisu' }} ">
+        <input type="hidden" name="step" value="{{ step.id }} ">
+    </form>
 
         {% elif charge and not charge.preparations %}
         <div style="margin-top:10px; padding:5px; border:1px solid black;">
@@ -153,10 +154,10 @@
             </table>
         </div>
 
+    <form action="" method="post">
+        {% csrf_token %}
         <div style="margin-top:10px; padding:5px; border:1px solid black;">
             <h3><u>Vorarbeiten</u></h3>
-            <form action="" method="post">
-                {% csrf_token %}
                 <table class="table table-hover table-sm">
                     <thead class="thead-dark">
                         <tr>
@@ -171,25 +172,18 @@
                     </tr>
                     {% endfor %}
                 </table>
-                <br>
-                <input type="submit" name="preps_save" value="Speichern">
-                <input type="submit" name="preps_next" value="Weiter">
-            </form>
         </div>
+        <br>
+        <input type="submit" class="btn btn-primary btn-lg btn-block" name="preps_next" value="Weiter">
+        <input type="submit" class="btn btn-secondary btn-lg btn-block" name="preps_save" value="Speichern">
+    </form>
     {% else %}
         <b><u>Hinweis:</u></b> Wähle Rezept, Menge und Braumeister.<br><br>
         <form action="" method="post">
             {% csrf_token %}
-            <table>
-            <tr>
-                <td>Rezept:</td><td>{{ form.recipe }}</td>
-            </tr><tr>
-                <td>Menge:</td><td>{{ form.amount }}</td>
-            </tr><tr>
-                <td>Braumeister:</td><td>{{ form.brewmaster }}</td>
-            </tr>
-            </table>
-            <input type="submit" name="create" value="Erstellen">
+            {{ form.as_table }}
+            <br>
+            <input type="submit" class="btn btn-primary btn-lg btn-block" name="create" value="Erstellen">
         </form>
     {% endif %}
 </div>
