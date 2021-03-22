@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 from django.conf import settings
+from django.core.validators import MinValueValidator
 
 
 class Unit(models.Model):
@@ -21,7 +22,7 @@ class Storage(models.Model):
     name = models.CharField(max_length=200)
     type = models.ForeignKey(Type, on_delete=models.CASCADE)
     unit = models.ForeignKey(Unit, on_delete=models.CASCADE)
-    amount = models.FloatField()
+    amount = models.FloatField(validators=[MinValueValidator(0.0)])
     threshold = models.BooleanField(default=False)
     warning = models.IntegerField(default=-1)
     danger = models.IntegerField(default=-1)

@@ -25,6 +25,11 @@ class StorageAddItem(ModelForm):
     class Meta:
         model = Storage
         fields = ['name', 'amount', 'type', 'unit']
+        widgets = {'unit': Select(attrs={'class': 'custom-select mr-sm'}),
+                   'name': TextInput(attrs={'class': 'form-control mr-sm'}),
+                   'amount': TextInput(attrs={'class': 'form-control mr-sm'}),
+                   'type': Select(attrs={'class': 'custom-select mr-sm'})
+                   }
 
 
 class AddRecipe(ModelForm):

@@ -1,10 +1,14 @@
 {% extends 'brewery/base.html' %}
+{% block extrahead %}
+{% endblock %}
+
 {% block content %}
 <h2>Lager: Bearbeite Position</h2>
 
 <form action="" method="post">
-{% csrf_token %}
-<table>
+    {% csrf_token %}
+    {{ form.media }}
+    <table>
         <tr>
             <td>Name</td> <td> {{ form.name }} </td>
         </tr>
@@ -17,11 +21,9 @@
         <tr>
             <td>Einheit</td> <td> {{ form.unit }} </td>
         </tr>
-</table>
-<br>
-<input type="button" value="Abbrechen"  onclick="window.location.href = '{% url 'storage' %}';">
-<input type="submit" name="save" value="Speichern">
-<br>
-<input type="submit" name="delete" value="Löschen">
+    </table>
+    <br>
+    <input type="button" class="btn btn-secondary" value="Abbrechen"  onclick="window.location.href = '{% url 'storage' %}';">
+    <input type="submit" class="btn btn-primary" name="save" value="Speichern">
 </form>
 {% endblock content %}
