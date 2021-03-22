@@ -1,5 +1,5 @@
 from django import forms
-from django.forms import Form, ModelForm, Select, TextInput
+from django.forms import Form, ModelForm, Select, TextInput, NumberInput
 from django.contrib.auth.models import User
 from bootstrap_datepicker_plus import DateTimePickerInput, DatePickerInput
 from .models import Charge, Storage, Recipe, Step, Keg, Preparation, PreparationProtocol, FermentationProtocol
@@ -7,17 +7,12 @@ from django.core.validators import EMPTY_VALUES, ValidationError
 from django.core import validators
 
 
-#class BrewingCharge(forms.Form):
-#    recipe = forms.ModelChoiceField(queryset=Recipe.objects.all().order_by('name'))
-#    amount = forms.FloatField()
-#    brewmaster = forms.ModelChoiceField(queryset=User.objects.all().order_by('username'))
-
 class BrewingCharge(ModelForm):
     class Meta:
         model = Charge
         fields = ['recipe', 'brewmaster', 'amount']
         widgets = {'recipe': Select(attrs={'class': 'custom-select mr-sm'}),
-                   'amount': TextInput(attrs={'class': 'form-control mr-sm', 'placeholder': 'Menge in Liter'}),
+                   'amount': NumberInput(attrs={'class': 'form-control mr-sm', 'placeholder': 'Menge in Liter'}),
                    'brewmaster': Select(attrs={'class': 'custom-select mr-sm'})
                    }
 
@@ -78,19 +73,19 @@ class FermentationProtocolForm(ModelForm):
     class Meta:
         model = FermentationProtocol
         fields = ['temperature', 'plato', 'date']
-        widgets = {'date': DateTimePickerInput()}
+        widgets = {'date': DateTimePickerInput(format='%d.%m.%Y %H:%M'),
+                   'plato': NumberInput(attrs={'class': 'form-control mr-sm', 'placeholder': '°Plato'}),
+                   'temperature': NumberInput(attrs={'class': 'form-control mr-sm', 'placeholder': '°Celsius'})
+                   }
 
 
 class FinishFermentationForm(ModelForm):
-    output = forms.FloatField(required=True)
-    evg = forms.FloatField(required=True)
+    output = forms.FloatField(required=True, widget=forms.NumberInput(attrs={'class': 'form-control mr-sm', 'placeholder': 'Ausstoß in Liter'}))
+    evg = forms.FloatField(required=True, widget=forms.NumberInput(attrs={'class': 'form-control mr-sm', 'placeholder': '°Plato'}))
 
     class Meta:
         model = Charge
         fields = ['output', 'evg']
-        widget = {'output': TextInput(attrs={'class': 'form-control'}),
-                  'evg': TextInput(attrs={'class': 'form-control mr-sm'})
-                  }
 
 
 class StepForm(ModelForm):

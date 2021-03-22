@@ -21,16 +21,16 @@
                 {% for f in fermentation %}
                 <tr>
                     <td>{{ f.date }}</td>
-                    <td>{{ f.plato }}</td>
                     <td>{{ f.temperature }}</td>
+                    <td>{{ f.plato }}</td>
                 </tr>
                 {% endfor %}
                 <tr>
                     {{ form.media }}
                     <td>{{ form.date }}</td>
-                    <td>{{ form.plato }}</td>
                     <td>{{ form.temperature }}</td>
-                    <td><input type="submit" name="add_mp" value="Hinzufügen"></td>
+                    <td>{{ form.plato }}</td>
+                    <td><input type="submit" class="btn btn-secondary" name="add_mp" value="Hinzufügen"></td>
                 </tr>
                 </tbody>
             </table>
@@ -38,39 +38,22 @@
             </form>
             <form action="" method="post">
                 {% csrf_token %}
-                <table>
-                    <tr>
-                        <td>Ausstoß:</td>
-                        <td>{{ c_form.output }}</td>
-                    </tr>
-                    <tr>
-                        <td>EVG:</td>
-                        <td>{{ c_form.evg }}</td>
-                    </tr>
-                </table>
-                <input type='submit' class='btn btn-primary' name='save' value='Braugang beenden'>
+                {{ cform.media }}
+                {{ cform.as_table }}
+                <br>
+                <input type="submit" class="btn btn-primary btn-lg btn-block" name="save" value="Braugang abschließen">
             </form>
             <br/>
         {% elif charge.ispindel %}
             {% autoescape off %}
             {{ plot }}
             {% endautoescape %}
-            ISPINDEL
-            <br/>
             <form action="" method="post">
-                {{ c_form.media }}
                 {% csrf_token %}
-                <table>
-                    <tr>
-                        <td>Ausstoß:</td>
-                        <td>{{ c_form.output }}</td>
-                    </tr>
-                    <tr>
-                        <td>EVG:</td>
-                        <td>{{ c_form.evg }}</td>
-                    </tr>
-                </table>
-                <input type='submit' class='btn btn-primary' name='save' value='Braugang beenden'>
+                {{ cform.media }}
+                {{ cform.as_table }}
+                <br>
+                <input type="submit" class="btn btn-primary btn-lg btn-block" name="save" value="Braugang abschließen">
             </form>
             <br/>
         {% else %}
@@ -81,7 +64,7 @@
             <input type="radio" id="no" name="spindel" value=False>
             <label for="no">Nein</label>
             <br><br>
-            <input type="submit" name="next" value="Weiter">
+            <input type="submit" class="btn btn-primary btn-lg btn-block" name="next" value="Weiter">
             <br><br>
         {% endif %}
         </form>

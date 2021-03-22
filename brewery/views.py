@@ -315,7 +315,7 @@ def fermentation(request, cid):
     context['charge'] = c
     context['fermentation'] = f
     context['form'] = FermentationProtocolForm()
-    context['c_form'] = FinishFermentationForm(instance=c)
+    context['cform'] = FinishFermentationForm()
 
     if request.POST:
         # checking if ispindel is activated
@@ -344,7 +344,7 @@ def fermentation(request, cid):
                 c_form.save()
                 return HttpResponseRedirect(reverse('protocol', kwargs={'cid': c.id}))
 
-            context['c_form'] = FinishFermentationForm(instance=c)
+            context['cform'] = FinishFermentationForm(instance=c)
             return render(request, 'brewery/fermentation.html', context)
 
         # checking for new measure point
@@ -352,6 +352,7 @@ def fermentation(request, cid):
             logging.debug("fermentation: adding new measure point")
             form = FermentationProtocolForm(request.POST)
             if form.is_valid():
+                logging.debug("fermentation: form.is_vald")
                 form = form.save(commit=False)
                 form.charge = c
                 form.step = FermentationProtocol.objects.filter(charge=c).count() + 1
