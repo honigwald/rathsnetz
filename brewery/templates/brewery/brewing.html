@@ -9,6 +9,16 @@
         <u>Wasser:</u> (HG: {{ hg }}l / NG: {{ ng }}l) <br>
         <u>Braumeister:</u> {{ charge.brewmaster }}
 
+    <br>
+    <br>
+    <div style="margin-top:10px; padding:5px; border:1px solid black; background-color:white;">
+        <h3><u>Fortschritt:</u></h3>
+        <div class="progress">
+            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="{{ progress }}" aria-valuemin="0" aria-valuemax="100" style="width: {{ progress }}%">
+                {{ progress }}%
+            </div>
+        </div>
+    </div>
     <form action="" method="post">
         <div style="margin-top:10px; padding:5px; border:1px solid black; background-color:white;">
             <h3><u>Aktuell:</u></h3>

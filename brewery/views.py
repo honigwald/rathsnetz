@@ -110,8 +110,11 @@ def brewing(request, cid):
         logging.debug("brewing: Restoring session [Finished: Preparations]")
         step = c.current_step
         step.amount = (step.amount * c.amount) / AMOUNT_FACTOR if step.amount else step.amount
-        s_next = step.next
-        s_next.amount = (s_next.amount * c.amount) / AMOUNT_FACTOR if s_next.amount else s_next.amount
+        try:
+            s_next = step.next
+            s_next.amount = (s_next.amount * c.amount) / AMOUNT_FACTOR if s_next.amount else s_next.amount
+        except Step.DoesNotExist:
+            s_next = None
         context['charge'] = c
         context['t_start'] = datetime.now()
         context['step'] = step
@@ -122,6 +125,7 @@ def brewing(request, cid):
         context['ng'] = c.amount * c.recipe.ng / AMOUNT_FACTOR
         context['protocol'] = RecipeProtocol.objects.filter(charge=cid)
         context['form'] = BrewingProtocol()
+        context['progress'] = get_progress(c.recipe, step)
 
         return render(request, 'brewery/brewing.html', context)
 
@@ -165,6 +169,7 @@ def brewing(request, cid):
                 context['recipe'] = get_steps(c.recipe, c.amount)
                 context['hg'] = c.amount * c.recipe.hg / AMOUNT_FACTOR
                 context['ng'] = c.amount * c.recipe.ng / AMOUNT_FACTOR
+                context['progress'] = get_progress(c.recipe, step)
                 return render(request, 'brewery/brewing.html', context)
             else:
                 logging.debug("brewing: there are still preparations todo.")
@@ -213,6 +218,7 @@ def brewing(request, cid):
                     context['recipe'] = get_steps(c.recipe, c.amount)
                     context['hg'] = c.amount * c.recipe.hg / AMOUNT_FACTOR
                     context['ng'] = c.amount * c.recipe.ng / AMOUNT_FACTOR
+                    context['progress'] = get_progress(c.recipe, step)
                     c.current_step = step
                     c.save()
                     logging.debug("brewing: context[recipe]: %s", context['recipe'])
@@ -517,6 +523,29 @@ def get_steps(rid, amount):
         except AttributeError:
             step = None
     return s
+
+
+def get_progress(rid, current_step):
+    try:
+        step = Step.objects.get(pk=rid.first)
+    except Step.DoesNotExist:
+        step = None
+
+    s = []
+    while step:
+        s.append(step)
+        try:
+            step = step.next
+        except AttributeError:
+            step = None
+    print(len(s))
+    print(s.index(current_step))
+
+    progress = ((s.index(current_step) + 1) / len(s)) * 100
+
+    return int(progress)
+
+
 
 
 @login_required
