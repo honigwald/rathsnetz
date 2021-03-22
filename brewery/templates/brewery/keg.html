@@ -44,10 +44,10 @@
         <br>
         {% csrf_token %}
         {% if kegs != None %}
-            <input type="submit" class="btn btn-primary" name="edit" value="Bearbeiten">
+            <input type="submit" class="btn btn-primary btn-lg btn-block" name="edit" value="Bearbeiten">
         {% else %}
-            <input type="submit" class="btn btn-primary" name="save" value="Speichern">
-            <input type="button" class="btn btn-secondary" value="Abbrechen"  onclick="window.location.href = '{% url 'keg' %}';">
+            <input type="submit" class="btn btn-primary btn-lg btn-block" name="save" value="Speichern">
+            <input type="button" class="btn btn-secondary btn-lg btn-block" value="Abbrechen"  onclick="window.location.href = '{% url 'keg' %}';">
         {% endif %}
     </form>
 </div>
