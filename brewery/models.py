@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 from django.conf import settings
+from django.core.validators import MinValueValidator
 
 
 class Unit(models.Model):
@@ -21,7 +22,7 @@ class Storage(models.Model):
     name = models.CharField(max_length=200)
     type = models.ForeignKey(Type, on_delete=models.CASCADE)
     unit = models.ForeignKey(Unit, on_delete=models.CASCADE)
-    amount = models.FloatField()
+    amount = models.FloatField(validators=[MinValueValidator(0.0)])
     threshold = models.BooleanField(default=False)
     warning = models.IntegerField(default=-1)
     danger = models.IntegerField(default=-1)
@@ -51,6 +52,7 @@ class Step(models.Model):
     duration = models.DurationField(blank=True, null=True)
     ingredient = models.ForeignKey(Storage, on_delete=models.CASCADE, blank=True, null=True)
     amount = models.FloatField(blank=True, null=True)
+    unit = models.ForeignKey(Unit, on_delete=models.CASCADE, blank=True, null=True)
 
     def __str__(self):
         return "[" + str(self.recipe) + "] " + str(self.step) + ". " + str(self.title)
@@ -60,6 +62,8 @@ class Charge(models.Model):
     cid = models.CharField(max_length=200, blank=True, null=True)
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
     amount = models.IntegerField()
+    output = models.FloatField(blank=True, null=True)
+    evg = models.FloatField(blank=True, null=True)
     production = models.DateTimeField()
     duration = models.DurationField(blank=True, null=True)
     brewmaster = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, blank=True, null=True)

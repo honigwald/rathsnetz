@@ -86,7 +86,7 @@ def calculate_ingredients(charge):
         else:
             break
     ingredients['Wasser'] = [['Hauptguss', charge.recipe.hg * charge.amount / AMOUNT_FACTOR, 'Liter'],
-                             ['Nachguss', charge.recipe.ng * charge.amount  / AMOUNT_FACTOR, 'Liter']]
+                             ['Nachguss', charge.recipe.ng * charge.amount / AMOUNT_FACTOR, 'Liter']]
     return ingredients
 
 
@@ -110,12 +110,22 @@ def brewing(request, cid):
         logging.debug("brewing: Restoring session [Finished: Preparations]")
         step = c.current_step
         step.amount = (step.amount * c.amount) / AMOUNT_FACTOR if step.amount else step.amount
+        try:
+            s_next = step.next
+            s_next.amount = (s_next.amount * c.amount) / AMOUNT_FACTOR if s_next.amount else s_next.amount
+        except Step.DoesNotExist:
+            s_next = None
         context['charge'] = c
         context['t_start'] = datetime.now()
         context['step'] = step
+        context['s_next'] = s_next
         context['hint'] = Hint.objects.filter(step__id=step.id)
+        context['recipe'] = get_steps(c.recipe, c.amount)
+        context['hg'] = c.amount * c.recipe.hg / AMOUNT_FACTOR
+        context['ng'] = c.amount * c.recipe.ng / AMOUNT_FACTOR
         context['protocol'] = RecipeProtocol.objects.filter(charge=cid)
         context['form'] = BrewingProtocol()
+        context['progress'] = get_progress(c.recipe, step)
 
         return render(request, 'brewery/brewing.html', context)
 
@@ -149,15 +159,21 @@ def brewing(request, cid):
                 c.save()
                 step = Step.objects.get(pk=c.recipe.first)
                 step.amount = (step.amount * c.amount) / AMOUNT_FACTOR if step.amount else step.amount
+                s_next = step.next
+                s_next.amount = (s_next.amount * c.amount) / AMOUNT_FACTOR if s_next.amount else s_next.amount
                 context['step'] = step
+                context['s_next'] = s_next
                 context['t_start'] = datetime.now()
                 context['hint'] = Hint.objects.filter(step__id=step.id)
                 context['form'] = BrewingProtocol()
+                context['recipe'] = get_steps(c.recipe, c.amount)
+                context['hg'] = c.amount * c.recipe.hg / AMOUNT_FACTOR
+                context['ng'] = c.amount * c.recipe.ng / AMOUNT_FACTOR
+                context['progress'] = get_progress(c.recipe, step)
                 return render(request, 'brewery/brewing.html', context)
             else:
                 logging.debug("brewing: there are still preparations todo.")
                 context['ingredients'] = calculate_ingredients(c)
-                print(calculate_ingredients(c))
                 return render(request, 'brewery/brewing.html', context)
 
         # Brewing: get next step
@@ -186,14 +202,26 @@ def brewing(request, cid):
                     step = step.next
                     logging.debug("brewing: get next step: %s", step)
                     step.amount = (step.amount * c.amount) / AMOUNT_FACTOR if step.amount else step.amount
+                    try:
+                        s_next = step.next
+                        logging.debug("brewing: get new next step: %s", s_next)
+                        s_next.amount = (s_next.amount * c.amount) / AMOUNT_FACTOR if s_next.amount else s_next.amount
+                    except AttributeError:
+                        s_next = None
                     context['charge'] = c
                     context['t_start'] = datetime.now()
                     context['step'] = step
+                    context['s_next'] = s_next
                     context['hint'] = Hint.objects.filter(step__id=step.id)
                     context['protocol'] = RecipeProtocol.objects.filter(charge=cid)
                     context['form'] = BrewingProtocol()
+                    context['recipe'] = get_steps(c.recipe, c.amount)
+                    context['hg'] = c.amount * c.recipe.hg / AMOUNT_FACTOR
+                    context['ng'] = c.amount * c.recipe.ng / AMOUNT_FACTOR
+                    context['progress'] = get_progress(c.recipe, step)
                     c.current_step = step
                     c.save()
+                    logging.debug("brewing: context[recipe]: %s", context['recipe'])
                     return render(request, 'brewery/brewing.html', context)
                 # Brewing: Finished
                 except AttributeError:
@@ -215,6 +243,7 @@ def brewing(request, cid):
             logging.debug("brewing: calculate necessary ingredients")
             ingredients = calculate_ingredients(c)
             logging.debug("brewing: ingredients: %s", ingredients.values())
+            logging.debug("brewing: recipe: %s", Step.objects.filter(recipe=c.recipe))
             # Collecting all necessary preparations (finished and not finished)
             logging.debug("brewing: collecting necessary preparations")
             preps_form = [PreparationProtocolForm(prefix=str(item), instance=item) for item in preps]
@@ -266,10 +295,14 @@ def brewing_add(request):
 
 @login_required
 def protocol(request, cid):
+    context = {}
     c = Charge.objects.get(pk=cid)
-    p = RecipeProtocol.objects.filter(charge=c.id)
-    d = c.duration
-    context = {'protocol': p, 'charge': c, 'duration': d}
+    context['charge'] = c
+    context['protocol'] = RecipeProtocol.objects.filter(charge=c.id)
+    context['hg'] = c.amount * c.recipe.hg / AMOUNT_FACTOR
+    context['ng'] = c.amount * c.recipe.ng / AMOUNT_FACTOR
+    context['output'] = c.output
+    context['evg'] = c.evg
 
     if c.ispindel:
         context['plot'] = get_plot(c)
@@ -281,10 +314,14 @@ def protocol(request, cid):
 
 @login_required
 def fermentation(request, cid):
+    context = {}
     logging.debug("fermentation: starting")
     c = Charge.objects.get(pk=cid)
     f = FermentationProtocol.objects.filter(charge=c)
-    context = {'charge': c, 'fermentation': f, 'form': FermentationProtocolForm()}
+    context['charge'] = c
+    context['fermentation'] = f
+    context['form'] = FermentationProtocolForm()
+    context['cform'] = FinishFermentationForm()
 
     if request.POST:
         # checking if ispindel is activated
@@ -303,13 +340,25 @@ def fermentation(request, cid):
                 logging.debug("fermentation: saving fermentation data")
                 save_plot(c)
             logging.debug("fermentation: fermentation is finished. beer is ready for storing.")
-            return HttpResponseRedirect(reverse('brewing_overview'))
+            return HttpResponseRedirect(reverse('protocol', kwargs={'cid': c.id}))
+        if request.POST.get('save'):
+            c_form = FinishFermentationForm(request.POST, instance=c)
+            if c_form.is_valid():
+                c_form.save(commit=False)
+                c.finished = True
+                c.save()
+                c_form.save()
+                return HttpResponseRedirect(reverse('protocol', kwargs={'cid': c.id}))
+
+            context['cform'] = FinishFermentationForm(instance=c)
+            return render(request, 'brewery/fermentation.html', context)
 
         # checking for new measure point
         if request.POST.get('add_mp'):
             logging.debug("fermentation: adding new measure point")
             form = FermentationProtocolForm(request.POST)
             if form.is_valid():
+                logging.debug("fermentation: form.is_vald")
                 form = form.save(commit=False)
                 form.charge = c
                 form.step = FermentationProtocol.objects.filter(charge=c).count() + 1
@@ -455,15 +504,20 @@ def recipe(request):
     context = {'recipes': r}
     return render(request, 'brewery/recipe.html', context)
 
+
 ### HELPER FUNCTION
-def get_steps(rid):
+def get_steps(rid, amount):
     try:
         step = Step.objects.get(pk=rid.first)
     except Step.DoesNotExist:
         step = None
     s = []
     while step:
-        s.append(step)
+        if step.ingredient:
+            step.amount = (step.amount * amount) / AMOUNT_FACTOR
+            s.append(step)
+        else:
+            s.append(step)
         try:
             step = step.next
         except AttributeError:
@@ -471,10 +525,33 @@ def get_steps(rid):
     return s
 
 
+def get_progress(rid, current_step):
+    try:
+        step = Step.objects.get(pk=rid.first)
+    except Step.DoesNotExist:
+        step = None
+
+    s = []
+    while step:
+        s.append(step)
+        try:
+            step = step.next
+        except AttributeError:
+            step = None
+    print(len(s))
+    print(s.index(current_step))
+
+    progress = ((s.index(current_step) + 1) / len(s)) * 100
+
+    return int(progress)
+
+
+
+
 @login_required
 def recipe_detail(request, recipe_id):
     r = Recipe.objects.get(pk=recipe_id)
-    s = get_steps(r)    
+    s = get_steps(r, AMOUNT_FACTOR)
     p = Preparation.objects.filter(recipe=r)
 
     if request.method == 'POST':
@@ -513,7 +590,7 @@ def recipe_add(request):
 @login_required
 def recipe_edit(request, recipe_id):
     r = Recipe.objects.get(pk=recipe_id)
-    s = get_steps(r)
+    s = get_steps(r, AMOUNT_FACTOR)
     preps = SelectPreparation()
 
     # Get steps which aren't properly linked
@@ -673,12 +750,21 @@ def step_edit(request, recipe_id, step_id=None):
                     logging.debug("step.next: %s", s_has_next)
                     if s_has_next:
                         successor = Step.objects.get(pk=s_next_id)
-                        predecessor = Step.objects.get(pk=s_prev_id)
-                        step.prev = None
-                        step.save()
-                        successor.prev = predecessor
-                        successor.save()
-                        logging.debug("predecessor: %s -> %s\t successor: %s <- %s", predecessor.id, predecessor.next.id, successor.id, successor.prev.id)
+                        try:
+                            predecessor = Step.objects.get(pk=s_prev_id)
+                        except Step.DoesNotExist:
+                            predecessor = None
+                        if predecessor:
+                            step.prev = None
+                            step.save()
+                            successor.prev = predecessor
+                            successor.save()
+                            logging.debug("predecessor: %s -> %s\t successor: %s <- %s", predecessor.id, predecessor.next.id, successor.id, successor.prev.id)
+                        else:
+                            successor.prev = None
+                            successor.save()
+                            r.first = successor.id
+                            r.save()
                     step.prev = prev
                     step.save()
 

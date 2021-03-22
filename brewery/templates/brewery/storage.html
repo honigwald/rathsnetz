@@ -6,7 +6,7 @@
     <table class="table table-sm table-hover table-bordered" id="datatable">
         <thead class="thead-dark">
             <tr>
-                <th data-sortable="true">ID</th><th>Name</th> <th>Typ</th> <th>Anzahl</th> <th>Einheit</th>
+                <th data-sortable="true">ID</th><th>Name</th> <th>Typ</th> <th>Anzahl</th>
             </tr>
         </thead>
         <tbody>
@@ -21,15 +21,14 @@
                 <td>{{ item.id }}</td>
                 <td><a href="{% url 'storage_edit' item.id %}">{{ item.name }}</a></td>
                 <td>{{ item.type }}</td>
-                <td>{{ item.amount }}</td>
-                <td>{{ item.unit }}</td>
+                <td align="right">{{ item.amount|floatformat:1 }} {{ item.unit }}</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
-
+    <br>
     <form>
-        <input type="button" onclick="window.location.href = '{% url 'storage_add' %}';" value="Neue Pos."/>
+        <input type="button" class="btn btn-primary btn-lg btn-block" onclick="window.location.href = '{% url 'storage_add' %}';" value="Neue Position"/>
     </form>
 </div>
 

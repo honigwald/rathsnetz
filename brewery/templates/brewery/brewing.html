@@ -1,16 +1,27 @@
 {% extends 'brewery/base.html' %}
-{% block content %}
 
+{% block content %}
 <div class="container-sm">
     <h2>Brauen: {{ charge.amount }} Liter {{ charge.recipe }}</h2>
     {% if charge and charge.preps_finished %}
         <u>Rezept:</u> {{ charge.recipe.name }} <br>
         <u>Menge:</u> {{ charge.amount }} Liter <br>
+        <u>Wasser:</u> (HG: {{ hg }}l / NG: {{ ng }}l) <br>
         <u>Braumeister:</u> {{ charge.brewmaster }}
 
-        <div style="margin-top:10px; padding:5px; border:1px solid black;">
+    <br>
+    <br>
+    <div style="margin-top:10px; padding:5px; border:1px solid black; background-color:white;">
+        <h3><u>Fortschritt:</u></h3>
+        <div class="progress">
+            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="{{ progress }}" aria-valuemin="0" aria-valuemax="100" style="width: {{ progress }}%">
+                {{ progress }}%
+            </div>
+        </div>
+    </div>
+    <form action="" method="post">
+        <div style="margin-top:10px; padding:5px; border:1px solid black; background-color:white;">
             <h3><u>Aktuell:</u></h3>
-            <form action="" method="post">
                 {% csrf_token %}
                 <table class="table table-sm table-hover" style="vertical-align:top;">
                     <thead class="thead-dark">
@@ -23,69 +34,111 @@
                         <td>{{ step.step }}</td>
                         <td>{{ step.title }}</td>
                         <td>{{ step.description }}</td>
-                        {% if step.ingredient %}
-                            <td>{{ step.ingredient }}</td>
-                            <td>{{ step.amount }}</td>
-                        {% else %}
-                            <td></td><td></td>
-                        {% endif %}
-                        {% if step.duration %}
-                            <td>{{ step.duration }}</td>
-                        {% else %}
-                            <td></td>
-                        {% endif %}
+                        <td>{% if step.ingredient %}{{ step.ingredient }}{% endif %}</td>
+                        <td>{% if step.amount %}{{ step.amount }} {{ step.unit }}{% endif %}</td>
+                        <td>{% if step.duration %}{{ step.duration }}{% endif %}</td>
                         <td>{{ form.comment }}</td>
                     </tr>
                     </tbody>
                 </table>
                 {% if hint %}
-                <h3><u>Hinweis:</u></h3>
-                <ul>
-                    {% for h in hint %}
-                    <li>{{ h }}</li>
-                    {% endfor %}
-                </ul>
-                <br>
+                    <h3><u>Hinweis:</u></h3>
+                    <ul>
+                        {% for h in hint %}
+                        <li>{{ h }}</li>
+                        {% endfor %}
+                    </ul>
+                    <br>
                 {% endif %}
-                <br/>
-                {% if step.next %}
-                <input type="submit" name="brew_next" value="Weiter">
-                {% else %}
-                <input type="submit" name="brew_next" value="Speichern">
-                {% endif %}
-                <input type="hidden" name="charge" value="{{ charge.id }}">
-                <input type="hidden" name="t_start" value="{{ t_start|date:'YmdHisu' }} ">
-                <input type="hidden" name="step" value="{{ step.id }} ">
-            </form>
             <br/>
         </div>
 
-        <br><br>
-        <div style="margin-top:10px; padding:5px; border:1px solid black;">
-            <h3><u>Protokoll:</u></h3>
+        {% if step.next %}
+        <div style="margin-top:10px; padding:5px; border:1px solid black; background-color:white; opacity:0.5;">
+            <h3><u>Nächster Schritt:</u></h3>
+                <table class="table table-sm table-hover" style="vertical-align:top;">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>Schritt</th> <th>Titel</th> <th>Beschreibung</th> <th>Zutaten</th> <th>Menge</th> <th>Dauer</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="background-color:white;">
+                            <td>{{ s_next.step }}</td>
+                            <td>{{ s_next.title }}</td>
+                            <td>{{ s_next.description }}</td>
+                            <td>{% if s_next.ingredient %}{{ s_next.ingredient }}{% endif %}</td>
+                            <td>{% if s_next.amount %}{{ s_next.amount }} {{ s_next.unit }}{% endif %}</td>
+                            <td>{% if s_next.duration %}{{ s_next.duration }}{% endif %}</td>
+                        </tr>
+                    </tbody>
+                </table>
+          <a data-toggle="collapse" href="#collapseRecipe" aria-expanded="false" aria-controls="collapseRecipe">
+            <u>Aufklappen:</u>
+          </a>
+          <div class="collapse" id="collapseRecipe" aria-expanded="false" aria-controls="collapseProtocol">
             <table class="table table-sm table-hover" style="vertical-align:top;">
                 <thead class="thead-dark">
-                    <tr>
-                        <th>Schritt</th> <th>Titel</th> <th>Beschreibung</th> <th>Zutaten</th> <th>Menge</th> <th>Dauer</th> <th>Start</th> <th>Ende</th> <th>Notizen</th>
-                    </tr>
                 </thead>
                 <tbody>
-                {% for p in protocol %}
-                <tr>
-                    <td>{{ p.step }}</td>
-                    <td>{{ p.title }}</td>
-                    <td>{{ p.description }}</td>
-                    <td>{{ p.ingredient }}</td>
-                    <td>{{ p.amount }}</td>
-                    <td>{{ p.duration }}</td>
-                    <td>{{ p.tstart }}</td>
-                    <td>{{ p.tend }}</td>
-                    <td>{{ p.comment }}</td>
-                </tr>
+                {% for s in recipe %}
+                    {% if forloop.counter > step.next.step %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ s.title }}</td>
+                            <td>{{ s.description }}</td>
+                            <td>{% if s.ingredient %}{{ s.ingredient }}{% endif %}</td>
+                            <td style="white-space:nowrap;">{% if s.amount %}{{ s.amount }} {{ s.unit }}{% endif %}</td>
+                            <td>{% if s.duration %}{{ s.duration }}{% endif %}</td>
+                        </tr>
+                    {% endif %}
                 {% endfor %}
                 </tbody>
             </table>
+          </div>
         </div>
+        {% endif %}
+
+        <div style="margin-top:10px; padding:5px; border:1px solid black; background-color:white;">
+          <a data-toggle="collapse" href="#collapseProtocol" aria-expanded="false" aria-controls="collapseProtocol">
+            <h3><u>Protokoll:</u></h3>
+          </a>
+          <div class="collapse" id="collapseProtocol">
+                <table class="table table-sm table-hover" style="vertical-align:top;">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>Schritt</th> <th>Titel</th> <th>Beschreibung</th> <th>Zutaten</th> <th>Menge</th> <th>Dauer</th> <th>Start</th> <th>Ende</th> <th>Notizen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for p in protocol %}
+                    <tr>
+                        <td>{{ p.step }}</td>
+                        <td>{{ p.title }}</td>
+                        <td>{{ p.description }}</td>
+                        <td>{{ p.ingredient }}</td>
+                        <td>{{ p.amount }}</td>
+                        <td>{{ p.duration }}</td>
+                        <td>{{ p.tstart }}</td>
+                        <td>{{ p.tend }}</td>
+                        <td>{{ p.comment }}</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+          </div>
+        </div>
+        <br/>
+        {% if step.next %}
+            <input type="submit" class="btn btn-primary btn-lg btn-block" name="brew_next" value="Weiter">
+        {% else %}
+            <input type="submit" class="btn btn-primary btn-lg btn-block" name="brew_next" value="Gärung starten">
+        {% endif %}
+
+        <input type="hidden" name="charge" value="{{ charge.id }}">
+        <input type="hidden" name="t_start" value="{{ t_start|date:'YmdHisu' }} ">
+        <input type="hidden" name="step" value="{{ step.id }} ">
+    </form>
 
         {% elif charge and not charge.preparations %}
         <div style="margin-top:10px; padding:5px; border:1px solid black;">
@@ -111,10 +164,10 @@
             </table>
         </div>
 
+    <form action="" method="post">
+        {% csrf_token %}
         <div style="margin-top:10px; padding:5px; border:1px solid black;">
             <h3><u>Vorarbeiten</u></h3>
-            <form action="" method="post">
-                {% csrf_token %}
                 <table class="table table-hover table-sm">
                     <thead class="thead-dark">
                         <tr>
@@ -129,25 +182,18 @@
                     </tr>
                     {% endfor %}
                 </table>
-                <br>
-                <input type="submit" name="preps_save" value="Speichern">
-                <input type="submit" name="preps_next" value="Weiter">
-            </form>
         </div>
+        <br>
+        <input type="submit" class="btn btn-primary btn-lg btn-block" name="preps_next" value="Weiter">
+        <input type="submit" class="btn btn-secondary btn-lg btn-block" name="preps_save" value="Speichern">
+    </form>
     {% else %}
         <b><u>Hinweis:</u></b> Wähle Rezept, Menge und Braumeister.<br><br>
         <form action="" method="post">
             {% csrf_token %}
-            <table>
-            <tr>
-                <td>Rezept:</td><td>{{ form.recipe }}</td>
-            </tr><tr>
-                <td>Menge:</td><td>{{ form.amount }}</td>
-            </tr><tr>
-                <td>Braumeister:</td><td>{{ form.brewmaster }}</td>
-            </tr>
-            </table>
-            <input type="submit" name="create" value="Erstellen">
+            {{ form.as_table }}
+            <br>
+            <input type="submit" class="btn btn-primary btn-lg btn-block" name="create" value="Erstellen">
         </form>
     {% endif %}
 </div>

@@ -1,4 +1,7 @@
 {% extends 'brewery/base.html' %}
+{% block extrahead %}
+{% endblock %}
+
 {% block content %}
 <div class="container-sm">
     <h2>Fermentation</h2>
@@ -18,15 +21,16 @@
                 {% for f in fermentation %}
                 <tr>
                     <td>{{ f.date }}</td>
-                    <td>{{ f.plato }}</td>
                     <td>{{ f.temperature }}</td>
+                    <td>{{ f.plato }}</td>
                 </tr>
                 {% endfor %}
                 <tr>
+                    {{ form.media }}
                     <td>{{ form.date }}</td>
-                    <td>{{ form.plato }}</td>
                     <td>{{ form.temperature }}</td>
-                    <td><input type="submit" name="add_mp" value="Hinzufügen"></td>
+                    <td>{{ form.plato }}</td>
+                    <td><input type="submit" class="btn btn-secondary" name="add_mp" value="Hinzufügen"></td>
                 </tr>
                 </tbody>
             </table>
@@ -34,18 +38,23 @@
             </form>
             <form action="" method="post">
                 {% csrf_token %}
-                Fermentation beendet?<input type="checkbox" name="finished"> <br><br>
-                <input type="submit" name="save" value="Speichern">
+                {{ cform.media }}
+                {{ cform.as_table }}
+                <br>
+                <input type="submit" class="btn btn-primary btn-lg btn-block" name="save" value="Braugang abschließen">
             </form>
             <br/>
         {% elif charge.ispindel %}
             {% autoescape off %}
             {{ plot }}
             {% endautoescape %}
-            ISPINDEL
-            <br/>
-            Abgeschlossen?<input type="checkbox" name="finished"> <br><br>
-            <input type="submit" name="save" value="Speichern">
+            <form action="" method="post">
+                {% csrf_token %}
+                {{ cform.media }}
+                {{ cform.as_table }}
+                <br>
+                <input type="submit" class="btn btn-primary btn-lg btn-block" name="save" value="Braugang abschließen">
+            </form>
             <br/>
         {% else %}
             Willst du die iSpindel benutzen?
@@ -55,7 +64,7 @@
             <input type="radio" id="no" name="spindel" value=False>
             <label for="no">Nein</label>
             <br><br>
-            <input type="submit" name="next" value="Weiter">
+            <input type="submit" class="btn btn-primary btn-lg btn-block" name="next" value="Weiter">
             <br><br>
         {% endif %}
         </form>
