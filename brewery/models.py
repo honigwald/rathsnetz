@@ -61,6 +61,8 @@ class Charge(models.Model):
     cid = models.CharField(max_length=200, blank=True, null=True)
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
     amount = models.IntegerField()
+    output = models.FloatField(blank=True, null=True)
+    evg = models.FloatField(blank=True, null=True)
     production = models.DateTimeField()
     duration = models.DurationField(blank=True, null=True)
     brewmaster = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, blank=True, null=True)

@@ -2,7 +2,7 @@ from django import forms
 from django.forms import Form, ModelForm, Select, TextInput
 from django.contrib.auth.models import User
 from bootstrap_datepicker_plus import DateTimePickerInput, DatePickerInput
-from .models import Storage, Recipe, Step, Keg, Preparation, PreparationProtocol, FermentationProtocol
+from .models import Charge, Storage, Recipe, Step, Keg, Preparation, PreparationProtocol, FermentationProtocol
 from django.core.validators import EMPTY_VALUES, ValidationError
 from django.core import validators
 
@@ -61,10 +61,22 @@ class PreparationProtocolForm(ModelForm):
 
 
 class FermentationProtocolForm(ModelForm):
-    date = forms.DateTimeField(initial="2020-10-10 12:00:00")
     class Meta:
         model = FermentationProtocol
         fields = ['temperature', 'plato', 'date']
+        widgets = {'date': DateTimePickerInput()}
+
+
+class FinishFermentationForm(ModelForm):
+    output = forms.FloatField(required=True)
+    evg = forms.FloatField(required=True)
+
+    class Meta:
+        model = Charge
+        fields = ['output', 'evg']
+        widget = {'output': TextInput(attrs={'class': 'form-control'}),
+                  'evg': TextInput(attrs={'class': 'form-control mr-sm'})
+                  }
 
 
 class StepForm(ModelForm):

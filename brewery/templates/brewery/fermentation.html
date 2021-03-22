@@ -1,4 +1,7 @@
 {% extends 'brewery/base.html' %}
+{% block extrahead %}
+{% endblock %}
+
 {% block content %}
 <div class="container-sm">
     <h2>Fermentation</h2>
@@ -23,6 +26,7 @@
                 </tr>
                 {% endfor %}
                 <tr>
+                    {{ form.media }}
                     <td>{{ form.date }}</td>
                     <td>{{ form.plato }}</td>
                     <td>{{ form.temperature }}</td>
@@ -34,8 +38,17 @@
             </form>
             <form action="" method="post">
                 {% csrf_token %}
-                Fermentation beendet?<input type="checkbox" name="finished"> <br><br>
-                <input type="submit" name="save" value="Speichern">
+                <table>
+                    <tr>
+                        <td>Ausstoß:</td>
+                        <td>{{ c_form.output }}</td>
+                    </tr>
+                    <tr>
+                        <td>EVG:</td>
+                        <td>{{ c_form.evg }}</td>
+                    </tr>
+                </table>
+                <input type='submit' class='btn btn-primary' name='save' value='Braugang beenden'>
             </form>
             <br/>
         {% elif charge.ispindel %}
@@ -44,8 +57,21 @@
             {% endautoescape %}
             ISPINDEL
             <br/>
-            Abgeschlossen?<input type="checkbox" name="finished"> <br><br>
-            <input type="submit" name="save" value="Speichern">
+            <form action="" method="post">
+                {{ c_form.media }}
+                {% csrf_token %}
+                <table>
+                    <tr>
+                        <td>Ausstoß:</td>
+                        <td>{{ c_form.output }}</td>
+                    </tr>
+                    <tr>
+                        <td>EVG:</td>
+                        <td>{{ c_form.evg }}</td>
+                    </tr>
+                </table>
+                <input type='submit' class='btn btn-primary' name='save' value='Braugang beenden'>
+            </form>
             <br/>
         {% else %}
             Willst du die iSpindel benutzen?

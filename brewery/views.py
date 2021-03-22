@@ -291,6 +291,8 @@ def protocol(request, cid):
     context['protocol'] = RecipeProtocol.objects.filter(charge=c.id)
     context['hg'] = c.amount * c.recipe.hg / AMOUNT_FACTOR
     context['ng'] = c.amount * c.recipe.ng / AMOUNT_FACTOR
+    context['output'] = c.output
+    context['evg'] = c.evg
 
     if c.ispindel:
         context['plot'] = get_plot(c)
@@ -302,10 +304,14 @@ def protocol(request, cid):
 
 @login_required
 def fermentation(request, cid):
+    context = {}
     logging.debug("fermentation: starting")
     c = Charge.objects.get(pk=cid)
     f = FermentationProtocol.objects.filter(charge=c)
-    context = {'charge': c, 'fermentation': f, 'form': FermentationProtocolForm()}
+    context['charge'] = c
+    context['fermentation'] = f
+    context['form'] = FermentationProtocolForm()
+    context['c_form'] = FinishFermentationForm(instance=c)
 
     if request.POST:
         # checking if ispindel is activated
@@ -324,7 +330,18 @@ def fermentation(request, cid):
                 logging.debug("fermentation: saving fermentation data")
                 save_plot(c)
             logging.debug("fermentation: fermentation is finished. beer is ready for storing.")
-            return HttpResponseRedirect(reverse('brewing_overview'))
+            return HttpResponseRedirect(reverse('protocol', kwargs={'cid': c.id}))
+        if request.POST.get('save'):
+            c_form = FinishFermentationForm(request.POST, instance=c)
+            if c_form.is_valid():
+                c_form.save(commit=False)
+                c.finished = True
+                c.save()
+                c_form.save()
+                return HttpResponseRedirect(reverse('protocol', kwargs={'cid': c.id}))
+
+            context['c_form'] = FinishFermentationForm(instance=c)
+            return render(request, 'brewery/fermentation.html', context)
 
         # checking for new measure point
         if request.POST.get('add_mp'):
