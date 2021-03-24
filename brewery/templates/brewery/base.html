@@ -19,6 +19,9 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/1.10.22/css/dataTables.bootstrap4.min.css">
     <script src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.min.js"> </script>
     <script src="https://cdn.datatables.net/1.10.22/js/dataTables.bootstrap4.min.js"> </script>
+
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/timer.css' %}">
 </head>
 
 {% load static %}
@@ -30,22 +33,28 @@
             ">
     <div class="container">
         <header>
-            <nav class="navbar navbar-expand-sm navbar-dark navbar-fixed-top" style="background-color: rgba(52,58,64,0.9)">
+            <!--<nav class="navbar navbar-expand-sm navbar-dark navbar-fixed-top" style="background-color: rgba(52,58,64,0.9)">-->
+            <nav class="navbar navbar-expand-sm navbar-dark navbar-fixed-top" style="background-color: rgba(52,58,64,1">
                 <a class="navbar-brand" href="{% url 'index' %}">
                     <img src="{% static 'brewery/img/logo-white.png' %}" alt="Logo" style="width:35px;">
                 </a>
-                <ul class="navbar-nav">
-                    {% if user.is_authenticated %}
-                    <li class="nav-item"><a class="nav-link " href='{% url 'index' %}'>Übersicht</a></li>
-                    <li class="nav-item"><a class="nav-link " href='{% url 'keg' %}'>Bierblick</a></li>
-                    <li class="nav-item"><a class="nav-link " href='{% url 'brewing_overview' %}'>Brauen</a></li>
-                    <li class="nav-item"><a class="nav-link " href='{% url 'recipe' %}'>Rezepte</a></li>
-                    <li class="nav-item"><a class="nav-link " href='{% url 'storage' %}'>Lager</a></li>
-                    <li class="nav-item"><a class="nav-link " href='{% url 'logout' %}'>Logout</a></li>
-                    {% else %}
-                    <li class="nav-item"><a class="nav-link" href='{% url 'login' %}'>Login</a></li>
-                    {% endif %}
-                </ul>
+                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+                    <ul class="navbar-nav">
+                        {% if user.is_authenticated %}
+                        <li class="nav-item {% if navi == 'overview' %}active{% endif %}"><a class="nav-link " href='{% url 'index' %}'>Übersicht</a></li>
+                        <li class="nav-item {% if navi == 'kegs' %}active{% endif %}"><a class="nav-link " href='{% url 'keg' %}'>Bierblick</a></li>
+                        <li class="nav-item {% if navi == 'brewing' %}active{% endif %}"><a class="nav-link " href='{% url 'brewing_overview' %}'>Brauen</a></li>
+                        <li class="nav-item {% if navi == 'recipe' %}active{% endif %}"><a class="nav-link " href='{% url 'recipe' %}'>Rezepte</a></li>
+                        <li class="nav-item {% if navi == 'storage' %}active{% endif %}"><a class="nav-link " href='{% url 'storage' %}'>Lager</a></li>
+                        <li class="nav-item"><a class="nav-link " href='{% url 'logout' %}'>Logout</a></li>
+                        {% else %}
+                        <li class="nav-item"><a class="nav-link" href='{% url 'login' %}'>Login</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
             </nav>
         </header>
         <div class="container pt-5 pb-5" style="background-color: white">
