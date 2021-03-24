@@ -52,7 +52,7 @@ class EditKegContent(ModelForm):
     class Meta:
         model = Keg
         fields = ['content', 'status', 'notes', 'filling']
-        widgets = {'filling': DateTimePickerInput(),
+        widgets = {'filling': DateTimePickerInput(format='%d.%m.%Y %H:%M'),
                    'content': Select(attrs={'class': 'custom-select mr-sm'}),
                    'notes': TextInput(attrs={'class': 'form-control mr-sm'}),
                    'status': Select(attrs={'class': 'custom-select mr-sm'})
