@@ -13,6 +13,7 @@ from plotly.offline import plot
 from plotly.subplots import make_subplots
 from influxdb import InfluxDBClient
 
+
 ### STARTING WITH SOME CONFIGURATIONS
 # Used for recipe scaling
 AMOUNT_FACTOR = 100
@@ -24,7 +25,7 @@ logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 
 
 def index(request):
-    return render(request, 'brewery/index.html')
+    return render(request, 'brewery/index.html', {'navi': 'overview'})
 
 
 def protocol_step(charge, step, start_time):
@@ -57,7 +58,8 @@ def brewing_overview(request):
     active = Charge.objects.filter(finished=False)
     context = {
         'charge': c,
-        'active': active
+        'active': active,
+        'navi': "brewing"
     }
     return render(request, 'brewery/brewing_overview.html', context)
 
@@ -92,9 +94,10 @@ def calculate_ingredients(charge):
 
 @login_required
 def brewing(request, cid):
+    context = {}
     c = get_object_or_404(Charge, pk=cid)
     preps = PreparationProtocol.objects.filter(charge=c)
-    context = {}
+    context['navi'] = "brewing"
     # Charge finished. Goto protocol
     if c.finished:
         logging.debug("brewing: Charge finished [Finished: Preparations, Brewing, Fermentation]")
@@ -289,7 +292,7 @@ def brewing_add(request):
 
     else:
         charge_form = BrewingCharge()
-    context = {'form': charge_form}
+    context = {'form': charge_form, 'navi': 'brewing'}
     return render(request, 'brewery/brewing.html', context)
 
 
@@ -303,6 +306,7 @@ def protocol(request, cid):
     context['ng'] = c.amount * c.recipe.ng / AMOUNT_FACTOR
     context['output'] = c.output
     context['evg'] = c.evg
+    context['navi'] = 'brewing'
 
     if c.ispindel:
         context['plot'] = get_plot(c)
@@ -322,6 +326,7 @@ def fermentation(request, cid):
     context['fermentation'] = f
     context['form'] = FermentationProtocolForm()
     context['cform'] = FinishFermentationForm()
+    context['navi'] = 'brewing'
 
     if request.POST:
         # checking if ispindel is activated
@@ -502,6 +507,7 @@ def get_plot(charge):
 def recipe(request):
     r = Recipe.objects.all()
     context = {'recipes': r}
+    context['navi'] = 'recipe'
     return render(request, 'brewery/recipe.html', context)
 
 
@@ -550,6 +556,7 @@ def get_progress(rid, current_step):
 
 @login_required
 def recipe_detail(request, recipe_id):
+    context = {}
     r = Recipe.objects.get(pk=recipe_id)
     s = get_steps(r, AMOUNT_FACTOR)
     p = Preparation.objects.filter(recipe=r)
@@ -559,13 +566,17 @@ def recipe_detail(request, recipe_id):
             r.delete()
             return HttpResponseRedirect(reverse('recipe'))
 
-    context = {'recipe': r, 'steps': s, 'preparation': p}
+    context['recipe'] = r
+    context['steps'] = s
+    context['preparation'] = p
+    context['navi'] = 'recipe'
 
     return render(request, 'brewery/recipe_detail.html', context)
 
 
 @login_required
 def recipe_add(request):
+    context = {}
     if request.method == 'POST':
         add_recipe = AddRecipe(request.POST)
         select_preparation = SelectPreparation(request.POST)
@@ -582,13 +593,16 @@ def recipe_add(request):
 
     add_recipe = AddRecipe()
     select_preparation = SelectPreparation()
-    context = {'add_recipe': add_recipe, 'select_preparation': select_preparation}
+    context['add_recipe'] = add_recipe
+    context['select_preparation'] = select_preparation
+    context['navi'] = 'recipe'
 
     return render(request, 'brewery/recipe_add.html', context)
 
 
 @login_required
 def recipe_edit(request, recipe_id):
+    context = {}
     r = Recipe.objects.get(pk=recipe_id)
     s = get_steps(r, AMOUNT_FACTOR)
     preps = SelectPreparation()
@@ -615,7 +629,12 @@ def recipe_edit(request, recipe_id):
             return HttpResponseRedirect(reverse('recipe'))
 
     form = EditRecipe()
-    context = {'form': form, 'steps': s, 'recipe': r, 'unused': unused_steps, 'preps': preps}
+    context['form'] = form
+    context['steps'] = s
+    context['recipe'] = r
+    context['unused'] = unused_steps
+    context['preps'] = preps
+    context['navi'] = 'recipe'
 
     return render(request, 'brewery/recipe_edit.html', context)
 
@@ -790,17 +809,17 @@ def step_edit(request, recipe_id, step_id=None):
             return HttpResponseRedirect(reverse('recipe_edit', kwargs={'recipe_id': r.id}))
         else:
             logging.debug(dict(form.errors))
-            context = {'form': form, 'recipe': r}
+            context = {'form': form, 'recipe': r, 'navi': 'recipe'}
             return render(request, 'brewery/step_edit.html', context)
 
-    context = {'form': form, 'recipe': r}
+    context = {'form': form, 'recipe': r, 'navi': 'recipe'}
     return render(request, 'brewery/step_edit.html', context)
 
 
 @login_required
 def storage(request):
     items = Storage.objects.all()
-    context = {'storage': items}
+    context = {'storage': items, 'navi': 'storage'}
     return render(request, 'brewery/storage.html', context)
 
 
@@ -812,7 +831,7 @@ def storage_add(request):
             form.save()
             return HttpResponseRedirect(reverse('storage'))
 
-    context = {'storage': storage, 'form': form}
+    context = {'storage': storage, 'form': form, 'navi': 'storage'}
     return render(request, 'brewery/storage_add.html', context)
 
 
@@ -829,7 +848,7 @@ def storage_edit(request, s_id):
             if request.POST.get('delete'):
                 item.delete()
                 return HttpResponseRedirect(reverse('storage'))
-    context = {'form': form}
+    context = {'form': form, 'navi': 'storage'}
     return render(request, 'brewery/storage_edit.html', context)
 
 
@@ -837,11 +856,10 @@ def storage_edit(request, s_id):
 def keg(request):
     kegs = Keg.objects.all()
     if request.method == 'POST':
-        print("request.POST: %s" % request.POST)
         if request.POST.get('edit'):
             keg_forms = [EditKegContent(prefix=str(k), instance=k) for k in kegs]
             zipped_list = zip(kegs, keg_forms)
-            context = {'list': zipped_list}
+            context = {'list': zipped_list, 'navi': 'kegs'}
             return render(request, 'brewery/keg.html', context)
         if request.POST.get('save'):
             keg_forms = [EditKegContent(request.POST, prefix=str(k), instance=k) for k in kegs]
@@ -851,5 +869,6 @@ def keg(request):
 
             return HttpResponseRedirect(reverse('keg'))
     else:
-        context = {'kegs': kegs}
+        context = {'kegs': kegs, 'navi': 'kegs'}
         return render(request, 'brewery/keg.html', context)
+
