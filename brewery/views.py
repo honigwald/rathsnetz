@@ -271,7 +271,7 @@ def brewing_add(request):
                 yearly_production = Charge.objects.filter(production__contains=current_year + "-").count() + 1
                 current_year_month = datetime.now().strftime("%Y%m")
                 # Create new charge
-                c.cid = current_year_month + "." + str(yearly_production)
+                c.cid = current_year_month + "." + str(yearly_production).zfill(2)
                 c.recipe = charge_form.cleaned_data['recipe']
                 c.amount = charge_form.cleaned_data['amount']
                 c.brewmaster = charge_form.cleaned_data['brewmaster']
@@ -450,6 +450,7 @@ def get_plot(charge):
     points = q.get_points()
     for item in points:
         time.append(item['time'])
+        print("Time: {}".format(item['time']))
         # Polynomial: 0.000166916x^3 + -0.01470147x^2 + 0.679876283x + -10.536229152
         x = item['tilt']
         plato = (0.000166916 * pow(x, 3))
