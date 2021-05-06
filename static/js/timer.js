@@ -55,16 +55,26 @@ function initTimer(time) {
 
 function onTimesUp() {
   clearInterval(timerInterval);
-  document.getElementById('alert').play();
+  //document.getElementById('alert').play();
 }
 
 function startTimer() {
+  tStart = Date.now();
+  tEnd = tStart + TIME_LIMIT * 1000;
   timerInterval = setInterval(() => {
     timePassed = timePassed += 1;
-    timeLeft = TIME_LIMIT - timePassed;
+    timeLeft = Math.round((tEnd - Date.now())/1000);
     document.getElementById("base-timer-label").innerHTML = formatTime(
       timeLeft
     );
+    /*
+    document.getElementById("ts").innerHTML = "tStart: " + tStart + "<br>" 
+						+ "tNow: "+ Date.now() + "<br>"
+						+ "tRunning: " + Math.round((Date.now() - tStart) / 1000) + "<br>"
+						+ "tLeft: " + Math.round((tEnd - Date.now())/1000) + "<br>"
+						+ "tEnd: " + tEnd
+						;
+    */
     setCircleDasharray();
     setRemainingPathColor(timeLeft);
 
@@ -72,6 +82,11 @@ function startTimer() {
       onTimesUp();
     }
   }, 1000);
+}
+
+function stopTimer(time) {
+        clearInterval(timerInterval);        
+        initTimer(time);
 }
 
 function formatTime(time) {
