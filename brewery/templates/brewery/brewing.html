@@ -71,7 +71,7 @@
                     </script>
                     <br>
                     <button type="button" class="btn btn-primary btn-sm btn-block" onclick="startTimer()">Start</button>
-                    <button type="button" class="btn btn-danger btn-sm btn-block" onclick="initTimer({{ step.duration|seconds }})">Reset</button>
+                    <button type="button" class="btn btn-danger btn-sm btn-block" onclick="stopTimer({{ step.duration|seconds }})">Reset</button>
                 </div>
                 {% endif %}
 
