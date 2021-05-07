@@ -3,10 +3,40 @@
 
 <div class="container-sm">
     <h2>Lager</h2>
-    <table class="table table-sm table-hover table-bordered" id="datatable">
+    <div id="responsive">
+        <table id="storage" class="table table-sm table-hover table-bordered display responsive dataTable dtr-inline collapsed" width="100%">
+            <thead class="thead-dark">
+            <tr>
+                <th class="never">ID</th><th class="all">Name</th> <th data-sortable="true">Typ</th> <th class="desktop">Anzahl</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for item in storage %}
+            {% if item.threshold and item.amount <= item.danger %}
+            <tr class="table-danger">
+                {% elif  item.threshold and item.amount <= item.warning %}
+            <tr class="table-warning">
+                {% else %}
+            <tr>
+                {% endif %}
+                <td>{{ item.id }}</td>
+                <td><a href="{% url 'storage_edit' item.id %}">{{ item.name }}</a></td>
+                <td>{{ item.type }}</td>
+                <td align="right">{{ item.amount|floatformat:1 }} {{ item.unit }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+
+
+    </div>
+
+    <table class="table table-sm table-hover table-bordered" id="dtable" style="width: 100%;">
         <thead class="thead-dark">
             <tr>
-                <th data-sortable="true">ID</th><th>Name</th> <th>Typ</th> <th>Anzahl</th>
+                <th class="never">ID</th><th class="all">Name</th> <th data-sortable="true">Typ</th> <th class="desktop">Anzahl</th>
             </tr>
         </thead>
         <tbody>
@@ -31,5 +61,28 @@
         <input type="button" class="btn btn-primary btn-lg btn-block" onclick="window.location.href = '{% url 'storage_add' %}';" value="Neue Position"/>
     </form>
 </div>
+
+<script>
+$(document).ready(function() {
+    $('#storage').DataTable( {
+        "columns": [
+            { "data": "Id" },
+            { "data": "Name" },
+            { "data": "Typ" },
+            { "data": "Anzahl" },
+        ]
+    } );
+} );
+</script>
+<script>
+$(document).ready(function() {
+    var table = $('#dtable').DataTable( {
+        responsive: true
+    } );
+
+} );
+</script>
+
+
 
 {% endblock content %}
