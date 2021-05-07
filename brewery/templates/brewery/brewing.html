@@ -64,7 +64,7 @@
                 <div class="col-3" style="margin-top:10px; padding:5px; border:1px solid black;">
                     <h3><u>Timer:</u></h3>
                     <div id="timer"></div>
-                    <audio id="alert" src="{% static 'brewery/sc_laboratory_alert.mp3' %}" preload="auto"></audio>
+                    <audio id="alert" src="{% static 'misc/sc_laboratory_alert.mp3' %}" preload="auto"></audio>
                     <script src="{% static 'js/timer.js' %}"></script>
                     <script>
                         initTimer({{ step.duration|seconds }});

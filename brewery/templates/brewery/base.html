@@ -16,22 +16,29 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.7.14/js/bootstrap-datetimepicker.min.js"></script>
 
     <!-- datatable -->
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.22/css/dataTables.bootstrap4.min.css">
-    <script src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.min.js"> </script>
-    <script src="https://cdn.datatables.net/1.10.22/js/dataTables.bootstrap4.min.js"> </script>
+    <script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.24/js/dataTables.bootstrap4.min.js"> </script>
+    <script src="https://cdn.datatables.net/responsive/2.2.7/js/dataTables.responsive.min.js"></script>
 
+
+    <script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.css"></script>
+    <script src="https://cdn.datatables.net/1.10.24/css/dataTables.bootstrap4.min.css"></script>
+    <script src="https://cdn.datatables.net/responsive/2.2.7/css/responsive.bootstrap.min.css"></script>
+
+    <!-- fonts -->
     <link rel="preconnect" href="https://fonts.gstatic.com">
-<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400&display=swap" rel="stylesheet">
 
 
     {% load static %}
     <link rel="stylesheet" href="{% static 'css/default.css' %}">
     <link rel="stylesheet" href="{% static 'css/timer.css' %}">
+    <link rel="shortcut icon" type="image/x-icon" href="{% static 'img/fav.ico' %}">
 </head>
 
 {% load static %}
 <body class="bg-image"
-      style="   background-image: url('{% static 'brewery/img/bg.jpg' %}');
+      style="   background-image: url('{% static 'img/bg.jpg' %}');
                 background-size: 100%;
                 background-repeat: no-repeat;
                 background-color: black;
@@ -41,7 +48,7 @@
             <!--<nav class="navbar navbar-expand-sm navbar-dark navbar-fixed-top" style="background-color: rgba(52,58,64,0.9)">-->
             <nav class="navbar navbar-expand-sm navbar-dark navbar-fixed-top" style="background-color: rgba(52,58,64,1">
                 <a class="navbar-brand" href="{% url 'index' %}">
-                    <img src="{% static 'brewery/img/logo-white.png' %}" alt="Logo" style="width:35px;">
+                    <img src="{% static 'img/logo-white.png' %}" alt="Logo" style="width:35px;">
                 </a>
                 <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>

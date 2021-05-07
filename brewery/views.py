@@ -271,7 +271,7 @@ def brewing_add(request):
                 yearly_production = Charge.objects.filter(production__contains=current_year + "-").count() + 1
                 current_year_month = datetime.now().strftime("%Y%m")
                 # Create new charge
-                c.cid = current_year_month + "." + str(yearly_production)
+                c.cid = current_year_month + "." + str(yearly_production).zfill(2)
                 c.recipe = charge_form.cleaned_data['recipe']
                 c.amount = charge_form.cleaned_data['amount']
                 c.brewmaster = charge_form.cleaned_data['brewmaster']
@@ -363,7 +363,7 @@ def fermentation(request, cid):
             logging.debug("fermentation: adding new measure point")
             form = FermentationProtocolForm(request.POST)
             if form.is_valid():
-                logging.debug("fermentation: form.is_vald")
+                logging.debug("fermentation: form.is_valid")
                 form = form.save(commit=False)
                 form.charge = c
                 form.step = FermentationProtocol.objects.filter(charge=c).count() + 1
@@ -450,6 +450,7 @@ def get_plot(charge):
     points = q.get_points()
     for item in points:
         time.append(item['time'])
+        print("Time: {}".format(item['time']))
         # Polynomial: 0.000166916x^3 + -0.01470147x^2 + 0.679876283x + -10.536229152
         x = item['tilt']
         plato = (0.000166916 * pow(x, 3))
@@ -463,37 +464,52 @@ def get_plot(charge):
 
     fig = make_subplots(specs=[[{"secondary_y": True}]])
     fig.update_layout(
-        #title="iSpindel",
+        height=550,
         xaxis_title="Zeit",
-        yaxis_title="Vergärungsgrad",
-        yaxis_range=[-10, 40],
+        yaxis=dict(
+            title_text="Vergärungsgrad [°Plato]",
+            tickmode="array",
+        ),
         yaxis2=dict(
-            title="Grad Celius",
+            title="Temperatur [°C]",
             overlaying='y',
             side='right',
             range=[2, 30]
         ),
-        legend_title="Legende",
         font=dict(
             family="Courier New, monospace",
-            size=18,
+            size=14,
             color="RebeccaPurple"
-        )
+        ),
+        legend=dict(
+            yanchor="top",
+            xanchor="right",
+            y=0.95,
+            x=0.9
+        ),
+        hovermode='x',
     )
-    fig.add_trace(go.Scatter(x=time[1:-5], y=tilt[1:-15],
+    fig.update_yaxes(automargin=True)
+    config = {'responsive': True, 'modeBarButtonsToRemove': ['toggleSpikelines']}
+    fig.update_xaxes(showline=True, linewidth=2, linecolor='black')
+    fig.update_yaxes(showline=True, linewidth=2, linecolor='black')
+
+
+    fig.add_trace(go.Scatter(x=time[1:], y=tilt[1:],
                              line_shape='spline',
                              mode='lines',
                              name='Plato'),
                              secondary_y=False)
-    fig.add_trace(go.Scatter(x=time[1:-5], y=temperature[1:-15],
+    fig.add_trace(go.Scatter(x=time[1:], y=temperature[1:],
                              line_shape='spline',
                              mode='lines',
                              name='Temperatur'),
                              secondary_y=True)
-    fig.add_trace(go.Scatter(x=time[1:-5], y=battery[1:-15],
+    fig.add_trace(go.Scatter(x=time[1:], y=battery[1:],
                              line_shape='spline',
                              mode='lines',
-                             name='Batterie'))
+                             name='Batterie',
+                             visible='legendonly'))
 
     plt_div = plot(fig, output_type='div')
     client.close()
