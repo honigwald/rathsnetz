@@ -581,6 +581,8 @@ def recipe_detail(request, recipe_id):
         if request.POST.get('delete'):
             r.delete()
             return HttpResponseRedirect(reverse('recipe'))
+        if request.POST.get('add'):
+            return HttpResponseRedirect(reverse('step_add', kwargs={'recipe_id': r.id}))
 
     context['recipe'] = r
     context['steps'] = s
@@ -605,7 +607,7 @@ def recipe_add(request):
                 for item in select_preparation.cleaned_data['preparation']:
                     prep = get_object_or_404(Preparation, short=item)
                     prep.recipe.add(ar)
-            return HttpResponseRedirect(reverse('recipe_edit', kwargs={'recipe_id': ar.id}))
+            return HttpResponseRedirect(reverse('recipe_detail', kwargs={'recipe_id': ar.id}))
 
     add_recipe = AddRecipe()
     select_preparation = SelectPreparation()
@@ -822,7 +824,7 @@ def step_edit(request, recipe_id, step_id=None):
                 elem = elem.next
                 snr = snr + 1
 
-            return HttpResponseRedirect(reverse('recipe_edit', kwargs={'recipe_id': r.id}))
+            return HttpResponseRedirect(reverse('recipe_detail', kwargs={'recipe_id': r.id}))
         else:
             logging.debug(dict(form.errors))
             context = {'form': form, 'recipe': r, 'navi': 'recipe'}
