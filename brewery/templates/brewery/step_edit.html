@@ -1,17 +1,14 @@
 {% extends 'brewery/base.html' %}
 {% block content %}
-<h2>Step</h2>
-<table>
+{% load crispy_forms_tags %}
+
+<div class="container-sm">
+    <h2>Schritt hinzufügen</h2>
     <form action="" method="post">
         {% csrf_token %}
-        {{ form.as_table }}
-        <tr>
-            <td></td>
-            <td>
-                <input type="submit" name="save" value="Speichern">
-                <input type="button" value="Abbrechen"  onclick="window.location.href = '{% url 'recipe_edit' recipe.id %}';">
-            </td>
-        </tr>
+        {{ form|crispy }}
+        <input type="submit" class="btn btn-primary btn-lg btn-block" name="save" value="Speichern">
+        <input type="button" class="btn btn-secondary btn-lg btn-block" value="Abbrechen"  onclick="window.location.href = '{% url 'recipe_edit' recipe.id %}';">
     </form>
-</table>
+</div>
 {% endblock content %}
