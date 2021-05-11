@@ -40,7 +40,10 @@ INSTALLED_APPS = [
     'brewery',
     'bootstrap4',
     'bootstrap_datepicker_plus',
+    'crispy_forms',
 ]
+
+CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
