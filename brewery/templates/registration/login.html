@@ -1,7 +1,9 @@
 {% extends 'brewery/base.html' %}
+{% load crispy_forms_tags %}
 
 {% block content %}
-<h2>Login</h2>
+<div class="container">
+    <h2>Login</h2>
     {% if form.errors %}
     <p>Something went wrong!</p>
     {% endif %}
@@ -12,11 +14,10 @@
 
     <form method="post" action="{% url 'login' %}">
         {% csrf_token %}
+        {{ form|crispy }}
 
-        <p>User: {{ form.username }}</p>
-        <p>Password: {{ form.password }}</p>
-
-        <input type="submit" value="login">
+        <input type="submit" class="btn btn-primary btn-lg btn-block" name="save" value="Login">
         <input type="hidden" name="next" value="{{ next }}">
     </form>
+</div>
 {% endblock %}
