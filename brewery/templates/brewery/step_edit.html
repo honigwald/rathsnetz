@@ -8,7 +8,7 @@
         {% csrf_token %}
         {{ form|crispy }}
         <input type="submit" class="btn btn-primary btn-lg btn-block" name="save" value="Speichern">
-        <input type="button" class="btn btn-secondary btn-lg btn-block" value="Abbrechen"  onclick="window.location.href = '{% url 'recipe_edit' recipe.id %}';">
+        <input type="button" class="btn btn-secondary btn-lg btn-block" value="Abbrechen"  onclick="window.location.href = '{% url 'recipe_detail' recipe.id %}';">
     </form>
 </div>
 {% endblock content %}
