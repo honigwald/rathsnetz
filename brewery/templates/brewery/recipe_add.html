@@ -1,28 +1,26 @@
 {% extends 'brewery/base.html' %}
 {% block content %}
-<h2>Neues Rezept</h2>
-<b><u>Hinweis:</u></b> Das Rezept skaliert automatisch. 
-Hiefür muss das Rezept zwingend für <u>100 Liter</u> eingepflegt werden.<br><br>
+{% load crispy_forms_tags %}
 
-<form action="" method="post">
-    {% csrf_token %}
-    <table>
-    <tr>
-        <td>Rezeptname:</td><td>{{ add_recipe.name }}</td>
-    </tr>
-    <tr>
-        <td>Hauptguss:</td><td>{{ add_recipe.hg }}</td>
-    </tr>
-    <tr>
-        <td>Nachguss:</td><td>{{ add_recipe.ng }}</td>
-    </tr>
-    </table>
-    <h3>Vorarbeiten</h3>
-    <b><u>Hinweis:</u></b> Die Vorarbeiten müssen vor jedem Braugang durchgeführt werden.<br><br>
+<div class="container-sm">
+    <h2>Neues Rezept</h2>
+    <p style="color:red">
+        <b><u>Hinweis:</u></b> Das Rezept skaliert automatisch.
+        Hiefür muss das Rezept zwingend für <u>100 Liter</u> eingepflegt werden.<br>
+    </p>
 
-    Wähle die Vorarbeiten (Mehrfach: Strg + Klick):<br>
-    {{ select_preparation.preparation }}
-    <br><br>
-    <input type="submit" value="Erstellen">
-</form>
+    <form action="" method="post">
+        {% csrf_token %}
+        {{ add_recipe|crispy }}
+
+        <br>
+        <h3>Vorarbeiten</h3>
+        <b><u>Hinweis:</u></b> Die Vorarbeiten müssen vor jedem Braugang durchgeführt werden.<br><br>
+
+        Wähle die Vorarbeiten (Mehrfach: Strg + Klick):<br>
+        {{ select_preparation|crispy }}
+        <br><br>
+        <input type="submit" class="btn btn-primary btn-lg btn-block" name="add" value="Erstellen">
+    </form>
+</div>
 {% endblock content %}

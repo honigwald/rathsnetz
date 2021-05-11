@@ -1,58 +1,83 @@
 {% extends 'brewery/base.html' %}
 {% block content %}
-<h2>Bearbeiten</h2>
-<h3><u>Rezeptname:</u> {{ recipe.name }}</h3>
-<!--
-<h3><u>Vorarbeiten</u></h3>
-<b><u>Hinweis:</u></b> Die Vorarbeiten müssen vor jedem Braugang durchgeführt werden.<br><br>
+<div class="container-sm">
+    <h2>Bearbeiten</h2>
+    <h3><u>Rezeptname:</u> {{ recipe.name }}</h3>
+    <!--
+    <h3><u>Vorarbeiten</u></h3>
+    <b><u>Hinweis:</u></b> Die Vorarbeiten müssen vor jedem Braugang durchgeführt werden.<br><br>
 
-Wähle die Vorarbeiten (Mehrfach: Strg + Klick):<br>
-{{ preps.preparation }}
-<br><br>
--->
+    Wähle die Vorarbeiten (Mehrfach: Strg + Klick):<br>
+    {{ preps.preparation }}
+    <br><br>
+    -->
 
-<h3><u>Rezeptschritte</u></h3>
-{% if unused%}
-    <u><b style="font-size: 15px">Unzugeordnet:</b></u>
-    {% for step in unused %}
-        <a href='{% url 'step_edit' recipe_id=recipe.id step_id=step.id %}'>{{ step.title }}</a>, 
-    {% endfor %}
-{% endif %}
+    <h3><u>Rezeptschritte</u></h3>
+    {% if unused%}
+        <u><b style="font-size: 15px">Unzugeordnet:</b></u>
+        {% for step in unused %}
+            <a href='{% url 'step_edit' recipe_id=recipe.id step_id=step.id %}'>{{ step.title }}</a>,
+        {% endfor %}
+    {% endif %}
 
-<table>
-    <thead>
+    <table id="dt_r_edit" class="table table-sm table-hover table-bordered display dt-responsive dataTable dtr-inline collapsed" width="100%">
+        <thead>
+            <tr>
+                <th>Schritt</th> <th>Beschreibung</th> <th>Zutaten</th> <th>Anzahl</th> <th>Dauer</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for s in steps %}
         <tr>
-            <th>Schritt</th> <th>Titel</th> <th>Beschreibung</th> <th>Zutaten</th> <th>Anzahl</th> <th>Dauer</th><th></th>
+            <td><a href="{% url 'step_edit' recipe_id=recipe.id step_id=s.id %}"> {{ s.step }}. {{ s.title }}</a></td>
+            <td>{{ s.description }}</td>
+            <td>{% if s.ingredient %}{{ s.ingredient }}{% endif %}</td>
+            <td>{% if s.amount %}{{ s.amount }}{% endif %}</td>
+            <td>{% if s.duration %}{{ s.duration }}{% endif %}</td>
         </tr>
-    </thead>
-    <tbody>
-    {% for s in steps %}
-    <tr>
-        <td>{{ forloop.counter }}</td>
-        <td>{{ s.title }}</td>
-        <td>{{ s.description }}</td>
-        <td>{% if s.ingredient %}{{ s.ingredient }}{% endif %}</td>
-        <td>{% if s.amount %}{{ s.amount }}{% endif %}</td>
-        <td>{% if s.duration %}{{ s.duration }}{% endif %}</td>
-        <td>
-            <form action="" method="post">
-                {% csrf_token %}
-                <input type="button" onclick="window.location.href = '{% url 'step_edit' recipe_id=recipe.id step_id=s.id %}';" value="Bearbeiten"/>
-            </form>
-        </td>
-    </tr>
-    {% endfor %}
-        <form action="" method="post">
-            {% csrf_token %}
-            <tr>
-                <td><input type="submit" name="add" value="Schritt hinzufügen"> </td>
-                <td><input type="button" value="Zur&uuml;ck"  onclick="window.location.href = '{% url 'recipe_detail' recipe_id=recipe.id %}';"></td>
-            </tr>
-            <tr>
-                <td><input type="submit" onclick="return confirm('ACHTUNG! Löschen kann nicht rückgängig gemacht werden.');" name="delete" value="Rezept löschen"></td>
-            </tr>
-        </form>
-    </tbody>
-</table>
+        {% endfor %}
+        </tbody>
+    </table>
+    <form action="" method="post">
+        {% csrf_token %}
+        <input type="submit" class="btn btn-primary btn-lg btn-block" name="add" value="Schritt hinzufügen">
+        <input type="button" class="btn btn-secondary btn-lg btn-block" value="Zurück"  onclick="window.location.href = '{% url 'recipe_detail' recipe_id=recipe.id %}';">
+    </form>
+</div>
+
+<script>
+    $(document).ready(function() {
+        $('#dt_r_edit').DataTable( {
+            responsive: {
+                details: {
+                    display: $.fn.dataTable.Responsive.display.modal( {
+                        header: function ( row ) {
+                            var data = row.data();
+                            return data["Name"];
+                        }
+                    } ),
+                    renderer: $.fn.dataTable.Responsive.renderer.tableAll( {
+                        tableClass: 'table'
+                    } )
+                }
+            },
+            "paging": false,
+            "searching": false,
+            "info": false,
+            "pagingType": "numbers",
+            "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "Alle"]],
+            "language": {
+                search: "",
+                searchPlaceholder: "Suche",
+                 "paginate": {
+                    "previous": "Zurück",
+                    "next": "Vor"
+                 },
+                 "info": "Seite _PAGE_ von _PAGES_",
+                 "lengthMenu": "Zeige _MENU_ Einträge"
+            }
+        } );
+    } );
+    </script>
 
 {% endblock content %}

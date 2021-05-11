@@ -19,11 +19,44 @@
     <script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.10.24/js/dataTables.bootstrap4.min.js"> </script>
     <script src="https://cdn.datatables.net/responsive/2.2.7/js/dataTables.responsive.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.2.7/js/responsive.bootstrap4.min.js"></script>
 
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.24/css/dataTables.bootstrap4.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.2.7/css/responsive.bootstrap4.min.css">
 
-    <script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.css"></script>
-    <script src="https://cdn.datatables.net/1.10.24/css/dataTables.bootstrap4.min.css"></script>
-    <script src="https://cdn.datatables.net/responsive/2.2.7/css/responsive.bootstrap.min.css"></script>
+    <script>
+    $(document).ready(function() {
+        $('#datatable').DataTable( {
+            responsive: {
+                details: {
+                    display: $.fn.dataTable.Responsive.display.modal( {
+                        header: function ( row ) {
+                            var data = row.data();
+                            return data["Name"];
+                        }
+                    } ),
+                    renderer: $.fn.dataTable.Responsive.renderer.tableAll( {
+                        tableClass: 'table'
+                    } )
+                }
+            },
+            "info": false,
+            "pagingType": "numbers",
+            "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "Alle"]],
+            "language": {
+                search: "",
+                searchPlaceholder: "Suche",
+                 "paginate": {
+                    "previous": "Zurück",
+                    "next": "Vor"
+                 },
+                 "info": "Seite _PAGE_ von _PAGES_",
+                 "lengthMenu": "Zeige _MENU_ Einträge"
+            }
+        } );
+    } );
+    </script>
+
 
     <!-- fonts -->
     <link rel="preconnect" href="https://fonts.gstatic.com">
@@ -37,8 +70,7 @@
 </head>
 
 {% load static %}
-<body class="bg-image"
-      style="   background-image: url('{% static 'img/bg.jpg' %}');
+<body class="bg-image" style="   background-image: url('{% static 'img/bg.jpg' %}');
                 background-size: 100%;
                 background-repeat: no-repeat;
                 background-color: black;
@@ -74,10 +106,5 @@
     {% endblock content %}
         </div>
     </div>
-    <script>
-        $('#datatable').DataTable({
-            "pageLength": 15
-        });
-    </script>
 </body>
 </html>

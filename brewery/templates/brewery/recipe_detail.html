@@ -1,46 +1,85 @@
 {% extends 'brewery/base.html' %}
 {% block content %}
-<h2>Rezept: {{ recipe.name }}</h2>
-<u>Author:</u> {{ recipe.author }} <br>
-<u>Erstellt:</u> {{ recipe.creation |date:'d.M Y' }}
+<div class="container-sm">
+    <h2>Rezept: {{ recipe.name }}</h2>
+    <u>Author:</u> {{ recipe.author }} <br>
+    <u>Erstellt:</u> {{ recipe.creation |date:'d.M Y' }}
 
-<h3>Vorarbeiten</h3>
-<table class="table table-sm table-hover">
-    <tbody>
-    {% for p in preparation %}
-    <tr>
-        <td>{{ p.short }}<td>
-        <td>{{ p.detail }}<td>
-    </tr>
-    {% endfor %}
-    </tbody>
-</table>
-
-<h3>Braugang</h3>
-<table class="table table-sm table-hover">
-    <thead class="thead-dark">
+    <h3>Vorarbeiten</h3>
+    <table class="table table-sm table-hover">
+        <tbody>
+        {% for p in preparation %}
         <tr>
-            <th>Schritt</th> <th>Titel</th> <th>Beschreibung</th> <th>Zutaten</th> <th>Anzahl</th> <th>Dauer</th><th></th>
+            <td>{{ p.short }}<td>
+            <td>{{ p.detail }}<td>
         </tr>
-    </thead>
-    <tbody>
-    {% for s in steps %}
-    <tr>
-        <td>{{ forloop.counter }}</td>
-        <td>{{ s.title }}</td>
-        <td>{{ s.description }}</td>
-        <td>{% if s.ingredient %}{{ s.ingredient }}{% endif %}</td>
-        <td style="white-space:nowrap;">{% if s.amount %}{{ s.amount }} {{ s.unit }}{% endif %}</td>
-        <td>{% if s.duration %}{{ s.duration }}{% endif %}</td>
-    </tr>
-    {% endfor %}
-    </tbody>
-</table>
+        {% endfor %}
+        </tbody>
+    </table>
 
-<br><br>
-<form method="post" action="">
-    {% csrf_token %}
-    <input type="button" onclick="window.location.href = '{% url 'recipe_edit' recipe_id=recipe.id %}';" value="Bearbeiten"/>
-</form>
+    <h3>Braugang</h3>
+    <div id="responsive">
+        <table id="dt_r_detail" class="table table-sm table-hover display dt-responsive dataTable dtr-inline collapsed" width="100%">
+            <thead class="thead-dark">
+            <tr>
+                <th class="never"></th></th><th class="all">Schritt</th> <th class="all">Beschreibung</th> <th class="desktop">Zutaten</th> <th class="desktop">Anzahl</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for s in steps %}
+            <tr>
+                <td></td>
+                <td><a href="{% url 'step_edit' recipe_id=recipe.id step_id=s.id %}"> {{ s.step }}. {{ s.title }}</a></td>
+                <td>{{ s.description }} {% if s.duration %} für {{ s.duration }}{% endif %} </td>
+                <td>{% if s.ingredient %}{{ s.ingredient }}{% endif %}</td>
+                <td style="white-space:nowrap;">{% if s.amount %}{{ s.amount }} {{ s.unit }}{% endif %}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        <br><br>
+        <form action="" method="post">
+            {% csrf_token %}
+            <input type="submit" class="btn btn-primary btn-lg btn-block" name="add" value="Schritt hinzufügen">
+            <input type="button" class="btn btn-secondary btn-lg btn-block" value="Zurück"  onclick="window.location.href = '{% url 'recipe' %}';">
+        </form>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        $('#dt_r_detail').DataTable( {
+            buttons: [ 'colvis' ],
+            responsive: {
+                details: {
+                    display: $.fn.dataTable.Responsive.display.modal( {
+                        header: function ( row ) {
+                            var data = row.data();
+                            return data;
+                        }
+                    } ),
+                    renderer: $.fn.dataTable.Responsive.renderer.tableAll( {
+                        tableClass: 'table'
+                    } )
+                }
+            },
+            "paging": false,
+            "searching": false,
+            "info": false,
+            "pagingType": "numbers",
+            "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "Alle"]],
+            "language": {
+                search: "",
+                searchPlaceholder: "Suche",
+                 "paginate": {
+                    "previous": "Zurück",
+                    "next": "Vor"
+                 },
+                 "info": "Seite _PAGE_ von _PAGES_",
+                 "lengthMenu": "Zeige _MENU_ Einträge"
+            }
+        } );
+    } );
+    </script>
 
 {% endblock content %}

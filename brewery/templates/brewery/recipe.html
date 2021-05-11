@@ -3,18 +3,19 @@
 
 <div class="container-sm">
     <h2>Rezepte</h2>
-    <table class="table table-sm table-hover table-bordered" id="datatable">
+    <table class="table table-sm table-hover display dt-responsive dataTable dtr-inline collapsed" id="datatable" width="100%">
         <thead class="thead-dark">
             <tr>
-                <th>Name</th> <th>Author</th> <th>Erstellt</th>
+                <th class="never"></th><th class="all">Name</th> <th>Author</th> <th class="desktop">Erstellt</th>
             </tr>
         </thead>
         <tbody>
         {% for r in recipes %}
         <tr>
+            <td></td>
             <td><a href="{% url 'recipe_detail' r.id %}">{{ r.name }}</a></td>
             <td>{{ r.author }}</td>
-            <td>{{ r.creation|date:'d.M Y' }}</td>
+            <td>{{ r.creation|date:'d. M Y' }}</td>
         </tr>
         {% endfor %}
         </tbody>

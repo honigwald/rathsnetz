@@ -6,21 +6,23 @@
 <div class="container-sm">
     <h2>Liste des ewigen Bieres</h2>
     <form method="post" class="form">
-        <table class="table table-sm table-hover table-bordered" id="datatable">
+        <table id="datatable" class="table table-sm table-hover">
             <thead class="thead-dark">
             <tr>
-                <th>Keg</th> <th>Volumen</th> <th>Charge</th> <th>Inhalt</th> <th>Abfüllung</th> <th>Notizen</th> <th>Status</th>
+                <th class="never"></th><th class="always">Keg</th> <th class="desktop">Volumen</th> <th class="always">Inhalt</th>
+                <th class="desktop tablet-l">Charge</th> <th class="desktop">Abfüllung</th> <th class="desktop">Notizen</th> <th class="desktop tablet-l">Status</th>
             </tr>
             </thead>
             <tbody>
             {% if kegs != None %}
                 {% for k in kegs %}
                 <tr>
+                    <td></td>
                     <td>{{ k.id }}</td>
                     <td>{{ k.volume }}</td>
-                    <td>{% if k.content %}<a href="{% url 'protocol' k.content.id %}">{{ k.content }}</a>{% endif %}</td>
                     <td>{% if k.content %} {{ k.content.recipe }}{% endif %}</td>
-                    <td>{% if k.filling %} {{ k.filling }}{% endif %}</td>
+                    <td>{% if k.content %}<a href="{% url 'protocol' k.content.id %}">{{ k.content }}</a>{% endif %}</td>
+                    <td>{% if k.filling %} {{ k.filling|date:'d. M Y' }}{% endif %}</td>
                     <td>{% if k.notes %} {{ k.notes }}{% endif %}</td>
                     <td>{% if k.content %} {{ k.get_status_display }}{% endif %}</td>
                 </tr>
