@@ -88,7 +88,7 @@
                 <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
                     <ul class="navbar-nav">
                         {% if user.is_authenticated %}
-                        <li class="nav-item {% if navi == 'overview' %}active{% endif %}"><a class="nav-link " href='{% url 'index' %}'>Übersicht</a></li>
+                        <!--<li class="nav-item {% if navi == 'analyse' %}active{% endif %}"><a class="nav-link " href='{% url 'analyse' %}'>Analyse</a></li>-->
                         <li class="nav-item {% if navi == 'kegs' %}active{% endif %}"><a class="nav-link " href='{% url 'keg' %}'>Bierblick</a></li>
                         <li class="nav-item {% if navi == 'brewing' %}active{% endif %}"><a class="nav-link " href='{% url 'brewing_overview' %}'>Brauen</a></li>
                         <li class="nav-item {% if navi == 'recipe' %}active{% endif %}"><a class="nav-link " href='{% url 'recipe' %}'>Rezepte</a></li>
