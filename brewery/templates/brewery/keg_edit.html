@@ -1,0 +1,22 @@
+{% extends 'brewery/base.html' %}
+{% block extrahead %}
+{% endblock %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container-sm">
+    <h2>Keg </h2>
+    <form method="post" class="form">
+        {% csrf_token %}
+        {{ form }}
+        {{ form.media }}
+
+        <br> <br>
+        <br> <br>
+        <input type="submit" class="btn btn-primary btn-lg btn-block" name="save" value="Speichern" onclick="window.location.href = '{% url 'keg' %}';">
+        <input type="submit" class="btn btn-danger btn-lg btn-block" name="reset" value="Reset"  onclick="window.location.href = '{% url 'keg' %}';">
+    </form>
+</div>
+
+
+{% endblock content %}

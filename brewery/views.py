@@ -28,6 +28,10 @@ def index(request):
     return render(request, 'brewery/index.html', {'navi': 'overview'})
 
 
+def analyse(request):
+    return render(request, 'brewery/analyse.html', {'navi': 'analyse'})
+
+
 def protocol_step(charge, step, start_time):
     c = charge
     s = step
@@ -890,3 +894,22 @@ def keg(request):
         context = {'kegs': kegs, 'navi': 'kegs'}
         return render(request, 'brewery/keg.html', context)
 
+@login_required
+def keg_edit(request, keg_id):
+    keg = Keg.objects.get(pk=keg_id)
+    form = EditKegContent(prefix=str(keg), instance=keg)
+    if request.method == 'POST':
+        form = EditKegContent(request.POST, prefix=str(keg), instance=keg)
+        if form.is_valid():
+            if request.POST.get('save'):
+                form.save()
+                return HttpResponseRedirect(reverse('keg'))
+            if request.POST.get('reset'):
+                keg.content = None
+                keg.filling = None
+                keg.notes = None
+                keg.status = "Unverplant"
+                keg.save()
+                return HttpResponseRedirect(reverse('keg'))
+    context = {'form': form, 'navi': 'kegs'}
+    return render(request, 'brewery/keg_edit.html', context)

@@ -4,8 +4,10 @@ from . import views
 
 urlpatterns = [
     path('', views.index, name='index'),
+    path('analyse/', views.analyse, name='analyse'),
     path('fermentation/<int:cid>', views.fermentation, name='fermentation'),
     path('keg/', views.keg, name='keg'),
+    path('keg/<int:keg_id>', views.keg_edit, name='keg_edit'),
     path('storage/', views.storage, name='storage'),
     path('storage/add/', views.storage_add, name='storage_add'),
     path('storage/<int:s_id>/', views.storage_edit, name='storage_edit'),

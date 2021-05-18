@@ -5,53 +5,31 @@
 {% block content %}
 <div class="container-sm">
     <h2>Liste des ewigen Bieres</h2>
-    <form method="post" class="form">
+        <br>
         <table id="datatable" class="table table-sm table-hover">
             <thead class="thead-dark">
-            <tr>
-                <th class="never"></th><th class="always">Keg</th> <th class="desktop">Volumen</th> <th class="always">Inhalt</th>
-                <th class="desktop tablet-l">Charge</th> <th class="desktop">Abfüllung</th> <th class="desktop">Notizen</th> <th class="desktop tablet-l">Status</th>
-            </tr>
+                <tr>
+                    <th class="never"></th><th class="always">Keg / Inhalt</th>
+                    <th class="none">Charge</th> <th class="none">Abfüllung</th>
+                    <th class="desktop">Notizen</th> <th class="desktop tablet-l">Status</th>
+                    <th class="none">Volumen</th>
+                </tr>
             </thead>
             <tbody>
-            {% if kegs != None %}
                 {% for k in kegs %}
                 <tr>
                     <td></td>
-                    <td>{{ k.id }}</td>
-                    <td>{{ k.volume }}</td>
-                    <td>{% if k.content %} {{ k.content.recipe }}{% endif %}</td>
+                    <td>{{ k.id }} / <a href="{% url 'keg_edit' k.id %}">{% if k.content %} {{ k.content.recipe }}{% else %} -------------- {% endif %}</a></td>
                     <td>{% if k.content %}<a href="{% url 'protocol' k.content.id %}">{{ k.content }}</a>{% endif %}</td>
                     <td>{% if k.filling %} {{ k.filling|date:'d. M Y' }}{% endif %}</td>
                     <td>{% if k.notes %} {{ k.notes }}{% endif %}</td>
                     <td>{% if k.content %} {{ k.get_status_display }}{% endif %}</td>
+                    <td>{% if k.volume %} {{ k.volume }} l{% endif %}</td>
                 </tr>
                 {% endfor %}
-            {% else %}
-                {% for k, f in list %}
-                {{ f.media }}
-                <tr>
-                    <td>{{ k.id }}</td>
-                    <td>{{ k.volume }}</td>
-                    <td>{{ f.content }}</td>
-                    <td>{{ k.content.recipe }}</td>
-                    <td>{{ f.filling }}</td>
-                    <td>{{ f.notes }}</td>
-                    <td>{{ f.status }}</td>
-                </tr>
-                {% endfor %}
-            {% endif %}
             </tbody>
         </table>
         <br>
-        {% csrf_token %}
-        {% if kegs != None %}
-            <input type="submit" class="btn btn-primary btn-lg btn-block" name="edit" value="Bearbeiten">
-        {% else %}
-            <input type="submit" class="btn btn-primary btn-lg btn-block" name="save" value="Speichern">
-            <input type="button" class="btn btn-secondary btn-lg btn-block" value="Abbrechen"  onclick="window.location.href = '{% url 'keg' %}';">
-        {% endif %}
-    </form>
 </div>
 
 
