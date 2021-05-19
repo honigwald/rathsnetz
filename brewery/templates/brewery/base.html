@@ -90,10 +90,10 @@
                     <ul class="nav navbar-nav">
                         {% if user.is_authenticated %}
                         <!--<li class="nav-item {% if navi == 'analyse' %}active{% endif %}"><a class="nav-link " href='{% url 'analyse' %}'>Analyse</a></li>-->
-                        <li class="nav-item {% if navi == 'kegs' %}active{% endif %}"><a class="nav-link " href='{% url 'keg' %}'>Bierblick</a></li>
-                        <li class="nav-item {% if navi == 'brewing' %}active{% endif %}"><a class="nav-link " href='{% url 'brewing_overview' %}'>Brauen</a></li>
-                        <li class="nav-item {% if navi == 'recipe' %}active{% endif %}"><a class="nav-link " href='{% url 'recipe' %}'>Rezepte</a></li>
-                        <li class="nav-item {% if navi == 'storage' %}active{% endif %}"><a class="nav-link " href='{% url 'storage' %}'>Lager</a></li>
+                        <li class="nav-item {% if navi == 'kegs' %}active{% endif %}"><a class="nav-link" href="{% url 'keg' %}">Bierblick</a></li>
+                        <li class="nav-item {% if navi == 'brewing' %}active{% endif %}"><a class="nav-link" href="{% url 'brewing_overview' %}">Brauen</a></li>
+                        <li class="nav-item {% if navi == 'recipe' %}active{% endif %}"><a class="nav-link" href="{% url 'recipe' %}">Rezepte</a></li>
+                        <li class="nav-item {% if navi == 'storage' %}active{% endif %}"><a class="nav-link" href="{% url 'storage' %}">Lager</a></li>
                         {% endif %}
                     </ul>
                 </div>
@@ -114,9 +114,9 @@
                             <li class="nav-item"> <a class="nav-link"> Presse </a> </li>
                             <li class="nav-item"> <a class="nav-link"> Unterstützer </a> </li>
                             {% if user.is_authenticated %}
-                            <li class="nav-item"><a class="nav-link " href='{% url 'logout' %}'>Logout</a></li>
+                            <li class="nav-item"><a class="nav-link " href="{% url 'logout' %}">Logout</a></li>
                             {% else %}
-                            <li class="nav-item"><a class="nav-link" href='{% url 'login' %}'>Login</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Login</a></li>
                             {% endif %}
                         </ul>
                     </nav>
