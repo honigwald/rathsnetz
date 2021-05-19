@@ -49,12 +49,15 @@ footer {
     position: relative;
     background-color: white;
     height: 85%;
-    padding-bottom: 10px;
+    padding-bottom: 100px;
     z-index: 4;
 }
-.header {
+.bottom {
+    padding-bottom: 50px;
+}
+
+.head {
     /*background: rgba(52,58,64,1);*/
     background: black;
-    height: 4.125em;
     color: white;
 }
