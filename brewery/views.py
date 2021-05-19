@@ -847,12 +847,17 @@ def storage(request):
 
 @login_required
 def storage_add(request):
-    form = StorageAddItem(request.POST)
+    logging.debug("storage_add")
     if request.method == 'POST':
+        form = StorageAddItem(request.POST)
+        logging.debug("storage_add: POST")
         if form.is_valid():
+            logging.debug("storage_add: form is valid")
             form.save()
+
             return HttpResponseRedirect(reverse('storage'))
 
+    form = StorageAddItem()
     context = {'storage': storage, 'form': form, 'navi': 'storage'}
     return render(request, 'brewery/storage_add.html', context)
 

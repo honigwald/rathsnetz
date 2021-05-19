@@ -4,7 +4,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="container-sm">
+<div class="container-sm bottom">
     <h2>Brauen: {{ charge.amount }} Liter {{ charge.recipe }}</h2>
     {% if charge and charge.preps_finished %}
         <u>Rezept:</u> {{ charge.recipe.name }} <br>

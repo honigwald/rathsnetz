@@ -28,26 +28,9 @@
             </tbody>
         </table>
     </div>
-</div>
     <br>
     <form>
         <input type="button" class="btn btn-primary btn-lg btn-block" onclick="window.location.href = '{% url 'storage_add' %}';" value="Neue Position"/>
     </form>
-
-    <script>
-    $(document).ready(function() {
-        $('#storage').DataTable( {
-            "columns": [
-                { "data": "Id" },
-                { "data": "Name" },
-                { "data": "Typ" },
-                { "data": "Anzahl" },
-            ]
-        } );
-    } );
-    </script>
-
-
-
-
+</div>
 {% endblock content %}

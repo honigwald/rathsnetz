@@ -1,25 +1,17 @@
 {% extends 'brewery/base.html' %}
 {% block content %}
-<h2>Lager: Neue Position</h2>
+{% load crispy_forms_tags %}
 
-<form action="" method="post">
-{% csrf_token %}
-<table>
-        <tr>
-            <td>Name</td> <td> {{ form.name }} <td>
-        </tr>
-        <tr>
-            <td>Kategorie</td> <td> {{ form.type }}
-        </tr>
-        <tr>
-            <td>Anzahl</td> <td> {{ form.amount }} <td>
-        </tr>
-        <tr>
-            <td>Einheit</td> <td> {{ form.unit }}
-        </tr>
-</table>
-<br>
-<input type="button" class="btn btn-secondary" value="Abbrechen"  onclick="window.location.href = '{% url 'storage' %}';">
-<input type="submit" class="btn btn-primary" value="Speichern">
-</form>
+
+<div class="container-sm bottom">
+    <h2>Lager: Neue Position</h2>
+
+    <form action="" method="post">
+        {% csrf_token %}
+        {{ form|crispy }}
+        <br> <br>
+        <input type="submit" class="btn btn-primary btn-lg btn-block" name="save" value="Speichern">
+        <input type="submit" class="btn btn-secondary btn-lg btn-block" name="reset" value="Abbrechen"  onclick="window.location.href = '{% url 'storage' %}';">
+    </form>
+</div>
 {% endblock content %}
