@@ -53,7 +53,7 @@ def storage_delta(charge, step):
     required = charge.amount * step.amount / AMOUNT_FACTOR
     available = Storage.objects.get(name=step.ingredient).amount
     delta = available - required
-    return delta
+    return delta if delta > 0 else 0
 
 
 @login_required
