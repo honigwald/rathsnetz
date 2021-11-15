@@ -39,7 +39,14 @@ class StorageAddItem(ModelForm):
 class AddRecipe(ModelForm):
     class Meta:
         model = Recipe
-        fields = ['name', 'hg', 'ng']
+        fields = ['name', 'hg', 'ng', 'wort', 'ibu', 'boiltime']
+        widgets = {'name': TextInput(attrs={'class': 'form-control mr-sm', 'placeholder': 'Rezeptname'}),
+                   'hg': NumberInput(attrs={'class': 'form-control mr-sm', 'placeholder': 'Hauptguss [Litern]'}),
+                   'ng': NumberInput(attrs={'class': 'form-control mr-sm', 'placeholder': 'Nachguss [Litern]'}),
+                   'ibu': NumberInput(attrs={'class': 'form-control mr-sm', 'placeholder': 'Bittere [IBU]'}),
+                   'wort': NumberInput(attrs={'class': 'form-control mr-sm', 'placeholder': 'Stammürze in [°Plato]'}),
+                   'boiltime': NumberInput(attrs={'class': 'form-control mr-sm', 'placeholder': 'Kochzeit [Minuten]'}),
+                   }
 
 
 class EditRecipe(ModelForm):

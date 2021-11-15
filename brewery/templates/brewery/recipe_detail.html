@@ -3,7 +3,12 @@
 <div class="container-sm">
     <h2>Rezept: {{ recipe.name }}</h2>
     <u>Author:</u> {{ recipe.author }} <br>
-    <u>Erstellt:</u> {{ recipe.creation |date:'d.M Y' }}
+    <u>Erstellt:</u> {{ recipe.creation |date:'d.M Y' }} <br>
+    <u>Hauptguss:</u>{{ recipe.hg }} <br>
+    <u>Nachguss:</u>{{ recipe.ng }} <br>
+    <u>Kochzeit:</u>{{ recipe.boiltime }} <br>
+    <u>IBU:</u>{{ recipe.ibu }} <br>
+    <u>Stammwürze:</u>{{ recipe.wort }} <br>
 
     <h3>Vorarbeiten</h3>
     <table class="table table-sm table-hover">
