@@ -20,7 +20,7 @@
             <tr>
                 {% endif %}
                 <td>{{ item.id }}</td>
-                <td><a href="{% url 'storage_edit' item.id %}">{{ item.name }}</a></td>
+                <td><a href="{% url 'storage_edit' item.id %}">{{ item.name }} {% if item.alpha %} &#945; = {{ item.alpha }} {% endif %}</a></td>
                 <td>{{ item.type }}</td>
                 <td align="right">{{ item.amount|floatformat:1 }} {{ item.unit }}</td>
             </tr>

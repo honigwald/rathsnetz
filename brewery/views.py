@@ -858,8 +858,8 @@ def storage_add(request):
             return HttpResponseRedirect(reverse('storage'))
 
     form = StorageAddItem()
-    context = {'storage': storage, 'form': form, 'navi': 'storage'}
-    return render(request, 'brewery/storage_add.html', context)
+    context = {'storage': storage, 'form': form, 'navi': 'storage', 'called': 'add'}
+    return render(request, 'brewery/storage_edit.html', context)
 
 
 @login_required
@@ -875,7 +875,7 @@ def storage_edit(request, s_id):
             if request.POST.get('delete'):
                 item.delete()
                 return HttpResponseRedirect(reverse('storage'))
-    context = {'form': form, 'navi': 'storage'}
+    context = {'storage': storage, 'form': form, 'navi': 'storage', 'called': 'edit'}
     return render(request, 'brewery/storage_edit.html', context)
 
 

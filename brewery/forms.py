@@ -1,5 +1,5 @@
 from django import forms
-from django.forms import Form, ModelForm, Select, TextInput, NumberInput
+from django.forms import Form, ModelForm, Select, TextInput, NumberInput, NullBooleanField, BooleanField
 from django.contrib.auth.models import User
 from bootstrap_datepicker_plus import DateTimePickerInput, DatePickerInput
 from .models import Charge, Storage, Recipe, Step, Keg, Preparation, PreparationProtocol, FermentationProtocol
@@ -26,14 +26,26 @@ class BrewingProtocol(forms.Form):
 
 
 class StorageAddItem(ModelForm):
+    TRUE_FALSE_CHOICES = ((True, 'Aktiv'),
+                          (False, 'Inaktiv'))
     class Meta:
         model = Storage
-        fields = ['name', 'amount', 'type', 'unit']
+        fields = ['name', 'type', 'amount', 'unit', 'threshold', 'warning', 'danger']
         widgets = {'unit': Select(attrs={'class': 'custom-select mr-sm'}),
                    'name': TextInput(attrs={'class': 'form-control mr-sm'}),
                    'amount': TextInput(attrs={'class': 'form-control mr-sm'}),
-                   'type': Select(attrs={'class': 'custom-select mr-sm'})
-                   }
+                   'type': Select(attrs={'class': 'custom-select mr-sm'}),
+                   'warning': NumberInput(attrs={'class': 'form-control mr-sm'}),
+                   'danger': NumberInput(attrs={'class': 'form-control mr-sm'})
+        }
+        labels = {'name': 'Bezeichnung',
+                  'unit': 'Einheit',
+                  'amount': 'Menge',
+                  'type': 'Obergruppe',
+		  'warning': 'Grenzwert Warnung (Gelb)',
+		  'danger': 'Grenzwert Kritisch (Rot)'
+        }
+    threshold = forms.ChoiceField(choices = TRUE_FALSE_CHOICES, widget=forms.Select(), initial='False', label='Warnung bei geringem Bestand')
 
 
 class AddRecipe(ModelForm):

@@ -1,17 +1,39 @@
 {% extends 'brewery/base.html' %}
-{% block extrahead %}
-{% endblock %}
+{% block content %}
 {% load crispy_forms_tags %}
 
-{% block content %}
-<div class="container-sm">
+
+
+<div class="container-sm bottom">
+    {% if called == "add" %}
+    <h2>Lager: Neue Position</h2>
+    {% else %}
     <h2>Lager: Bearbeite Position</h2>
+    {% endif %}
 
     <form action="" method="post">
         {% csrf_token %}
         {{ form|crispy }}
+        <br> <br>
         <input type="submit" class="btn btn-primary btn-lg btn-block" name="save" value="Speichern">
         <input type="button" class="btn btn-secondary btn-lg btn-block" value="Abbrechen"  onclick="window.location.href = '{% url 'storage' %}';">
     </form>
 </div>
+
+<script>
+function Hide() {
+    console.log("Hide is running");
+    if(document.getElementById('id_threshold').value == "True") {
+         console.log("True");
+         document.getElementById('div_id_warning').style.display = '';
+         document.getElementById('div_id_danger').style.display = '';
+    } else {
+         console.log("False");
+         document.getElementById('div_id_warning').style.display = 'none';
+         document.getElementById('div_id_danger').style.display = 'none';
+    }
+}
+window.onload = Hide;
+document.getElementById('div_id_threshold').onchange = Hide;
+</script>
 {% endblock content %}
