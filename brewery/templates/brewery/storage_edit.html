@@ -22,18 +22,25 @@
 
 <script>
 function Hide() {
-    console.log("Hide is running");
+    var select_type = document.getElementById('id_type');
+    var option = select_type.options[select_type.selectedIndex];
+    console.log(option.text);
+    if(option.text == "Hopfen" || option.text == "hopfen") {
+         document.getElementById('div_id_alpha').style.display = '';
+    } else {
+         document.getElementById('div_id_alpha').style.display = 'none';
+    }
+
     if(document.getElementById('id_threshold').value == "True") {
-         console.log("True");
          document.getElementById('div_id_warning').style.display = '';
          document.getElementById('div_id_danger').style.display = '';
     } else {
-         console.log("False");
          document.getElementById('div_id_warning').style.display = 'none';
          document.getElementById('div_id_danger').style.display = 'none';
     }
 }
 window.onload = Hide;
 document.getElementById('div_id_threshold').onchange = Hide;
+document.getElementById('div_id_type').onchange = Hide;
 </script>
 {% endblock content %}

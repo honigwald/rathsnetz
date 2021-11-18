@@ -30,17 +30,19 @@ class StorageAddItem(ModelForm):
                           (False, 'Inaktiv'))
     class Meta:
         model = Storage
-        fields = ['name', 'type', 'amount', 'unit', 'threshold', 'warning', 'danger']
+        fields = ['name', 'type', 'amount', 'unit', 'alpha', 'threshold', 'warning', 'danger']
         widgets = {'unit': Select(attrs={'class': 'custom-select mr-sm'}),
                    'name': TextInput(attrs={'class': 'form-control mr-sm'}),
-                   'amount': TextInput(attrs={'class': 'form-control mr-sm'}),
+                   'amount': NumberInput(attrs={'class': 'form-control mr-sm'}),
                    'type': Select(attrs={'class': 'custom-select mr-sm'}),
+                   'alpha': NumberInput(attrs={'class': 'form-control mr-sm'}),
                    'warning': NumberInput(attrs={'class': 'form-control mr-sm'}),
                    'danger': NumberInput(attrs={'class': 'form-control mr-sm'})
         }
         labels = {'name': 'Bezeichnung',
                   'unit': 'Einheit',
                   'amount': 'Menge',
+                  'alpha': 'Alphasäure',
                   'type': 'Obergruppe',
 		  'warning': 'Grenzwert Warnung (Gelb)',
 		  'danger': 'Grenzwert Kritisch (Rot)'
