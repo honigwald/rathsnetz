@@ -1,5 +1,5 @@
 from django import forms
-from django.forms import Form, ModelForm, Select, TextInput, NumberInput, NullBooleanField, BooleanField
+from django.forms import Form, ModelForm, Select, TextInput, NumberInput, NullBooleanField, BooleanField, Textarea
 from django.contrib.auth.models import User
 from bootstrap_datepicker_plus import DateTimePickerInput, DatePickerInput
 from .models import Charge, Storage, Recipe, Step, Keg, Preparation, PreparationProtocol, FermentationProtocol
@@ -60,7 +60,7 @@ class AddRecipe(ModelForm):
                    'ibu': NumberInput(attrs={'class': 'form-control mr-sm', 'placeholder': 'Bittere [IBU]'}),
                    'wort': NumberInput(attrs={'class': 'form-control mr-sm', 'placeholder': 'Stammürze in [°Plato]'}),
                    'boiltime': NumberInput(attrs={'class': 'form-control mr-sm', 'placeholder': 'Kochzeit [Minuten]'}),
-                   }
+        }
 
 
 class EditRecipe(ModelForm):
@@ -110,12 +110,20 @@ class FinishFermentationForm(ModelForm):
 
 
 class StepForm(ModelForm):
-    description = forms.CharField(required=False)
-    duration = forms.DurationField(required=False)
-
     class Meta:
         model = Step
-        fields = ['prev', 'title', 'description', 'duration', 'ingredient', 'amount', 'unit']
+        fields = ['prev', 'category', 'title', 'description', 'duration', 'ingredient', 'amount', 'unit']
+        widgets = {'description': Textarea(attrs={'class': 'form-control mr-sm', 'rows': 4})
+	}
+        labels = {'prev': 'Vorgänger (wenn leer, dann als 1. Schritt einfügen)',
+                  'category': 'Kategorie',
+                  'titel': 'Titel',
+                  'description': 'Beschreibung',
+                  'duration': 'Dauer',
+                  'ingredient': 'Zutat',
+                  'amount': 'Menge',
+                  'unit': 'Einheit'
+        }
 
     def clean(self):
         ingredient = self.cleaned_data.get('ingredient', None)
