@@ -169,27 +169,39 @@
     </form>
 
         {% elif charge and not charge.preparations %}
-        <div style="margin-top:10px; padding:5px; border:1px solid black;">
+        <div id="ingredient_calculation">
             <h3><u>Kalkulierte Zutaten</u></h3>
             <table class="table table-sm table-hover" style="vertical-align:top;">
                 <thead class="thead-dark">
                     <tr>
                         <th>Kategorie</th><th>Zutat</th><th>Menge</th>
                     </tr>
-                {% for key, value in ingredients.items %}
                 </thead>
+                {% for key, value in ingredients.items %}
                 <tr>
-                    <td>{{ key }} </td>
+                    <td>{{ key }}</td>
                     {% for ingr in value %}
                         {% if forloop.counter > 1 %}
-                            </tr><tr><td></td>
+                            <tr></tr><td></td>
                         {% endif %}
                         <td>{{ ingr.0 }}</td>
                         <td>{{ ingr.1 }} {{ ingr.2 }}</td>
                     {% endfor %}
                 </tr>
                 {% endfor %}
+                {% for hop in calc_hop_ingr %}
+                    <tr>
+                    {% if forloop.counter == 1 %}
+                        <td>{{ hop.ingredient.type }}</td>
+                    {% else %}
+                        <td></td>
+                    {% endif %}
+                    <td>{{ hop.ingredient }}</td>
+                    <td>{{ hop.amount }} {{ hop.step.unit}} &#8594; {{ hop.ibu }} IBU</td>
+                    </tr>
+                {% endfor %}
             </table>
+
             {% if missing %}
             <div id="missing_ingredient">
                 <h5><u class="warning">Achtung! Folgende Zutaten sind nicht ausreichend im Lager vorhanden:</u></h5>
@@ -198,24 +210,38 @@
                         <li>{{ item }}</li>
                     {% endfor %}
                 </ol>
-            {% endif %}
             </div>
-            <p>
+            {% endif %}
+
+            <div id="hop_calculator">
                 <h5><u>Hopfenrechner</u><sup>1</sup></h5>
                 Soll-Wert: {{ charge.recipe.ibu }} IBU <br>
-                Ist-Wert: {{ total_ibu }} IBU
-            </p>
-            <p id="hop_calculation_warning">
-                <sup>1</sup><u class="warning">Hinweis:</u>
-                <br>
-                Der Hopfenrechner basiert auf der Formel von Glenn Tinseth und
-                ist in dieser Version nur oberflächlich geprüft. Unter
-                Berücksichtigung der &alpha;-Säure, wird eine mögliche Auswahl
-                an Hopfen aus dem Lager vorgeschlagen. Hierbei soll die im
-                Rezept vorgegebene Gesamtbittere erreicht werden. <br><br>
-                Jeder Braumeister ist angehalten das errechnete Ergebnis zu
-                überprüfen bzw. eigene Rechnungen aufzustellen.
-            </p>
+                Ist-Wert: {{ total_ibu }} IBU (= 
+                {% for item in calc_hop_ingr %}
+                    {% if forloop.counter > 1 %}
+                        +
+                    {% endif %}
+                    {{ item.ibu }}
+                {% endfor %}
+                )
+                </br></br>
+                <form action="" method="post">
+                    {% csrf_token %}
+                    <input type="submit" class="btn btn-info btn-lg" name="recalculate" value="Neu Berechnen">
+                </form>
+                <br><br>
+                <p class="warning">
+                    <sup>1</sup><u>Hinweis:</u>
+                    <br>
+                    Der Hopfenrechner basiert auf der Formel von Glenn Tinseth und
+                    ist in dieser Version nur oberflächlich geprüft. Unter
+                    Berücksichtigung der &alpha;-Säure, wird eine mögliche Auswahl
+                    an Hopfen aus dem Lager vorgeschlagen. Hierbei soll die im
+                    Rezept vorgegebene Gesamtbittere erreicht werden. <br><br>
+                    Jeder Braumeister ist angehalten das errechnete Ergebnis zu
+                    überprüfen bzw. eigene Rechnungen aufzustellen.
+                </p>
+            </div>
         </div>
 
     <form action="" method="post">

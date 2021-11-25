@@ -61,3 +61,31 @@ footer {
     background: black;
     color: white;
 }
+
+#ingredient_calculation {
+    margin-top: 10px;
+    padding: 5px;
+    border: 1px solid black;
+}
+
+#hop_calculator {
+    margin: 5px;
+padding: 20px;
+    border: 2px solid black;
+    border-radius: 5px;
+}
+
+#hop_calculator .warning {
+    font-size: 10px;
+    color: black;
+}
+
+#missing_ingredient {
+    margin: 5px;
+    padding: 5px;
+    border: 2px solid red;
+    border-radius: 5px;
+}
+.warning {
+    color: red;
+}
