@@ -190,6 +190,21 @@
                 </tr>
                 {% endfor %}
             </table>
+            {% if missing %}
+            <div id="missing_ingredient">
+                <h5><u class="warning">Achtung! Folgende Zutaten sind nicht ausreichend im Lager vorhanden:</u></h5>
+                <ol>
+                    {% for item in missing %}
+                        <li>{{ item }}</li>
+                    {% endfor %}
+                </ol>
+            {% endif %}
+            </div>
+            <p>
+                <h5><u>Hopfenrechner</u><sup>1</sup></h5>
+                Soll-Wert: {{ charge.recipe.ibu }} IBU <br>
+                Ist-Wert: {{ total_ibu }} IBU
+            </p>
             <p id="hop_calculation_warning">
                 <sup>1</sup><u class="warning">Hinweis:</u>
                 <br>
