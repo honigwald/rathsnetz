@@ -176,3 +176,14 @@ class PreparationProtocol(models.Model):
 
     def __str__(self):
         return str(self.charge.cid) + "_" + str(self.preparation.short)
+
+class HopCalculation(models.Model):
+    id = models.AutoField(primary_key=True)
+    charge = models.ForeignKey(Charge, on_delete=models.DO_NOTHING)
+    step = models.ForeignKey(Step, on_delete=models.DO_NOTHING)
+    ingredient = models.ForeignKey(Storage, on_delete=models.DO_NOTHING)
+    amount = models.FloatField()
+    ibu = models.FloatField()
+
+    def __str__(self):
+        return str(self.charge) + "_" + str(self.step.step)
