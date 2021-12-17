@@ -110,7 +110,7 @@ class Keg(models.Model):
         ('S', 'Verkauft'),
         ('D', 'Defekt'),
     )
-    content = models.ForeignKey(Charge, on_delete=models.CASCADE, blank=True, null=True, limit_choices_to={'finished': True})
+    content = models.ForeignKey(Charge, on_delete=models.SET_NULL, blank=True, null=True, limit_choices_to={'finished': True})
     status = models.CharField(max_length=1, default='F', choices=STATUS_CHOICES)
     notes = models.CharField(max_length=200, blank=True, null=True)
     volume = models.IntegerField()
