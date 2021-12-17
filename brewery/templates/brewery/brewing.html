@@ -75,9 +75,7 @@
                     <button type="button" class="btn btn-danger btn-sm btn-block" onclick="stopTimer({{ step.duration|seconds }})">Reset</button>
                 </div>
                 {% endif %}
-
             </div>
-
         </div>
 
 
@@ -113,7 +111,7 @@
                     {% if forloop.counter > step.next.step %}
                         <tr>
                             <td>{{ forloop.counter }}</td>
-                            <td>{{ s.title }}</td>
+                            <td>{% if s.title %}{{ s.title }}{% else %}{{ s.step.title}}{% endif %}</td>
                             <td>{{ s.description }}</td>
                             <td>{% if s.ingredient %}{{ s.ingredient }}{% endif %}</td>
                             <td style="white-space:nowrap;">{% if s.amount %}{{ s.amount }} {{ s.unit }}{% endif %}</td>

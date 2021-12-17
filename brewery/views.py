@@ -51,7 +51,10 @@ def protocol_step(charge, step, start_time):
 
 
 def storage_delta(charge, step):
-    required = charge.amount * step.amount / AMOUNT_FACTOR
+    if step.category == "Würzekochung":
+        required = step.amount
+    else:
+        required = charge.amount * step.amount / AMOUNT_FACTOR
     available = Storage.objects.get(id=step.ingredient.id).amount
     delta = available - required
     return delta if delta > 0 else 0
@@ -67,6 +70,14 @@ def brewing_overview(request):
         'navi': "brewing"
     }
     return render(request, 'brewery/brewing_overview.html', context)
+
+
+def load_calculated_hopping(step, hopping):
+    logging.debug("load_calculated_hopping")
+    step.amount = hopping[0].amount
+    step.ingredient = hopping[0].ingredient
+    step.description = "Hopfenrechner: " + str(hopping[0].ibu) + " IBU"
+    return step
 
 
 def glenn_tinseth_hop(charge, hop, progress, ibu):
@@ -237,17 +248,18 @@ def brewing(request, cid):
         logging.debug("brewing: Restoring session [Finished: Preparations]")
         step = c.current_step
         step.amount = (step.amount * c.amount) / AMOUNT_FACTOR if step.amount else step.amount
-        try:
-            s_next = step.next
-            s_next.amount = (s_next.amount * c.amount) / AMOUNT_FACTOR if s_next.amount else s_next.amount
-        except Step.DoesNotExist:
-            s_next = None
+        hopping = HopCalculation.objects.filter(charge=c).filter(step=step)
+        if step.category.name == "Würzekochung" and hopping:
+            step = load_calculated_hopping(step, hopping)
+        logging.debug("brewing: hopping: Left hops for %s is %s", step, hopping.count())
+        next_step = get_next_step(c, step)
+
         context['charge'] = c
         context['t_start'] = datetime.now()
         context['step'] = step
-        context['s_next'] = s_next
+        context['s_next'] = next_step
         context['hint'] = Hint.objects.filter(step__id=step.id)
-        context['recipe'] = get_steps(c.recipe, c.amount)
+        context['recipe'] = get_steps(c.recipe, c, c.amount)
         context['hg'] = c.amount * c.recipe.hg / AMOUNT_FACTOR
         context['ng'] = c.amount * c.recipe.ng / AMOUNT_FACTOR
         context['protocol'] = RecipeProtocol.objects.filter(charge=cid)
@@ -276,11 +288,11 @@ def brewing(request, cid):
             for pf in preps_form:
                 if pf.is_valid():
                     pf.save()
-            finished = not(preps.filter(check=False).exists())
+            preps_finished = not(preps.filter(check=False).exists())
             context = {'charge': c, 'list': zip(preps, preps_form)}
 
             # Check if preps are finished
-            if finished:
+            if preps_finished:
                 logging.debug("brewing: preparations finished")
                 c.preps_finished = True
                 c.save()
@@ -293,7 +305,7 @@ def brewing(request, cid):
                 context['t_start'] = datetime.now()
                 context['hint'] = Hint.objects.filter(step__id=step.id)
                 context['form'] = BrewingProtocol()
-                context['recipe'] = get_steps(c.recipe, c.amount)
+                context['recipe'] = get_steps(c.recipe, c, c.amount)
                 context['hg'] = c.amount * c.recipe.hg / AMOUNT_FACTOR
                 context['ng'] = c.amount * c.recipe.ng / AMOUNT_FACTOR
                 context['progress'] = get_progress(c.recipe, step)
@@ -305,70 +317,117 @@ def brewing(request, cid):
 
         # Brewing: get next step
         if request.POST.get('brew_next'):
-            logging.debug("brewing: get next step")
+            logging.debug("brewing: brew_next")
             cid = request.POST.get('charge')
             c = Charge.objects.get(pk=cid)
             p_form = BrewingProtocol(request.POST)
             step = c.current_step
-            logging.debug("brewing: step: %s", step)
+            hopping = None
+
+            # Check if current step contains hop, then load it's calculation
+            if step.category.name == "Würzekochung":
+                hopping = HopCalculation.objects.filter(charge=c).filter(step=step)
+                if hopping:
+                    step = load_calculated_hopping(step, hopping)
+                logging.debug("brewing: hopping for %s is %s", step, hopping.count())
+
             t_start = datetime.strptime(request.POST.get('t_start')[:-1], "%Y%m%d%H%M%S%f")
             if p_form.is_valid():
-                # Create step of protocol
-                logging.debug("brewing: saving finished step to protocol")
+                # Save current step to protocol
+                logging.debug("brewing: save current step %s to protocol", step)
                 p_step = protocol_step(c, step, t_start)
                 p_step.comment = p_form.cleaned_data['comment']
                 p_step.save()
                 # Update storage
                 if step.amount:
-                    logging.debug("brewing: calculate remaining amount of storage item. Ingredient: %s", step.ingredient)
-                    item = Storage.objects.get(id=step.ingredient.id)
-                    item.amount = storage_delta(c, step)
-                    item.save()
-                # Check if there is a next step
-                try:
-                    step = step.next
-                    logging.debug("brewing: get next step: %s", step)
-                    step.amount = (step.amount * c.amount) / AMOUNT_FACTOR if step.amount else step.amount
+                    logging.debug("brewing: calculate remaining amount of %s in stock.", step.ingredient)
+                    item_in_stock = Storage.objects.get(id=step.ingredient.id)
+                    item_in_stock.amount = storage_delta(c, step)
+                    item_in_stock.save()
+                    # delete first element of hop calculations
+                    if hopping:
+                        hopping = HopCalculation.objects.filter(charge=c).filter(step=step)
+                        logging.debug("brewing: delete first elemet (%s) of hop calculation's (%s).", hopping[0].ingredient, hopping)
+                        hopping[0].delete()
+
+                # Check if there still is hopping neccassary
+                if not hopping:
+                    # Check if there is a next step
                     try:
-                        s_next = step.next
-                        logging.debug("brewing: get new next step: %s", s_next)
-                        s_next.amount = (s_next.amount * c.amount) / AMOUNT_FACTOR if s_next.amount else s_next.amount
+                        step = step.next
+                        logging.debug("brewing: get next step: %s", step)
+                        step.amount = (step.amount * c.amount) / AMOUNT_FACTOR if step.amount else step.amount
+
+                        # Check if current step contains hop, then load it's calculation
+                        if step.category.name == "Würzekochung":
+                            hopping = HopCalculation.objects.filter(charge=c).filter(step=step)
+                            if hopping:
+                                step = load_calculated_hopping(step, hopping)
+                            logging.debug("brewing: hopping for %s is %s", step, hopping.count())
+
+                        cur_step_succ = get_next_step(c, step)
+                        logging.debug("brewing: get successor of %s. Successor: %s", step, cur_step_succ)
+
+                        context['charge'] = c
+                        context['t_start'] = datetime.now()
+                        context['step'] = step
+                        context['s_next'] = cur_step_succ
+                        context['hint'] = Hint.objects.filter(step__id=step.id)
+                        context['protocol'] = RecipeProtocol.objects.filter(charge=cid)
+                        context['form'] = BrewingProtocol()
+                        context['recipe'] = get_steps(c.recipe, c, c.amount)
+                        context['hg'] = c.amount * c.recipe.hg / AMOUNT_FACTOR
+                        context['ng'] = c.amount * c.recipe.ng / AMOUNT_FACTOR
+                        context['progress'] = get_progress(c.recipe, step)
+                        c.current_step = step
+                        c.save()
+                        return render(request, 'brewery/brewing.html', context)
+                    # Brewing: Finished
                     except AttributeError:
-                        s_next = None
+                        logging.debug("brewing: brewing process finished. continue with fermentation")
+                        # Calculate overall duration time
+                        c.duration = datetime.now() - c.production.replace(tzinfo=None)
+                        c.brewing_finished = True
+                        c.save()
+                        context['charge'] = c
+                        context['protocol'] = RecipeProtocol.objects.filter(charge=cid)
+                        return HttpResponseRedirect(reverse('fermentation', kwargs={'cid': c.id}))
+                else:
+                    logging.debug("brewing: Left hops for this step: %s", hopping.count())
+
+                    step = load_calculated_hopping(step, hopping)
+                    cur_step_succ = get_next_step(c, step)
+                    logging.debug("brewing: get successor of %s. Successor: %s", step, cur_step_succ)
+
                     context['charge'] = c
                     context['t_start'] = datetime.now()
                     context['step'] = step
-                    context['s_next'] = s_next
+                    context['s_next'] = cur_step_succ
                     context['hint'] = Hint.objects.filter(step__id=step.id)
                     context['protocol'] = RecipeProtocol.objects.filter(charge=cid)
                     context['form'] = BrewingProtocol()
-                    context['recipe'] = get_steps(c.recipe, c.amount)
+                    context['recipe'] = get_steps(c.recipe, c, c.amount)
                     context['hg'] = c.amount * c.recipe.hg / AMOUNT_FACTOR
                     context['ng'] = c.amount * c.recipe.ng / AMOUNT_FACTOR
                     context['progress'] = get_progress(c.recipe, step)
                     c.current_step = step
                     c.save()
-                    logging.debug("brewing: context[recipe]: %s", context['recipe'])
                     return render(request, 'brewery/brewing.html', context)
-                # Brewing: Finished
-                except AttributeError:
-                    logging.debug("brewing: brewing process finished. continue with fermentation")
-                    # Calculate overall duration time
-                    c.duration = datetime.now() - c.production.replace(tzinfo=None)
-                    c.brewing_finished = True
-                    c.save()
-                    context['charge'] = c
-                    context['protocol'] = RecipeProtocol.objects.filter(charge=cid)
-                    return HttpResponseRedirect(reverse('fermentation', kwargs={'cid': c.id}))
             # form validation error
             else:
                 logging.debug("brewing: something went wrong! seems that p_form is not valid.")
 
         # Preparations: start preparations
         else:
+            if request.POST.get('recalculate'):
+                c.hop_calculation_finished = False
+                c.save()
+                hops = HopCalculation.objects.filter(charge=c.id)
+                for hop in hops:
+                    hop.delete()
             # Collecting all necessary ingredients
             logging.debug("brewing: calculate necessary ingredients")
-            ingredients, total_ibu = calculate_ingredients(c)
+            ingredients = calculate_ingredients(c)
             logging.debug("brewing: ingredients: %s", ingredients.values())
             logging.debug("brewing: recipe: %s", Step.objects.filter(recipe=c.recipe))
             # Collecting all necessary preparations (finished and not finished)
@@ -383,7 +442,10 @@ def brewing(request, cid):
                     if not delta:
                         missing_ingredients.append(s.ingredient)
             calculated_hop_ingredients = HopCalculation.objects.filter(charge=c.id)
-            context = {'charge': c, 'list': zipped_list, 'ingredients': ingredients, 'total_ibu': round(total_ibu,1), 'missing': missing_ingredients, 'calc_hop_ingr': calculate_ingredients}
+            total_ibu = 0
+            for item in HopCalculation.objects.filter(charge=c):
+                total_ibu += item.ibu
+            context = {'charge': c, 'list': zipped_list, 'ingredients': ingredients, 'total_ibu': round(total_ibu,1), 'missing': missing_ingredients, 'calc_hop_ingr': calculated_hop_ingredients}
             return render(request, 'brewery/brewing.html', context)
 
 @login_required
@@ -657,7 +719,7 @@ def recipe(request):
 
 
 ### HELPER FUNCTION
-def get_steps(rid, amount):
+def get_steps(rid, charge, amount):
     try:
         step = Step.objects.get(pk=rid.first)
     except Step.DoesNotExist:
@@ -665,8 +727,23 @@ def get_steps(rid, amount):
     s = []
     while step:
         if step.ingredient:
-            step.amount = (step.amount * amount) / AMOUNT_FACTOR
-            s.append(step)
+            try:
+                hops = HopCalculation.objects.filter(charge=charge).filter(step=step)
+            except HopCalculation.DoesNotExist:
+                hops = None
+            if hops:
+                for idx, hop in enumerate(hops):
+                    if idx:
+                        add_step = Step.objects.get(id=step.id)
+                        step.next = add_step
+                        step = add_step
+                    step.description = str(hop.ibu) + "_berechnet"
+                    step.amount = hop.amount
+                    step.ingredient = hop.ingredient
+                    s.append(step)
+            else:
+                step.amount = (step.amount * amount) / AMOUNT_FACTOR
+                s.append(step)
         else:
             s.append(step)
         try:
@@ -674,6 +751,31 @@ def get_steps(rid, amount):
         except AttributeError:
             step = None
     return s
+
+def get_next_step(charge, step):
+    try:
+        hopping = HopCalculation.objects.filter(charge=charge).filter(step=step)
+        if step.category.name == "Würzekochung" and hopping and len(hopping) > 1:
+            next_step = Step.objects.get(id=step.id)
+            next_step.description = str(hopping[1].ibu) + "_berechnet"
+            next_step.amount = hopping[1].amount
+            next_step.ingredient = hopping[1].ingredient
+            return next_step
+        else:
+            next_step = step.next
+            logging.debug("brewing: get_next_step: %s", next_step)
+            next_step.amount = (next_step.amount * charge.amount) / AMOUNT_FACTOR if next_step.amount else next_step.amount
+            hopping = HopCalculation.objects.filter(charge=charge).filter(step=next_step)
+            if step.category.name == "Würzekochung" and hopping:
+                logging.debug("brewing: get_next_step: get calculated hoppings.")
+                #next_step = Step.objects.get(id=step.id)
+                next_step.description = str(hopping[0].ibu) + "_berechnet"
+                next_step.amount = hopping[0].amount
+                next_step.ingredient = hopping[0].ingredient
+    except Step.DoesNotExist:
+        next_step = None
+
+    return next_step
 
 
 def get_progress(rid, current_step):
@@ -689,8 +791,6 @@ def get_progress(rid, current_step):
             step = step.next
         except AttributeError:
             step = None
-    print(len(s))
-    print(s.index(current_step))
 
     progress = ((s.index(current_step) + 1) / len(s)) * 100
 
@@ -703,7 +803,7 @@ def get_progress(rid, current_step):
 def recipe_detail(request, recipe_id):
     context = {}
     r = Recipe.objects.get(pk=recipe_id)
-    s = get_steps(r, AMOUNT_FACTOR)
+    s = get_steps(r, None, AMOUNT_FACTOR)
     p = Preparation.objects.filter(recipe=r)
 
     if request.method == 'POST':
@@ -751,7 +851,7 @@ def recipe_add(request):
 def recipe_edit(request, recipe_id):
     context = {}
     r = Recipe.objects.get(pk=recipe_id)
-    s = get_steps(r, AMOUNT_FACTOR)
+    s = get_steps(r, None, AMOUNT_FACTOR)
     preps = SelectPreparation()
 
     # Get steps which aren't properly linked
