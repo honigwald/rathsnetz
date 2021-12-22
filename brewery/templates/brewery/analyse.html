@@ -4,19 +4,25 @@
     <h2>Analyse</h2>
     <div class="container">
         <div class="row">
-            <div class="col-sm" style="background-color:red">
-                Bier.Balance: (Income, Outcome)/(intern, extern)
+            <div class="col-sm-6" style="background-color:red">
+                Brauarten: Wie oft welches Bier
+                {% autoescape off %}
+                {{ cq_plt }}
+                {% endautoescape %}
             </div>
             <div class="col-sm" style="background-color:green">
-                Bier.Kuchen
+                Lagerbestand: Bier im Auge
+                {% autoescape off %}
+                {{ bis_plt }}
+                {% endautoescape %}
             </div>
         </div>
         <div class="row">
-            <div class="col-sm" style="background-color:yellow">
-                Balken
+            <div class="col-sm-6" style="background-color:yellow">
+                Bier.Balance: (Income, Outcome)/(intern, extern)
             </div>
             <div class="col-sm" style="background-color:blue">
-                Kuchen
+                Geld
             </div>
         </div>
     </div>

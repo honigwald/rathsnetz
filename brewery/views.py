@@ -29,8 +29,76 @@ def index(request):
     return render(request, 'brewery/index.html', {'navi': 'overview'})
 
 
+def get_charge_quantity():
+    cq = {}
+    recipes = Recipe.objects.all()
+    for r in recipes:
+        total = 0
+        charges = Charge.objects.filter(recipe=r).exclude(finished=False)
+        for c in charges:
+            total = total + c.amount
+        cq[r.name] = total
+    return cq
+
+
+def get_beer_in_stock():
+    bis = {}
+    kegs = Keg.objects.all().exclude(content=None)
+    for keg in kegs:
+        try:
+            bis[keg.content.recipe] = keg.volume + bis[keg.content.recipe]
+        except KeyError:
+            bis[keg.content.recipe] = keg.volume
+    return bis
+
+
 def analyse(request):
-    return render(request, 'brewery/analyse.html', {'navi': 'analyse'})
+    logging.debug("analyse: running now!")
+    cq = get_charge_quantity()
+    key = []
+    value = []
+    for k, v in cq.items():
+        key.append(k)
+        value.append(v)
+    trace = go.Pie(labels = key, values = value)
+    data = [trace]
+    cq_fig = go.Figure(data = data)
+    cq_fig.update_traces(textinfo='value')
+    cq_plt = plot(cq_fig, output_type='div')
+
+    bis = get_beer_in_stock()
+    logging.debug("analyse: bis %s", bis)
+    key.clear()
+    value.clear()
+    data = []
+    for k, v in bis.items():
+        key.append(k.name)
+        value.append(v)
+        data.append(go.Bar(name = k.name, x = [k.name], y = [v]))
+
+    bis_fig = go.Figure(data = data)
+    bis_fig.update_layout(
+        title='Lagerbestand: Bier im Auge',
+        xaxis_tickfont_size=14,
+        yaxis=dict(
+            title='Menge [Liter]',
+            titlefont_size=16,
+            tickfont_size=14,
+        ),
+        legend=dict(
+            x=0,
+            y=1.0,
+            bgcolor='rgba(255, 255, 255, 0)',
+            bordercolor='rgba(255, 255, 255, 0)'
+        ),
+        barmode='group',
+        bargap=0.3,
+    )
+    #bis_fig.update_traces(marker_color='green')
+
+    bis_plt = plot(bis_fig, output_type='div')
+
+    return render(request, 'brewery/analyse.html', {'navi': 'analyse', 'cq_plt': cq_plt, 'bis_plt': bis_plt})
 
 
 def protocol_step(charge, step, start_time):
