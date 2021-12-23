@@ -177,6 +177,7 @@ class PreparationProtocol(models.Model):
     def __str__(self):
         return str(self.charge.cid) + "_" + str(self.preparation.short)
 
+
 class HopCalculation(models.Model):
     id = models.AutoField(primary_key=True)
     charge = models.ForeignKey(Charge, on_delete=models.DO_NOTHING)
@@ -187,3 +188,24 @@ class HopCalculation(models.Model):
 
     def __str__(self):
         return str(self.charge) + "_" + str(self.step.step)
+
+
+class BeerOutput(models.Model):
+    id = models.AutoField(primary_key=True)
+    charge = models.ForeignKey(Charge, on_delete=models.DO_NOTHING)
+    amount = models.FloatField()
+    date = models.DateTimeField()
+
+    def __str__(self):
+        return str(self.id) + "_" + str(self.amount)
+
+
+class Account(models.Model):
+    id = models.AutoField(primary_key=True)
+    amount = models.FloatField()
+    income = models.BooleanField(default=False)
+    date = models.DateTimeField()
+    description = models.CharField(max_length=200)
+
+    def __str__(self):
+        return str(self.id) + "_" + str(self.date)

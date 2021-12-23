@@ -1,3 +1,5 @@
+import locale
+locale.setlocale(locale.LC_ALL, 'de_DE.UTF-8')
 import logging, sys, json
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
@@ -5,8 +7,9 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.db import transaction
 from datetime import datetime
+import pandas as pd
 from math import pow, exp
-from .models import Recipe, Step, Charge, RecipeProtocol, Keg, Hint, FermentationProtocol, HopCalculation
+from .models import Recipe, Step, Charge, RecipeProtocol, Keg, Hint, FermentationProtocol, HopCalculation, BeerOutput, Account
 from .forms import *
 
 import plotly.graph_objects as go
@@ -27,6 +30,50 @@ logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 
 def index(request):
     return render(request, 'brewery/index.html', {'navi': 'overview'})
+
+
+def get_account_balance():
+    ab = []
+    min_month = "2020-01"
+    max_month = "2020-12"
+    months = pd.date_range(min_month, max_month,freq='MS').strftime("%b").tolist()
+    ab.append(months)
+
+    total_amount = []
+    cur_month = datetime.now().month
+    for i in range(cur_month):
+        amount = 0
+        monthly_volume = Account.objects.all().filter(date__month=i+1)
+        for mv in monthly_volume:
+            if mv.income: 
+                amount = amount + mv.amount
+            else:
+                amount = amount - mv.amount
+        total_amount.append(amount)
+    ab.append(total_amount)
+    logging.debug(ab)
+    return ab
+
+def get_beer_balance():
+    bb = []
+    min_month = "2020-01"
+    max_month = "2020-12"
+    months = pd.date_range(min_month, max_month,freq='MS').strftime("%b").tolist()
+    bb.append(months)
+
+    total_amount = []
+    cur_month = datetime.now().month
+    for i in range(cur_month):
+        income_amount = output_amount = 0
+        income = Charge.objects.all().filter(production__month=i+1)
+        for c in income:
+            income_amount = income_amount + c.amount
+        output = BeerOutput.objects.all().filter(date__month=i+1)
+        for o in output:
+            output_amount = output_amount - o.amount
+        total_amount.append(income_amount + output_amount)
+    bb.append(total_amount)
+    return bb
 
 
 def get_charge_quantity():
@@ -64,6 +111,7 @@ def analyse(request):
     data = [trace]
     cq_fig = go.Figure(data = data)
     cq_fig.update_traces(textinfo='value')
+    cq_fig.update_layout(title='Total: Biermengen')
     cq_plt = plot(cq_fig, output_type='div')
 
     bis = get_beer_in_stock()
@@ -78,7 +126,7 @@ def analyse(request):
 
     bis_fig = go.Figure(data = data)
     bis_fig.update_layout(
-        title='Lagerbestand: Bier im Auge',
+        title='Lager: Bier im Auge',
         xaxis_tickfont_size=14,
         yaxis=dict(
             title='Menge [Liter]',
@@ -94,11 +142,39 @@ def analyse(request):
         barmode='group',
         bargap=0.3,
     )
-    #bis_fig.update_traces(marker_color='green')
-
     bis_plt = plot(bis_fig, output_type='div')
 
-    return render(request, 'brewery/analyse.html', {'navi': 'analyse', 'cq_plt': cq_plt, 'bis_plt': bis_plt})
+    bb_data = get_beer_balance()
+    bb_fig = go.Figure(go.Waterfall(
+        name = "20", orientation = "v",
+        #measure = ["relative", "relative", "total", "relative", "relative", "total"],
+        x = bb_data[0],
+        #textposition = "inside",
+        #text = ["+60", "+80", "", "-40", "-20", "Total"],
+        totals = {"marker":{"color":"deep sky blue", "line":{"color":"blue", "width":3}}},
+        y = bb_data[1],
+        connector = {"line":{"color":"rgb(63, 63, 63)"}},
+    ))
+
+    bb_fig.update_layout(title = "Bier.Balance: Eingang/Ausgang", waterfallgap = 0.1)
+    bb_plt = plot(bb_fig, output_type='div')
+
+    ab_data = get_account_balance()
+    ab_fig = go.Figure(go.Waterfall(
+        name = "20", orientation = "v",
+        #measure = ["relative", "relative", "total", "relative", "relative", "total"],
+        x = ab_data[0],
+        #textposition = "inside",
+        #text = ["+60", "+80", "", "-40", "-20", "Total"],
+        totals = {"marker":{"color":"deep sky blue", "line":{"color":"blue", "width":3}}},
+        y = ab_data[1],
+        connector = {"line":{"color":"rgb(63, 63, 63)"}},
+    ))
+
+    ab_fig.update_layout(title = "Geld.Balance: Eingang/Ausgang", waterfallgap = 0.1)
+    ab_plt = plot(ab_fig, output_type='div')
+
+    return render(request, 'brewery/analyse.html', {'navi': 'analyse', 'cq_plt': cq_plt, 'bis_plt': bis_plt, 'bb_plt': bb_plt, 'ab_plt': ab_plt})
 
 
 def protocol_step(charge, step, start_time):
@@ -1203,6 +1279,12 @@ def keg_edit(request, keg_id):
                 form.save()
                 return HttpResponseRedirect(reverse('keg'))
             if request.POST.get('reset'):
+                output = BeerOutput()
+                output.charge = keg.content
+                output.amount = keg.volume
+                output.date = datetime.now()
+                output.save()
+
                 keg.content = None
                 keg.filling = None
                 keg.notes = None
