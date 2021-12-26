@@ -101,20 +101,32 @@ class FermentationProtocolForm(ModelForm):
 
 
 class FinishFermentationForm(ModelForm):
-    output = forms.FloatField(required=True, widget=forms.NumberInput(attrs={'class': 'form-control mr-sm', 'placeholder': 'Ausstoß in Liter'}))
-    evg = forms.FloatField(required=True, widget=forms.NumberInput(attrs={'class': 'form-control mr-sm', 'placeholder': '°Plato'}))
+    output = forms.FloatField(required=True,
+                              widget=forms.NumberInput(attrs={'class': 'form-control mr-sm', 'placeholder': 'Ausstoß in Liter'}),
+                              label='Ausstoß:')
+    evg = forms.FloatField(required=True,
+                           widget=forms.NumberInput(attrs={'class': 'form-control mr-sm', 'placeholder': '°Plato'}),
+                           label='EVG:')
 
     class Meta:
         model = Charge
         fields = ['output', 'evg']
 
 
+class KegSelectForm(ModelForm):
+    id = forms.ModelMultipleChoiceField(queryset=Keg.objects.filter(content=None),
+                                        required=False,
+                                        label = 'Schon abgefüllt? Wähle hier die KEGs:')
+    class Meta:
+        model = Keg
+        fields = ['id']
+
+
 class StepForm(ModelForm):
     class Meta:
         model = Step
         fields = ['prev', 'category', 'title', 'description', 'duration', 'ingredient', 'amount', 'unit']
-        widgets = {'description': Textarea(attrs={'class': 'form-control mr-sm', 'rows': 4})
-	}
+        widgets = {'description': Textarea(attrs={'class': 'form-control mr-sm', 'rows': 4})}
         labels = {'prev': 'Vorgänger (wenn leer, dann als 1. Schritt einfügen)',
                   'category': 'Kategorie',
                   'titel': 'Titel',

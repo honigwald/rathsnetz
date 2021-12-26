@@ -3,6 +3,7 @@
 {% endblock %}
 
 {% block content %}
+{% load crispy_forms_tags %}
 <div class="container-sm">
     <h2>Fermentation</h2>
     <div style="margin-top:10px; padding:5px; border:1px solid black;">
@@ -38,8 +39,9 @@
             </form>
             <form action="" method="post">
                 {% csrf_token %}
-                {{ cform.media }}
-                {{ cform.as_table }}
+                {{ cform|crispy }}
+                <br>
+                {{ f_keg_select|crispy }}
                 <br>
                 <input type="submit" class="btn btn-primary btn-lg btn-block" name="save" value="Braugang abschließen">
             </form>
@@ -50,8 +52,9 @@
             {% endautoescape %}
             <form action="" method="post">
                 {% csrf_token %}
-                {{ cform.media }}
-                {{ cform.as_table }}
+                {{ cform|crispy }}
+                <br>
+                {{ f_keg_select|crispy }}
                 <br>
                 <input type="submit" class="btn btn-primary btn-lg btn-block" name="save" value="Braugang abschließen">
             </form>

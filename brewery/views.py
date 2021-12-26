@@ -6,6 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.db import transaction
+from django.utils import timezone
 from datetime import datetime
 import pandas as pd
 from math import pow, exp
@@ -661,6 +662,7 @@ def fermentation(request, cid):
     context['fermentation'] = f
     context['form'] = FermentationProtocolForm()
     context['cform'] = FinishFermentationForm()
+    context['f_keg_select'] = KegSelectForm()
     context['navi'] = 'brewing'
 
     if request.POST:
@@ -683,13 +685,19 @@ def fermentation(request, cid):
             return HttpResponseRedirect(reverse('protocol', kwargs={'cid': c.id}))
         if request.POST.get('save'):
             c_form = FinishFermentationForm(request.POST, instance=c)
+            f_keg_select = KegSelectForm(request.POST)
             if c_form.is_valid():
                 c_form.save(commit=False)
                 c.finished = True
                 c.save()
                 c_form.save()
-                return HttpResponseRedirect(reverse('protocol', kwargs={'cid': c.id}))
+                if f_keg_select.is_valid():
+                    for keg in f_keg_select.cleaned_data['id']:
+                        keg.content = c
+                        keg.filling = timezone.now()
+                        keg.save()
 
+                return HttpResponseRedirect(reverse('protocol', kwargs={'cid': c.id}))
             context['cform'] = FinishFermentationForm(instance=c)
             return render(request, 'brewery/fermentation.html', context)
 
