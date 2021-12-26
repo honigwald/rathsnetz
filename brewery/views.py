@@ -746,7 +746,7 @@ def save_plot(charge):
     logging.debug("save_plot: done.")
 
     # Cleanup
-    query = 'DROP measurement "measurements"'
+    query = 'DELETE FROM "measurements"'
     client.query(query)
     logging.debug("save_plot: cleaning up.")
 
