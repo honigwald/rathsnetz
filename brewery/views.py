@@ -1243,6 +1243,7 @@ def storage_add(request):
 def storage_edit(request, s_id):
     item = Storage.objects.get(pk=s_id)
     form = StorageAddItem(instance=item)
+    form.fields['alpha'].disabled = True
     if request.method == 'POST':
         form = StorageAddItem(request.POST, instance=item)
         if form.is_valid():
