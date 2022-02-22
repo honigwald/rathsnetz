@@ -172,7 +172,7 @@ class PreparationProtocol(models.Model):
     id = models.AutoField(primary_key=True)
     charge = models.ForeignKey(Charge, on_delete=models.CASCADE)
     preparation = models.ForeignKey(Preparation, on_delete=models.CASCADE)
-    check = models.BooleanField()
+    done = models.BooleanField()
 
     def __str__(self):
         return str(self.charge.cid) + "_" + str(self.preparation.short)

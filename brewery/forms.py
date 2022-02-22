@@ -1,7 +1,7 @@
 from django import forms
 from django.forms import Form, ModelForm, Select, TextInput, NumberInput, NullBooleanField, BooleanField, Textarea
 from django.contrib.auth.models import User
-from bootstrap_datepicker_plus import DateTimePickerInput, DatePickerInput
+from bootstrap_datepicker_plus.widgets import DateTimePickerInput, DatePickerInput
 from .models import Charge, Storage, Recipe, Step, Keg, Preparation, PreparationProtocol, FermentationProtocol
 from django.core.validators import EMPTY_VALUES, ValidationError
 from django.core import validators
@@ -28,6 +28,7 @@ class BrewingProtocol(forms.Form):
 class StorageAddItem(ModelForm):
     TRUE_FALSE_CHOICES = ((True, 'Aktiv'),
                           (False, 'Inaktiv'))
+
     class Meta:
         model = Storage
         fields = ['name', 'type', 'amount', 'unit', 'alpha', 'threshold', 'warning', 'danger']
@@ -44,8 +45,8 @@ class StorageAddItem(ModelForm):
                   'amount': 'Menge',
                   'alpha': 'Alphasäure',
                   'type': 'Obergruppe',
-		  'warning': 'Grenzwert Warnung (Gelb)',
-		  'danger': 'Grenzwert Kritisch (Rot)'
+                  'warning': 'Grenzwert Warnung (Gelb)',
+                  'danger': 'Grenzwert Kritisch (Rot)'
         }
     threshold = forms.ChoiceField(choices = TRUE_FALSE_CHOICES, widget=forms.Select(), initial='False', label='Warnung bei geringem Bestand')
 
@@ -87,7 +88,7 @@ class SelectPreparation(Form):
 class PreparationProtocolForm(ModelForm):
     class Meta:
         model = PreparationProtocol
-        fields = ['check']
+        fields = ['done']
 
 
 class FermentationProtocolForm(ModelForm):

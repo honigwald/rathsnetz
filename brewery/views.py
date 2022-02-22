@@ -433,7 +433,7 @@ def brewing(request, cid):
             for pf in preps_form:
                 if pf.is_valid():
                     pf.save()
-            preps_finished = not(preps.filter(check=False).exists())
+            preps_finished = not(preps.filter(done=False).exists())
             context = {'charge': c, 'list': zip(preps, preps_form)}
 
             # Check if preps are finished
@@ -621,7 +621,7 @@ def brewing_add(request):
                     preps_protocol = PreparationProtocol()
                     preps_protocol.charge = c
                     preps_protocol.preparation = p
-                    preps_protocol.check = False
+                    preps_protocol.done = False
                     preps_protocol.save()
 
                 return HttpResponseRedirect(reverse('brewing', kwargs={'cid': c.id}))
