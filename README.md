@@ -9,7 +9,11 @@ It was specially designed to fit all the needs of http://bäkebräu.de.
 Following packages are necessary:
 - django
 - plotly
-- influxdbclient
+- django-bootstrap4
+- django-crispy-forms
+- django-bootstrap-datepicker-plus
+- pandas
+- influxdb
 
 # Documentation
 in progress...
