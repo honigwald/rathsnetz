@@ -35,16 +35,17 @@ def index(request):
 
 def get_account_balance():
     ab = []
-    min_month = "2020-01"
-    max_month = "2020-12"
+    min_month = "2022-01"
+    max_month = "2022-12"
     months = pd.date_range(min_month, max_month,freq='MS').strftime("%b").tolist()
     ab.append(months)
 
     total_amount = []
     cur_month = datetime.now().month
-    for i in range(cur_month):
+    cur_year = datetime.now().year
+    for i in range(12):
         amount = 0
-        monthly_volume = Account.objects.all().filter(date__month=i+1)
+        monthly_volume = Account.objects.all().filter(date__year=cur_year).filter(date__month=i+1)
         for mv in monthly_volume:
             if mv.income: 
                 amount = amount + mv.amount
@@ -64,12 +65,13 @@ def get_beer_balance():
 
     total_amount = []
     cur_month = datetime.now().month
-    for i in range(cur_month):
+    cur_year = datetime.now().year
+    for i in range(12):
         income_amount = output_amount = 0
-        income = Charge.objects.all().filter(production__month=i+1)
+        income = Charge.objects.all().filter(production__year=cur_year).filter(production__month=i+1)
         for c in income:
             income_amount = income_amount + c.amount
-        output = BeerOutput.objects.all().filter(date__month=i+1)
+        output = BeerOutput.objects.all().filter(date__year=cur_year).filter(date__month=i+1)
         for o in output:
             output_amount = output_amount - o.amount
         total_amount.append(income_amount + output_amount)
@@ -91,12 +93,17 @@ def get_charge_quantity():
 
 def get_beer_in_stock():
     bis = {}
-    kegs = Keg.objects.all().exclude(content=None)
-    for keg in kegs:
+    beer = Keg.objects.all().exclude(content=None)
+    for keg in beer:
         try:
-            bis[keg.content.recipe] = keg.volume + bis[keg.content.recipe]
+            bis[keg.content.recipe.name] = keg.volume + bis[keg.content.recipe.name]
         except KeyError:
-            bis[keg.content.recipe] = keg.volume
+            bis[keg.content.recipe.name] = keg.volume
+
+    empty = Keg.objects.all().filter(content=None)
+    bis["Leer"] = 0
+    for keg in empty:
+        bis["Leer"] = bis["Leer"] + keg.volume
     return bis
 
 
@@ -121,9 +128,9 @@ def analyse(request):
     value.clear()
     data = []
     for k, v in bis.items():
-        key.append(k.name)
+        key.append(k)
         value.append(v)
-        data.append(go.Bar(name = k.name, x = [k.name], y = [v]))
+        data.append(go.Bar(name = k, x = [k], y = [v]))
 
     bis_fig = go.Figure(data = data)
     bis_fig.update_layout(
