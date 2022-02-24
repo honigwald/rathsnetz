@@ -109,32 +109,21 @@ def get_beer_in_stock():
 
 def analyse(request):
     logging.debug("analyse: running now!")
+    config = {'displayModeBar': False}
+    ### BIER TOTAL
     cq = get_charge_quantity()
     key = []
     value = []
+    data = []
     for k, v in cq.items():
         key.append(k)
         value.append(v)
-    trace = go.Pie(labels = key, values = value)
-    data = [trace]
-    cq_fig = go.Figure(data = data)
-    cq_fig.update_traces(textinfo='value')
-    cq_fig.update_layout(title='Total: Biermengen')
-    cq_plt = plot(cq_fig, output_type='div')
-
-    bis = get_beer_in_stock()
-    logging.debug("analyse: bis %s", bis)
-    key.clear()
-    value.clear()
-    data = []
-    for k, v in bis.items():
-        key.append(k)
-        value.append(v)
         data.append(go.Bar(name = k, x = [k], y = [v]))
+    logging.debug("analyse: %s", data)
 
-    bis_fig = go.Figure(data = data)
-    bis_fig.update_layout(
-        title='Lager: Bier im Auge',
+    cq_fig = go.Figure(data = data)
+    cq_fig.update_layout(
+        title='Total: Biermengen',
         xaxis_tickfont_size=14,
         yaxis=dict(
             title='Menge [Liter]',
@@ -142,16 +131,33 @@ def analyse(request):
             tickfont_size=14,
         ),
         legend=dict(
-            x=0,
+            xanchor="right",
             y=1.0,
             bgcolor='rgba(255, 255, 255, 0)',
             bordercolor='rgba(255, 255, 255, 0)'
         ),
         barmode='group',
         bargap=0.3,
+        xaxis={'categoryorder':'total descending'},
     )
-    bis_plt = plot(bis_fig, output_type='div')
+    cq_plt = plot(cq_fig, output_type='div', config=config)
 
+    ### BIER IM AUGE
+    bis = get_beer_in_stock()
+    key.clear()
+    value.clear()
+    for k, v in bis.items():
+        key.append(k)
+        value.append(v)
+
+    trace = go.Pie(labels = key, values = value)
+    data = [trace]
+    bis_fig = go.Figure(data = data)
+    bis_fig.update_traces(textinfo='value', hole=0.4)
+    bis_fig.update_layout(title='Lager: Bier im Auge')
+    bis_plt = plot(bis_fig, output_type='div', config=config)
+
+    ### BIER BALANCE
     bb_data = get_beer_balance()
     bb_fig = go.Figure(go.Waterfall(
         name = "20", orientation = "v",
@@ -165,8 +171,9 @@ def analyse(request):
     ))
 
     bb_fig.update_layout(title = "Bier.Balance: Eingang/Ausgang", waterfallgap = 0.1)
-    bb_plt = plot(bb_fig, output_type='div')
+    bb_plt = plot(bb_fig, output_type='div', config=config)
 
+    ### GELD BALANCE
     ab_data = get_account_balance()
     ab_fig = go.Figure(go.Waterfall(
         name = "20", orientation = "v",
@@ -180,7 +187,7 @@ def analyse(request):
     ))
 
     ab_fig.update_layout(title = "Geld.Balance: Eingang/Ausgang", waterfallgap = 0.1)
-    ab_plt = plot(ab_fig, output_type='div')
+    ab_plt = plot(ab_fig, output_type='div', config=config)
 
     return render(request, 'brewery/analyse.html', {'navi': 'analyse', 'cq_plt': cq_plt, 'bis_plt': bis_plt, 'bb_plt': bb_plt, 'ab_plt': ab_plt})
 
