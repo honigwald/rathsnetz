@@ -2,3 +2,4 @@ brewery/migrations/
 brewery/config.json
 db.sqlite3
 .idea/
+*.pyc

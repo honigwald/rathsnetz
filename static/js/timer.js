@@ -55,7 +55,7 @@ function initTimer(time) {
 
 function onTimesUp() {
   clearInterval(timerInterval);
-  //document.getElementById('alert').play();
+  document.getElementById('alert').play();
 }
 
 function startTimer() {

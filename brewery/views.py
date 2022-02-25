@@ -1,11 +1,16 @@
+import locale
+locale.setlocale(locale.LC_ALL, 'de_DE.UTF-8')
 import logging, sys, json
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseRedirect
 from django.urls import reverse
+from django.db import transaction
+from django.utils import timezone
 from datetime import datetime
-from math import pow
-from .models import Recipe, Step, Charge, RecipeProtocol, Keg, Hint, FermentationProtocol
+import pandas as pd
+from math import pow, exp
+from .models import Recipe, Step, Charge, RecipeProtocol, Keg, Hint, FermentationProtocol, HopCalculation, BeerOutput, Account
 from .forms import *
 
 import plotly.graph_objects as go
@@ -28,8 +33,163 @@ def index(request):
     return render(request, 'brewery/index.html', {'navi': 'overview'})
 
 
+def get_account_balance():
+    ab = []
+    min_month = "2022-01"
+    max_month = "2022-12"
+    months = pd.date_range(min_month, max_month,freq='MS').strftime("%b").tolist()
+    ab.append(months)
+
+    total_amount = []
+    cur_month = datetime.now().month
+    cur_year = datetime.now().year
+    for i in range(12):
+        amount = 0
+        monthly_volume = Account.objects.all().filter(date__year=cur_year).filter(date__month=i+1)
+        for mv in monthly_volume:
+            if mv.income: 
+                amount = amount + mv.amount
+            else:
+                amount = amount - mv.amount
+        total_amount.append(amount)
+    ab.append(total_amount)
+    logging.debug(ab)
+    return ab
+
+def get_beer_balance():
+    bb = []
+    min_month = "2020-01"
+    max_month = "2020-12"
+    months = pd.date_range(min_month, max_month,freq='MS').strftime("%b").tolist()
+    bb.append(months)
+
+    total_amount = []
+    cur_month = datetime.now().month
+    cur_year = datetime.now().year
+    for i in range(12):
+        income_amount = output_amount = 0
+        income = Charge.objects.all().filter(production__year=cur_year).filter(production__month=i+1)
+        for c in income:
+            income_amount = income_amount + c.amount
+        output = BeerOutput.objects.all().filter(date__year=cur_year).filter(date__month=i+1)
+        for o in output:
+            output_amount = output_amount - o.amount
+        total_amount.append(income_amount + output_amount)
+    bb.append(total_amount)
+    return bb
+
+
+def get_charge_quantity():
+    cq = {}
+    recipes = Recipe.objects.all()
+    for r in recipes:
+        total = 0
+        charges = Charge.objects.filter(recipe=r).exclude(finished=False)
+        for c in charges:
+            total = total + c.amount
+        cq[r.name] = total
+    return cq
+
+
+def get_beer_in_stock():
+    bis = {}
+    beer = Keg.objects.all().exclude(content=None)
+    for keg in beer:
+        try:
+            bis[keg.content.recipe.name] = keg.volume + bis[keg.content.recipe.name]
+        except KeyError:
+            bis[keg.content.recipe.name] = keg.volume
+
+    empty = Keg.objects.all().filter(content=None)
+    bis["Leer"] = 0
+    for keg in empty:
+        bis["Leer"] = bis["Leer"] + keg.volume
+    return bis
+
+
 def analyse(request):
-    return render(request, 'brewery/analyse.html', {'navi': 'analyse'})
+    logging.debug("analyse: running now!")
+    config = {'displayModeBar': False}
+    ### BIER TOTAL
+    cq = get_charge_quantity()
+    key = []
+    value = []
+    data = []
+    for k, v in cq.items():
+        key.append(k)
+        value.append(v)
+        data.append(go.Bar(name = k, x = [k], y = [v]))
+    logging.debug("analyse: %s", data)
+
+    cq_fig = go.Figure(data = data)
+    cq_fig.update_layout(
+        title='Total: Biermengen',
+        xaxis_tickfont_size=14,
+        yaxis=dict(
+            title='Menge [Liter]',
+            titlefont_size=16,
+            tickfont_size=14,
+        ),
+        legend=dict(
+            xanchor="right",
+            y=1.0,
+            bgcolor='rgba(255, 255, 255, 0)',
+            bordercolor='rgba(255, 255, 255, 0)'
+        ),
+        barmode='group',
+        bargap=0.3,
+        xaxis={'categoryorder':'total descending'},
+    )
+    cq_plt = plot(cq_fig, output_type='div', config=config)
+
+    ### BIER IM AUGE
+    bis = get_beer_in_stock()
+    key.clear()
+    value.clear()
+    for k, v in bis.items():
+        key.append(k)
+        value.append(v)
+
+    trace = go.Pie(labels = key, values = value)
+    data = [trace]
+    bis_fig = go.Figure(data = data)
+    bis_fig.update_traces(textinfo='value', hole=0.4)
+    bis_fig.update_layout(title='Lager: Bier im Auge')
+    bis_plt = plot(bis_fig, output_type='div', config=config)
+
+    ### BIER BALANCE
+    bb_data = get_beer_balance()
+    bb_fig = go.Figure(go.Waterfall(
+        name = "20", orientation = "v",
+        #measure = ["relative", "relative", "total", "relative", "relative", "total"],
+        x = bb_data[0],
+        #textposition = "inside",
+        #text = ["+60", "+80", "", "-40", "-20", "Total"],
+        totals = {"marker":{"color":"deep sky blue", "line":{"color":"blue", "width":3}}},
+        y = bb_data[1],
+        connector = {"line":{"color":"rgb(63, 63, 63)"}},
+    ))
+
+    bb_fig.update_layout(title = "Bier.Balance: Eingang/Ausgang", waterfallgap = 0.1)
+    bb_plt = plot(bb_fig, output_type='div', config=config)
+
+    ### GELD BALANCE
+    ab_data = get_account_balance()
+    ab_fig = go.Figure(go.Waterfall(
+        name = "20", orientation = "v",
+        #measure = ["relative", "relative", "total", "relative", "relative", "total"],
+        x = ab_data[0],
+        #textposition = "inside",
+        #text = ["+60", "+80", "", "-40", "-20", "Total"],
+        totals = {"marker":{"color":"deep sky blue", "line":{"color":"blue", "width":3}}},
+        y = ab_data[1],
+        connector = {"line":{"color":"rgb(63, 63, 63)"}},
+    ))
+
+    ab_fig.update_layout(title = "Geld.Balance: Eingang/Ausgang", waterfallgap = 0.1)
+    ab_plt = plot(ab_fig, output_type='div', config=config)
+
+    return render(request, 'brewery/analyse.html', {'navi': 'analyse', 'cq_plt': cq_plt, 'bis_plt': bis_plt, 'bb_plt': bb_plt, 'ab_plt': ab_plt})
 
 
 def protocol_step(charge, step, start_time):
@@ -50,10 +210,13 @@ def protocol_step(charge, step, start_time):
 
 
 def storage_delta(charge, step):
-    required = charge.amount * step.amount / AMOUNT_FACTOR
-    available = Storage.objects.get(name=step.ingredient).amount
+    if step.category == "Würzekochung":
+        required = step.amount
+    else:
+        required = charge.amount * step.amount / AMOUNT_FACTOR
+    available = Storage.objects.get(id=step.ingredient.id).amount
     delta = available - required
-    return delta
+    return delta if delta > 0 else 0
 
 
 @login_required
@@ -68,31 +231,158 @@ def brewing_overview(request):
     return render(request, 'brewery/brewing_overview.html', context)
 
 
+def load_calculated_hopping(step, hopping):
+    logging.debug("load_calculated_hopping")
+    step.amount = hopping[0].amount
+    step.ingredient = hopping[0].ingredient
+    step.description = "Hopfenrechner: " + str(hopping[0].ibu) + " IBU"
+    return step
+
+
+def glenn_tinseth_hop(charge, hop, progress, ibu):
+    boiltime = charge.recipe.boiltime.total_seconds() - progress
+    #logging.debug("%s(bt) min = %s(total_bt) - %s(progr)", boiltime/60, charge.recipe.boiltime.total_seconds(), progress)
+
+    utilization = 10
+    ### 10% higher utilization of hop, when pellets are used.
+    ### Currently we're not distingush between pellets and dolden. Therefore pellet is always true.
+    utilization += utilization/100*10 if True else 0
+
+    ### 10% higher utilization of hop, when added after 15min.
+    utilization += utilization/100*10 if (progress/60) >= 15 else 0
+
+    A = (ibu * charge.amount) / (hop.alpha * utilization)
+    B = (1.65 * pow(0.000125, (0.004 * charge.recipe.wort)))
+    C = (1-exp((-0.04) * boiltime /60)) / (4.15)
+    #logging.debug("Formula_A: %s = (%s * %s)/ (%s * %s)", A, ibu, charge.amount, hop.alpha, utilization)
+    #logging.debug("Formula_B: %s = (1.65 * pow(0.000125, (0.004 * %s)))", B, charge.recipe.wort)
+    #logging.debug("Formula_C: %s = (1 - exp( (-0.04) * %s /60 )) / 4.15", C, boiltime)
+    calculated_hop = A / (B * C)
+
+    ### units are important!!!
+    calculated_hop /= 1000 if hop.unit.name == "kg" else 1
+
+    return round(calculated_hop,2)
+
+def glenn_tinseth_ibu(charge, hop, progress, amount):
+    boiltime = charge.recipe.boiltime.total_seconds() - progress
+    ### units are important!!!
+    amount *= 1000 if hop.unit.name == "kg" else 1
+
+    utilization = 10
+    ### 10% higher utilization of hop, when pellets are used.
+    ### Currently we're not distingush between pellets and dolden. Therefore pellet is always true.
+    utilization += utilization/100*10 if True else 0
+
+    ### 10% higher utilization of hop, when added after 15min.
+    utilization += utilization/100*10 if (progress/60) >= 15 else 0
+
+    #logging.debug("%s(bt) min = %s(total_bt) - %s(progr)", boiltime/60, charge.recipe.boiltime.total_seconds(), progress)
+    A = (amount * hop.alpha * (utilization)) /  charge.amount
+    B = (1.65 * pow(0.000125, (0.004 * charge.recipe.wort)))
+    C = (1-exp((-0.04) * boiltime /60)) / (4.15)
+    #logging.debug("Formula_A: %s = (%s * %s * %s) / %s", A, amount, hop.alpha, utilization, charge.amount)
+    #logging.debug("Formula_B: %s = (1.65 * pow(0.000125, (0.004 * %s)))", B, charge.recipe.wort)
+    #logging.debug("Formula_C: %s = (1 - exp( (-0.04) * %s /60 )) / 4.15", C, boiltime)
+    ibu = round(A * B * C, 1)
+
+    return ibu
+
+
+@transaction.atomic
 def calculate_ingredients(charge):
     step = Step.objects.get(pk=charge.recipe.first)
     ingredients = {}
+    progress = 0
+    counting = 0
+    total_ibu = 0
+    calc_hops = list()
+    savepoint = transaction.savepoint()
     while step:
         data = list()
+        if step.duration and step.category.name == "Würzekochung":
+            if step.duration:
+                progress += step.duration.total_seconds()
+
         if step.ingredient:
-            required = charge.amount * step.amount / AMOUNT_FACTOR
-            data.append(step.ingredient.name)
-            data.append(required)
-            data.append(step.ingredient.unit.name)
-            if step.ingredient.type in ingredients:
-                tmp = ingredients[step.ingredient.type]
-                tmp.append(data)
-                ingredients[step.ingredient.type] = tmp
+            required_amount = charge.amount * step.amount / AMOUNT_FACTOR
+            ### Calculate hops
+            if step.category.name == "Würzekochung":
+                if not charge.hop_calculation_finished:
+                    hop = Storage.objects.get(id=step.ingredient.id)
+                    finished = False
+                    hops = Storage.objects.filter(name=step.ingredient.name).order_by('-amount')
+                    ### Calculate IBU of current step, which is required by the recipe
+                    target_step_ibu = glenn_tinseth_ibu(charge, step.ingredient, progress, required_amount)
+                    remaining_ibu = target_step_ibu
+                    for hop in hops:
+                        if finished:
+                            break
+                        if hop.amount == 0:
+                            continue
+                        calculated_hop = list()
+                        ### Calculate possible IBU with available hop in stock
+                        possible_ibu = glenn_tinseth_ibu(charge, hop, progress, hop.amount)
+                        logging.debug("%s: %s %s %s a=%s für %s min ergibt IBU = %s. Gebraucht wird IBU = %s",
+                            step.title, hop.amount, hop.unit, hop.name, hop.alpha,
+                            (charge.recipe.boiltime.total_seconds() - progress)/60,
+                            possible_ibu, target_step_ibu)
+                        if remaining_ibu > possible_ibu:
+                            remaining_ibu -= possible_ibu
+                            calc_hop_amount = glenn_tinseth_hop(charge, hop, progress, possible_ibu)
+                            calc_hop_ibu = glenn_tinseth_ibu(charge, hop, progress, calc_hop_amount)
+                            hop.amount = 0
+                            total_ibu += possible_ibu
+                        else:
+                            calc_hop_amount = glenn_tinseth_hop(charge, hop, progress, remaining_ibu)
+                            calc_hop_ibu = glenn_tinseth_ibu(charge, hop, progress, calc_hop_amount)
+                            finished = True
+                            hop.amount -= calc_hop_amount
+                            total_ibu += remaining_ibu
+                        calculated_hop.append(hop.id)
+                        calculated_hop.append(calc_hop_amount)
+                        calculated_hop.append(hop.unit.name)
+                        calculated_hop.append(calc_hop_ibu)
+                        calculated_hop.append(step.id)
+                        hop.save()
+                        calc_hops.append(calculated_hop)
+
+            ### Calcualte other ingredients
             else:
-                tmp = list()
-                tmp.append(data)
-                ingredients[step.ingredient.type] = tmp
-            logging.debug("ID: %s Ingredient: %s Type: %s Amount: %s", step.id, step.ingredient.name, step.ingredient.type, required)
+                data.append(step.ingredient.name)
+                data.append(required_amount)
+                data.append(step.ingredient.unit.name)
+
+                if step.ingredient.type in ingredients:
+                    tmp = ingredients[step.ingredient.type]
+                    tmp.append(data)
+                    ingredients[step.ingredient.type] = tmp
+                else:
+                    tmp = list()
+                    tmp.append(data)
+                    ingredients[step.ingredient.type] = tmp
         if hasattr(step, 'next'):
             step = step.next
         else:
             break
     ingredients['Wasser'] = [['Hauptguss', charge.recipe.hg * charge.amount / AMOUNT_FACTOR, 'Liter'],
                              ['Nachguss', charge.recipe.ng * charge.amount / AMOUNT_FACTOR, 'Liter']]
+
+    transaction.savepoint_rollback(savepoint)
+    if not charge.hop_calculation_finished:
+        for calculated_hop in calc_hops:
+            logging.debug("Item: %s", calculated_hop)
+            logging.debug("Item: %s", calculated_hop[4])
+            store_it = HopCalculation()
+            store_it.charge = charge
+            store_it.step = Step.objects.get(id=calculated_hop[4])
+            store_it.ingredient = Storage.objects.get(id=calculated_hop[0])
+            store_it.amount = calculated_hop[1]
+            store_it.ibu = calculated_hop[3]
+            store_it.save()
+
+        charge.hop_calculation_finished = True
+        charge.save()
     return ingredients
 
 
@@ -117,17 +407,18 @@ def brewing(request, cid):
         logging.debug("brewing: Restoring session [Finished: Preparations]")
         step = c.current_step
         step.amount = (step.amount * c.amount) / AMOUNT_FACTOR if step.amount else step.amount
-        try:
-            s_next = step.next
-            s_next.amount = (s_next.amount * c.amount) / AMOUNT_FACTOR if s_next.amount else s_next.amount
-        except Step.DoesNotExist:
-            s_next = None
+        hopping = HopCalculation.objects.filter(charge=c).filter(step=step)
+        if step.category.name == "Würzekochung" and hopping:
+            step = load_calculated_hopping(step, hopping)
+        logging.debug("brewing: hopping: Left hops for %s is %s", step, hopping.count())
+        next_step = get_next_step(c, step)
+
         context['charge'] = c
         context['t_start'] = datetime.now()
         context['step'] = step
-        context['s_next'] = s_next
+        context['s_next'] = next_step
         context['hint'] = Hint.objects.filter(step__id=step.id)
-        context['recipe'] = get_steps(c.recipe, c.amount)
+        context['recipe'] = get_steps(c.recipe, c, c.amount)
         context['hg'] = c.amount * c.recipe.hg / AMOUNT_FACTOR
         context['ng'] = c.amount * c.recipe.ng / AMOUNT_FACTOR
         context['protocol'] = RecipeProtocol.objects.filter(charge=cid)
@@ -156,11 +447,11 @@ def brewing(request, cid):
             for pf in preps_form:
                 if pf.is_valid():
                     pf.save()
-            finished = not(preps.filter(check=False).exists())
+            preps_finished = not(preps.filter(done=False).exists())
             context = {'charge': c, 'list': zip(preps, preps_form)}
 
             # Check if preps are finished
-            if finished:
+            if preps_finished:
                 logging.debug("brewing: preparations finished")
                 c.preps_finished = True
                 c.save()
@@ -173,7 +464,7 @@ def brewing(request, cid):
                 context['t_start'] = datetime.now()
                 context['hint'] = Hint.objects.filter(step__id=step.id)
                 context['form'] = BrewingProtocol()
-                context['recipe'] = get_steps(c.recipe, c.amount)
+                context['recipe'] = get_steps(c.recipe, c, c.amount)
                 context['hg'] = c.amount * c.recipe.hg / AMOUNT_FACTOR
                 context['ng'] = c.amount * c.recipe.ng / AMOUNT_FACTOR
                 context['progress'] = get_progress(c.recipe, step)
@@ -185,67 +476,114 @@ def brewing(request, cid):
 
         # Brewing: get next step
         if request.POST.get('brew_next'):
-            logging.debug("brewing: get next step")
+            logging.debug("brewing: brew_next")
             cid = request.POST.get('charge')
             c = Charge.objects.get(pk=cid)
             p_form = BrewingProtocol(request.POST)
             step = c.current_step
-            logging.debug("brewing: step: %s", step)
+            hopping = None
+
+            # Check if current step contains hop, then load it's calculation
+            if step.category.name == "Würzekochung":
+                hopping = HopCalculation.objects.filter(charge=c).filter(step=step)
+                if hopping:
+                    step = load_calculated_hopping(step, hopping)
+                logging.debug("brewing: hopping for %s is %s", step, hopping.count())
+
             t_start = datetime.strptime(request.POST.get('t_start')[:-1], "%Y%m%d%H%M%S%f")
             if p_form.is_valid():
-                # Create step of protocol
-                logging.debug("brewing: saving finished step to protocol")
+                # Save current step to protocol
+                logging.debug("brewing: save current step %s to protocol", step)
                 p_step = protocol_step(c, step, t_start)
                 p_step.comment = p_form.cleaned_data['comment']
                 p_step.save()
                 # Update storage
                 if step.amount:
-                    logging.debug("brewing: calculate remaining amount of storage item.")
-                    item = Storage.objects.get(name=step.ingredient)
-                    item.amount = storage_delta(c, step)
-                    item.save()
-                # Check if there is a next step
-                try:
-                    step = step.next
-                    logging.debug("brewing: get next step: %s", step)
-                    step.amount = (step.amount * c.amount) / AMOUNT_FACTOR if step.amount else step.amount
+                    logging.debug("brewing: calculate remaining amount of %s in stock.", step.ingredient)
+                    item_in_stock = Storage.objects.get(id=step.ingredient.id)
+                    item_in_stock.amount = storage_delta(c, step)
+                    item_in_stock.save()
+                    # delete first element of hop calculations
+                    if hopping:
+                        hopping = HopCalculation.objects.filter(charge=c).filter(step=step)
+                        logging.debug("brewing: delete first elemet (%s) of hop calculation's (%s).", hopping[0].ingredient, hopping)
+                        hopping[0].delete()
+
+                # Check if there still is hopping neccassary
+                if not hopping:
+                    # Check if there is a next step
                     try:
-                        s_next = step.next
-                        logging.debug("brewing: get new next step: %s", s_next)
-                        s_next.amount = (s_next.amount * c.amount) / AMOUNT_FACTOR if s_next.amount else s_next.amount
+                        step = step.next
+                        logging.debug("brewing: get next step: %s", step)
+                        step.amount = (step.amount * c.amount) / AMOUNT_FACTOR if step.amount else step.amount
+
+                        # Check if current step contains hop, then load it's calculation
+                        if step.category.name == "Würzekochung":
+                            hopping = HopCalculation.objects.filter(charge=c).filter(step=step)
+                            if hopping:
+                                step = load_calculated_hopping(step, hopping)
+                            logging.debug("brewing: hopping for %s is %s", step, hopping.count())
+
+                        cur_step_succ = get_next_step(c, step)
+                        logging.debug("brewing: get successor of %s. Successor: %s", step, cur_step_succ)
+
+                        context['charge'] = c
+                        context['t_start'] = datetime.now()
+                        context['step'] = step
+                        context['s_next'] = cur_step_succ
+                        context['hint'] = Hint.objects.filter(step__id=step.id)
+                        context['protocol'] = RecipeProtocol.objects.filter(charge=cid)
+                        context['form'] = BrewingProtocol()
+                        context['recipe'] = get_steps(c.recipe, c, c.amount)
+                        context['hg'] = c.amount * c.recipe.hg / AMOUNT_FACTOR
+                        context['ng'] = c.amount * c.recipe.ng / AMOUNT_FACTOR
+                        context['progress'] = get_progress(c.recipe, step)
+                        c.current_step = step
+                        c.save()
+                        return render(request, 'brewery/brewing.html', context)
+                    # Brewing: Finished
                     except AttributeError:
-                        s_next = None
+                        logging.debug("brewing: brewing process finished. continue with fermentation")
+                        # Calculate overall duration time
+                        c.duration = datetime.now() - c.production.replace(tzinfo=None)
+                        c.brewing_finished = True
+                        c.save()
+                        context['charge'] = c
+                        context['protocol'] = RecipeProtocol.objects.filter(charge=cid)
+                        return HttpResponseRedirect(reverse('fermentation', kwargs={'cid': c.id}))
+                else:
+                    logging.debug("brewing: Left hops for this step: %s", hopping.count())
+
+                    step = load_calculated_hopping(step, hopping)
+                    cur_step_succ = get_next_step(c, step)
+                    logging.debug("brewing: get successor of %s. Successor: %s", step, cur_step_succ)
+
                     context['charge'] = c
                     context['t_start'] = datetime.now()
                     context['step'] = step
-                    context['s_next'] = s_next
+                    context['s_next'] = cur_step_succ
                     context['hint'] = Hint.objects.filter(step__id=step.id)
                     context['protocol'] = RecipeProtocol.objects.filter(charge=cid)
                     context['form'] = BrewingProtocol()
-                    context['recipe'] = get_steps(c.recipe, c.amount)
+                    context['recipe'] = get_steps(c.recipe, c, c.amount)
                     context['hg'] = c.amount * c.recipe.hg / AMOUNT_FACTOR
                     context['ng'] = c.amount * c.recipe.ng / AMOUNT_FACTOR
                     context['progress'] = get_progress(c.recipe, step)
                     c.current_step = step
                     c.save()
-                    logging.debug("brewing: context[recipe]: %s", context['recipe'])
                     return render(request, 'brewery/brewing.html', context)
-                # Brewing: Finished
-                except AttributeError:
-                    logging.debug("brewing: brewing process finished. continue with fermentation")
-                    # Calculate overall duration time
-                    c.duration = datetime.now() - c.production.replace(tzinfo=None)
-                    c.brewing_finished = True
-                    c.save()
-                    context['charge'] = c
-                    context['protocol'] = RecipeProtocol.objects.filter(charge=cid)
-                    return HttpResponseRedirect(reverse('fermentation', kwargs={'cid': c.id}))
             # form validation error
             else:
                 logging.debug("brewing: something went wrong! seems that p_form is not valid.")
 
         # Preparations: start preparations
         else:
+            if request.POST.get('recalculate'):
+                c.hop_calculation_finished = False
+                c.save()
+                hops = HopCalculation.objects.filter(charge=c.id)
+                for hop in hops:
+                    hop.delete()
             # Collecting all necessary ingredients
             logging.debug("brewing: calculate necessary ingredients")
             ingredients = calculate_ingredients(c)
@@ -255,10 +593,18 @@ def brewing(request, cid):
             logging.debug("brewing: collecting necessary preparations")
             preps_form = [PreparationProtocolForm(prefix=str(item), instance=item) for item in preps]
             zipped_list = zip(preps, preps_form)
+            # Collecting missing ingredients
+            missing_ingredients = list()
             for s in Step.objects.filter(recipe=c.recipe):
                 if s.amount:
                     delta = storage_delta(c, s)
-            context = {'charge': c, 'list': zipped_list, 'ingredients': ingredients}
+                    if not delta:
+                        missing_ingredients.append(s.ingredient)
+            calculated_hop_ingredients = HopCalculation.objects.filter(charge=c.id)
+            total_ibu = 0
+            for item in HopCalculation.objects.filter(charge=c):
+                total_ibu += item.ibu
+            context = {'charge': c, 'list': zipped_list, 'ingredients': ingredients, 'total_ibu': round(total_ibu,1), 'missing': missing_ingredients, 'calc_hop_ingr': calculated_hop_ingredients}
             return render(request, 'brewery/brewing.html', context)
 
 @login_required
@@ -289,7 +635,7 @@ def brewing_add(request):
                     preps_protocol = PreparationProtocol()
                     preps_protocol.charge = c
                     preps_protocol.preparation = p
-                    preps_protocol.check = False
+                    preps_protocol.done = False
                     preps_protocol.save()
 
                 return HttpResponseRedirect(reverse('brewing', kwargs={'cid': c.id}))
@@ -330,6 +676,7 @@ def fermentation(request, cid):
     context['fermentation'] = f
     context['form'] = FermentationProtocolForm()
     context['cform'] = FinishFermentationForm()
+    context['f_keg_select'] = KegSelectForm()
     context['navi'] = 'brewing'
 
     if request.POST:
@@ -352,13 +699,19 @@ def fermentation(request, cid):
             return HttpResponseRedirect(reverse('protocol', kwargs={'cid': c.id}))
         if request.POST.get('save'):
             c_form = FinishFermentationForm(request.POST, instance=c)
+            f_keg_select = KegSelectForm(request.POST)
             if c_form.is_valid():
                 c_form.save(commit=False)
                 c.finished = True
                 c.save()
                 c_form.save()
-                return HttpResponseRedirect(reverse('protocol', kwargs={'cid': c.id}))
+                if f_keg_select.is_valid():
+                    for keg in f_keg_select.cleaned_data['id']:
+                        keg.content = c
+                        keg.filling = timezone.now()
+                        keg.save()
 
+                return HttpResponseRedirect(reverse('protocol', kwargs={'cid': c.id}))
             context['cform'] = FinishFermentationForm(instance=c)
             return render(request, 'brewery/fermentation.html', context)
 
@@ -415,7 +768,7 @@ def save_plot(charge):
     logging.debug("save_plot: done.")
 
     # Cleanup
-    query = 'DROP measurement "measurements"'
+    query = 'DELETE FROM "measurements"'
     client.query(query)
     logging.debug("save_plot: cleaning up.")
 
@@ -532,7 +885,7 @@ def recipe(request):
 
 
 ### HELPER FUNCTION
-def get_steps(rid, amount):
+def get_steps(rid, charge, amount):
     try:
         step = Step.objects.get(pk=rid.first)
     except Step.DoesNotExist:
@@ -540,8 +893,23 @@ def get_steps(rid, amount):
     s = []
     while step:
         if step.ingredient:
-            step.amount = (step.amount * amount) / AMOUNT_FACTOR
-            s.append(step)
+            try:
+                hops = HopCalculation.objects.filter(charge=charge).filter(step=step)
+            except HopCalculation.DoesNotExist:
+                hops = None
+            if hops:
+                for idx, hop in enumerate(hops):
+                    if idx:
+                        add_step = Step.objects.get(id=step.id)
+                        step.next = add_step
+                        step = add_step
+                    step.description = str(hop.ibu) + "_berechnet"
+                    step.amount = hop.amount
+                    step.ingredient = hop.ingredient
+                    s.append(step)
+            else:
+                step.amount = (step.amount * amount) / AMOUNT_FACTOR
+                s.append(step)
         else:
             s.append(step)
         try:
@@ -549,6 +917,31 @@ def get_steps(rid, amount):
         except AttributeError:
             step = None
     return s
+
+def get_next_step(charge, step):
+    try:
+        hopping = HopCalculation.objects.filter(charge=charge).filter(step=step)
+        if step.category.name == "Würzekochung" and hopping and len(hopping) > 1:
+            next_step = Step.objects.get(id=step.id)
+            next_step.description = str(hopping[1].ibu) + "_berechnet"
+            next_step.amount = hopping[1].amount
+            next_step.ingredient = hopping[1].ingredient
+            return next_step
+        else:
+            next_step = step.next
+            logging.debug("brewing: get_next_step: %s", next_step)
+            next_step.amount = (next_step.amount * charge.amount) / AMOUNT_FACTOR if next_step.amount else next_step.amount
+            hopping = HopCalculation.objects.filter(charge=charge).filter(step=next_step)
+            if step.category.name == "Würzekochung" and hopping:
+                logging.debug("brewing: get_next_step: get calculated hoppings.")
+                #next_step = Step.objects.get(id=step.id)
+                next_step.description = str(hopping[0].ibu) + "_berechnet"
+                next_step.amount = hopping[0].amount
+                next_step.ingredient = hopping[0].ingredient
+    except Step.DoesNotExist:
+        next_step = None
+
+    return next_step
 
 
 def get_progress(rid, current_step):
@@ -564,8 +957,6 @@ def get_progress(rid, current_step):
             step = step.next
         except AttributeError:
             step = None
-    print(len(s))
-    print(s.index(current_step))
 
     progress = ((s.index(current_step) + 1) / len(s)) * 100
 
@@ -578,7 +969,7 @@ def get_progress(rid, current_step):
 def recipe_detail(request, recipe_id):
     context = {}
     r = Recipe.objects.get(pk=recipe_id)
-    s = get_steps(r, AMOUNT_FACTOR)
+    s = get_steps(r, None, AMOUNT_FACTOR)
     p = Preparation.objects.filter(recipe=r)
 
     if request.method == 'POST':
@@ -626,7 +1017,7 @@ def recipe_add(request):
 def recipe_edit(request, recipe_id):
     context = {}
     r = Recipe.objects.get(pk=recipe_id)
-    s = get_steps(r, AMOUNT_FACTOR)
+    s = get_steps(r, None, AMOUNT_FACTOR)
     preps = SelectPreparation()
 
     # Get steps which aren't properly linked
@@ -858,14 +1249,15 @@ def storage_add(request):
             return HttpResponseRedirect(reverse('storage'))
 
     form = StorageAddItem()
-    context = {'storage': storage, 'form': form, 'navi': 'storage'}
-    return render(request, 'brewery/storage_add.html', context)
+    context = {'storage': storage, 'form': form, 'navi': 'storage', 'called': 'add'}
+    return render(request, 'brewery/storage_edit.html', context)
 
 
 @login_required
 def storage_edit(request, s_id):
     item = Storage.objects.get(pk=s_id)
     form = StorageAddItem(instance=item)
+    form.fields['alpha'].disabled = True
     if request.method == 'POST':
         form = StorageAddItem(request.POST, instance=item)
         if form.is_valid():
@@ -875,7 +1267,7 @@ def storage_edit(request, s_id):
             if request.POST.get('delete'):
                 item.delete()
                 return HttpResponseRedirect(reverse('storage'))
-    context = {'form': form, 'navi': 'storage'}
+    context = {'storage': storage, 'form': form, 'navi': 'storage', 'called': 'edit'}
     return render(request, 'brewery/storage_edit.html', context)
 
 
@@ -910,6 +1302,12 @@ def keg_edit(request, keg_id):
                 form.save()
                 return HttpResponseRedirect(reverse('keg'))
             if request.POST.get('reset'):
+                output = BeerOutput()
+                output.charge = keg.content
+                output.amount = keg.volume
+                output.date = datetime.now()
+                output.save()
+
                 keg.content = None
                 keg.filling = None
                 keg.notes = None

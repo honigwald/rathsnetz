@@ -1,7 +1,7 @@
 from django import forms
-from django.forms import Form, ModelForm, Select, TextInput, NumberInput
+from django.forms import Form, ModelForm, Select, TextInput, NumberInput, NullBooleanField, BooleanField, Textarea
 from django.contrib.auth.models import User
-from bootstrap_datepicker_plus import DateTimePickerInput, DatePickerInput
+from bootstrap_datepicker_plus.widgets import DateTimePickerInput, DatePickerInput
 from .models import Charge, Storage, Recipe, Step, Keg, Preparation, PreparationProtocol, FermentationProtocol
 from django.core.validators import EMPTY_VALUES, ValidationError
 from django.core import validators
@@ -26,20 +26,42 @@ class BrewingProtocol(forms.Form):
 
 
 class StorageAddItem(ModelForm):
+    TRUE_FALSE_CHOICES = ((True, 'Aktiv'),
+                          (False, 'Inaktiv'))
+
     class Meta:
         model = Storage
-        fields = ['name', 'amount', 'type', 'unit']
+        fields = ['name', 'type', 'amount', 'unit', 'alpha', 'threshold', 'warning', 'danger']
         widgets = {'unit': Select(attrs={'class': 'custom-select mr-sm'}),
                    'name': TextInput(attrs={'class': 'form-control mr-sm'}),
-                   'amount': TextInput(attrs={'class': 'form-control mr-sm'}),
-                   'type': Select(attrs={'class': 'custom-select mr-sm'})
-                   }
+                   'amount': NumberInput(attrs={'class': 'form-control mr-sm'}),
+                   'type': Select(attrs={'class': 'custom-select mr-sm'}),
+                   'alpha': NumberInput(attrs={'class': 'form-control mr-sm'}),
+                   'warning': NumberInput(attrs={'class': 'form-control mr-sm'}),
+                   'danger': NumberInput(attrs={'class': 'form-control mr-sm'})
+        }
+        labels = {'name': 'Bezeichnung',
+                  'unit': 'Einheit',
+                  'amount': 'Menge',
+                  'alpha': 'Alphasäure',
+                  'type': 'Obergruppe',
+                  'warning': 'Grenzwert Warnung (Gelb)',
+                  'danger': 'Grenzwert Kritisch (Rot)'
+        }
+    threshold = forms.ChoiceField(choices = TRUE_FALSE_CHOICES, widget=forms.Select(), initial='False', label='Warnung bei geringem Bestand')
 
 
 class AddRecipe(ModelForm):
     class Meta:
         model = Recipe
-        fields = ['name', 'hg', 'ng']
+        fields = ['name', 'hg', 'ng', 'wort', 'ibu', 'boiltime']
+        widgets = {'name': TextInput(attrs={'class': 'form-control mr-sm', 'placeholder': 'Rezeptname'}),
+                   'hg': NumberInput(attrs={'class': 'form-control mr-sm', 'placeholder': 'Hauptguss [Litern]'}),
+                   'ng': NumberInput(attrs={'class': 'form-control mr-sm', 'placeholder': 'Nachguss [Litern]'}),
+                   'ibu': NumberInput(attrs={'class': 'form-control mr-sm', 'placeholder': 'Bittere [IBU]'}),
+                   'wort': NumberInput(attrs={'class': 'form-control mr-sm', 'placeholder': 'Stammürze in [°Plato]'}),
+                   'boiltime': NumberInput(attrs={'class': 'form-control mr-sm', 'placeholder': 'Kochzeit [Minuten]'}),
+        }
 
 
 class EditRecipe(ModelForm):
@@ -66,7 +88,7 @@ class SelectPreparation(Form):
 class PreparationProtocolForm(ModelForm):
     class Meta:
         model = PreparationProtocol
-        fields = ['check']
+        fields = ['done']
 
 
 class FermentationProtocolForm(ModelForm):
@@ -80,21 +102,41 @@ class FermentationProtocolForm(ModelForm):
 
 
 class FinishFermentationForm(ModelForm):
-    output = forms.FloatField(required=True, widget=forms.NumberInput(attrs={'class': 'form-control mr-sm', 'placeholder': 'Ausstoß in Liter'}))
-    evg = forms.FloatField(required=True, widget=forms.NumberInput(attrs={'class': 'form-control mr-sm', 'placeholder': '°Plato'}))
+    output = forms.FloatField(required=True,
+                              widget=forms.NumberInput(attrs={'class': 'form-control mr-sm', 'placeholder': 'Ausstoß in Liter'}),
+                              label='Ausstoß:')
+    evg = forms.FloatField(required=True,
+                           widget=forms.NumberInput(attrs={'class': 'form-control mr-sm', 'placeholder': '°Plato'}),
+                           label='EVG:')
 
     class Meta:
         model = Charge
         fields = ['output', 'evg']
 
 
-class StepForm(ModelForm):
-    description = forms.CharField(required=False)
-    duration = forms.DurationField(required=False)
+class KegSelectForm(ModelForm):
+    id = forms.ModelMultipleChoiceField(queryset=Keg.objects.filter(content=None),
+                                        required=False,
+                                        label = 'Schon abgefüllt? Wähle hier die KEGs:')
+    class Meta:
+        model = Keg
+        fields = ['id']
 
+
+class StepForm(ModelForm):
     class Meta:
         model = Step
-        fields = ['prev', 'title', 'description', 'duration', 'ingredient', 'amount', 'unit']
+        fields = ['prev', 'category', 'title', 'description', 'duration', 'ingredient', 'amount', 'unit']
+        widgets = {'description': Textarea(attrs={'class': 'form-control mr-sm', 'rows': 4})}
+        labels = {'prev': 'Vorgänger (wenn leer, dann als 1. Schritt einfügen)',
+                  'category': 'Kategorie',
+                  'titel': 'Titel',
+                  'description': 'Beschreibung',
+                  'duration': 'Dauer',
+                  'ingredient': 'Zutat',
+                  'amount': 'Menge',
+                  'unit': 'Einheit'
+        }
 
     def clean(self):
         ingredient = self.cleaned_data.get('ingredient', None)

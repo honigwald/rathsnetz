@@ -1,10 +1,45 @@
 {% extends 'brewery/base.html' %}
 {% block content %}
 
+    <script>
+    $(document).ready(function() {
+        $('#dt_storage').DataTable( {
+            responsive: {
+                details: {
+                    display: $.fn.dataTable.Responsive.display.modal( {
+                        header: function ( row ) {
+                            var data = row.data();
+                            return data["Name"];
+                        }
+                    } ),
+                    renderer: $.fn.dataTable.Responsive.renderer.tableAll( {
+                        tableClass: 'table'
+                    } )
+                }
+            },
+            "order": [[ 2, "desc" ]],
+            "info": false,
+            "pagingType": "numbers",
+            "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "Alle"]],
+            "pageLength": 25,
+            "language": {
+                search: "",
+                searchPlaceholder: "Suche",
+                 "paginate": {
+                    "previous": "Zurück",
+                    "next": "Vor"
+                 },
+                 "info": "Seite _PAGE_ von _PAGES_",
+                 "lengthMenu": "Zeige _MENU_ Einträge"
+            }
+        } );
+    } );
+    </script>
+
 <div class="container-sm">
     <h2>Lager</h2>
     <div id="responsive">
-        <table id="datatable" class="table table-sm table-hover display dt-responsive dataTable dtr-inline collapsed" width="100%">
+        <table id="dt_storage" class="table table-sm table-hover display dt-responsive dataTable dtr-inline collapsed" width="100%">
             <thead class="thead-dark">
             <tr>
                 <th class="never">ID</th><th class="all">Name</th> <th data-sortable="true">Typ</th> <th class="desktop">Anzahl</th>
@@ -20,7 +55,7 @@
             <tr>
                 {% endif %}
                 <td>{{ item.id }}</td>
-                <td><a href="{% url 'storage_edit' item.id %}">{{ item.name }}</a></td>
+                <td><a href="{% url 'storage_edit' item.id %}">{{ item.name }} {% if item.alpha %} &#945; = {{ item.alpha }} {% endif %}</a></td>
                 <td>{{ item.type }}</td>
                 <td align="right">{{ item.amount|floatformat:1 }} {{ item.unit }}</td>
             </tr>

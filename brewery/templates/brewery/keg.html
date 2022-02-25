@@ -9,7 +9,8 @@
         <table id="datatable" class="table table-sm table-hover">
             <thead class="thead-dark">
                 <tr>
-                    <th class="never"></th><th class="always">Keg / Inhalt</th>
+                    <th class="never"></th><th class="always">Keg</th>
+                    <th class="always">Inhalt</th>
                     <th class="none">Charge</th> <th class="none">Abfüllung</th>
                     <th class="desktop">Notizen</th> <th class="desktop tablet-l">Status</th>
                     <th class="none">Volumen</th>
@@ -19,7 +20,8 @@
                 {% for k in kegs %}
                 <tr>
                     <td></td>
-                    <td>{{ k.id }} / <a href="{% url 'keg_edit' k.id %}">{% if k.content %} {{ k.content.recipe }}{% else %} -------------- {% endif %}</a></td>
+                    <td>{{ k.id }}</td>
+                    <td><a href="{% url 'keg_edit' k.id %}">{% if k.content %} {{ k.content.recipe }}{% else %} -------------- {% endif %}</a></td>
                     <td>{% if k.content %}<a href="{% url 'protocol' k.content.id %}">{{ k.content }}</a>{% endif %}</td>
                     <td>{% if k.filling %} {{ k.filling|date:'d. M Y' }}{% endif %}</td>
                     <td>{% if k.notes %} {{ k.notes }}{% endif %}</td>

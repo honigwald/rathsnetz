@@ -11,4 +11,19 @@
         <input type="button" class="btn btn-secondary btn-lg btn-block" value="Abbrechen"  onclick="window.location.href = '{% url 'recipe_detail' recipe.id %}';">
     </form>
 </div>
+<script>
+function Hide() {
+    var select_type = document.getElementById('id_ingredient');
+    var option = select_type.options[select_type.selectedIndex];
+    if(option.text == "---------") {
+         document.getElementById('div_id_amount').style.display = 'none';
+         document.getElementById('div_id_unit').style.display = 'none';
+    } else {
+         document.getElementById('div_id_amount').style.display = '';
+         document.getElementById('div_id_unit').style.display = '';
+    }
+}
+window.onload = Hide;
+document.getElementById('div_id_ingredient').onchange = Hide;
+</script>
 {% endblock content %}
