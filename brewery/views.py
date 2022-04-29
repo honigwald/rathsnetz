@@ -203,7 +203,16 @@ def protocol_step(charge, step, start_time):
     p_step.description = s.description
     p_step.duration = s.duration
     p_step.ingredient = s.ingredient
-    p_step.amount = (s.amount * c.amount) / AMOUNT_FACTOR if s.amount else s.amount
+    if step.amount:
+        if step.category.name == "Würzekochung":
+            hopping = HopCalculation.objects.filter(charge=c).filter(step=step)
+            if hopping:
+                step = load_calculated_hopping(step, hopping)
+                p_step.amount = step.amount
+            else:
+                p_step.amount = (s.amount * c.amount) / AMOUNT_FACTOR
+        else:
+            p_step.amount = (s.amount * c.amount) / AMOUNT_FACTOR
     p_step.tstart = t_start
     p_step.tend = datetime.now()
     return p_step
