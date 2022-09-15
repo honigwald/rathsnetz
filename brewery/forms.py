@@ -105,13 +105,13 @@ class FinishFermentationForm(ModelForm):
     output = forms.FloatField(required=True,
                               widget=forms.NumberInput(attrs={'class': 'form-control mr-sm', 'placeholder': 'Ausstoß in Liter'}),
                               label='Ausstoß:')
-    evg = forms.FloatField(required=True,
+    restextract = forms.FloatField(required=True,
                            widget=forms.NumberInput(attrs={'class': 'form-control mr-sm', 'placeholder': '°Plato'}),
-                           label='EVG:')
+                           label='Restextrakt:')
 
     class Meta:
         model = Charge
-        fields = ['output', 'evg']
+        fields = ['output', 'restextract']
 
 
 class KegSelectForm(ModelForm):
