@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>BAEKEBRAEU {% block title %}{% endblock %}</title>
+    <title>{% block title %}{% endblock %} B&auml;kebr&auml;u</title>
     <!-- bootstrap -->
     {% load bootstrap4 %}
     {% bootstrap_css %}
@@ -79,6 +79,9 @@
             {{ debug }}
             {% if request.META.SERVER_NAME == "localhost" %}
                 RUNNING IN DEVELOPMENT MODE!
+            {% endif %}
+            {% if request.META.SERVER_NAME == "preview.braurat.de" %}
+                RUNNING IN QS MODE!
             {% endif %}
         </h1>
             <nav class="navbar navbar-expand-sm navbar-dark navbar-fixed-top head">
