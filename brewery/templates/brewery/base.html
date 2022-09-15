@@ -75,6 +75,12 @@
 <body id="bg-image">
     <div class="container container-custom">
         <header>
+        <h1 style='background-color: red; border: 5px solid black;'>
+            {{ debug }}
+            {% if request.META.SERVER_NAME == "localhost" %}
+                RUNNING IN DEVELOPMENT MODE!
+            {% endif %}
+        </h1>
             <nav class="navbar navbar-expand-sm navbar-dark navbar-fixed-top head">
                 <a class="navbar-brand" href="{% url 'index' %}">
                     {% if user.is_authenticated %}
