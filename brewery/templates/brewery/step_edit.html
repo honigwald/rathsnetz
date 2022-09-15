@@ -1,9 +1,14 @@
 {% extends 'brewery/base.html' %}
+{% block title %}Bearbeiten: Schritt - {{ recipe.name }} -{% endblock title %}
 {% block content %}
 {% load crispy_forms_tags %}
 
 <div class="container-sm">
-    <h2>Schritt hinzufügen</h2>
+    {% if form.id %}
+        <h2>Schritt bearbeiten</h2>
+    {% else %}
+        <h2>Schritt hinzufügen</h2>
+    {% endif %}
     <form action="" method="post">
         {% csrf_token %}
         {{ form|crispy }}

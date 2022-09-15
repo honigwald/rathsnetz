@@ -1,4 +1,5 @@
 {% extends 'brewery/base.html' %}
+{% block title %} Rezepte -{% endblock title %}
 {% block content %}
 
 <div class="container-sm">
@@ -15,7 +16,7 @@
             <td></td>
             <td><a href="{% url 'recipe_detail' r.id %}">{{ r.name }}</a></td>
             <td>{{ r.author }}</td>
-            <td>{{ r.creation|date:'d. M Y' }}</td>
+            <td>{{ r.creation|date:'d.m.Y' }}</td>
         </tr>
         {% endfor %}
         </tbody>

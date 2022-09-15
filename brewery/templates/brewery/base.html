@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>BAEKEBRAEU {% block title %}{% endblock %}</title>
+    <title>{% block title %}{% endblock %} B&auml;kebr&auml;u</title>
     <!-- bootstrap -->
     {% load bootstrap4 %}
     {% bootstrap_css %}
@@ -20,12 +20,17 @@
     <script src="https://cdn.datatables.net/1.10.24/js/dataTables.bootstrap4.min.js"> </script>
     <script src="https://cdn.datatables.net/responsive/2.2.7/js/dataTables.responsive.min.js"></script>
     <script src="https://cdn.datatables.net/responsive/2.2.7/js/responsive.bootstrap4.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.8.4/moment.min.js"></script>
+    <script src="https://cdn.datatables.net/plug-ins/1.12.1/sorting/datetime-moment.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/locale/de.js"></script>
 
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.24/css/dataTables.bootstrap4.min.css">
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.2.7/css/responsive.bootstrap4.min.css">
 
     <script>
     $(document).ready(function() {
+        $.fn.dataTable.moment( 'DD.MM.YYYY' )
+
         $('#datatable').DataTable( {
             responsive: {
                 details: {
@@ -75,6 +80,15 @@
 <body id="bg-image">
     <div class="container container-custom">
         <header>
+        <h1 style='background-color: red; border: 5px solid black;'>
+            {{ debug }}
+            {% if request.META.SERVER_NAME == "localhost" %}
+                RUNNING IN DEVELOPMENT MODE!
+            {% endif %}
+            {% if request.META.SERVER_NAME == "preview.braurat.de" %}
+                RUNNING IN QS MODE!
+            {% endif %}
+        </h1>
             <nav class="navbar navbar-expand-sm navbar-dark navbar-fixed-top head">
                 <a class="navbar-brand" href="{% url 'index' %}">
                     {% if user.is_authenticated %}

@@ -203,7 +203,16 @@ def protocol_step(charge, step, start_time):
     p_step.description = s.description
     p_step.duration = s.duration
     p_step.ingredient = s.ingredient
-    p_step.amount = (s.amount * c.amount) / AMOUNT_FACTOR if s.amount else s.amount
+    if step.amount:
+        if step.category.name == "Würzekochung":
+            hopping = HopCalculation.objects.filter(charge=c).filter(step=step)
+            if hopping:
+                step = load_calculated_hopping(step, hopping)
+                p_step.amount = step.amount
+            else:
+                p_step.amount = (s.amount * c.amount) / AMOUNT_FACTOR
+        else:
+            p_step.amount = (s.amount * c.amount) / AMOUNT_FACTOR
     p_step.tstart = t_start
     p_step.tend = datetime.now()
     return p_step
@@ -424,6 +433,7 @@ def brewing(request, cid):
         context['protocol'] = RecipeProtocol.objects.filter(charge=cid)
         context['form'] = BrewingProtocol()
         context['progress'] = get_progress(c.recipe, step)
+        context['navi'] = 'brewing'
 
         return render(request, 'brewery/brewing.html', context)
 
@@ -569,6 +579,7 @@ def brewing(request, cid):
                     context['hg'] = c.amount * c.recipe.hg / AMOUNT_FACTOR
                     context['ng'] = c.amount * c.recipe.ng / AMOUNT_FACTOR
                     context['progress'] = get_progress(c.recipe, step)
+                    context['navi'] = 'brewing'
                     c.current_step = step
                     c.save()
                     return render(request, 'brewery/brewing.html', context)
@@ -604,7 +615,7 @@ def brewing(request, cid):
             total_ibu = 0
             for item in HopCalculation.objects.filter(charge=c):
                 total_ibu += item.ibu
-            context = {'charge': c, 'list': zipped_list, 'ingredients': ingredients, 'total_ibu': round(total_ibu,1), 'missing': missing_ingredients, 'calc_hop_ingr': calculated_hop_ingredients}
+            context = {'charge': c, 'list': zipped_list, 'ingredients': ingredients, 'total_ibu': round(total_ibu,1), 'missing': missing_ingredients, 'calc_hop_ingr': calculated_hop_ingredients, 'navi': 'brewing'}
             return render(request, 'brewery/brewing.html', context)
 
 @login_required

@@ -1,4 +1,5 @@
 {% extends 'brewery/base.html' %}
+{% block title %}{% if called == 'add' %}Neue Position{% else %}Bearbeite: Position{% endif %} - Lager -{% endblock title %}
 {% block content %}
 {% load crispy_forms_tags %}
 

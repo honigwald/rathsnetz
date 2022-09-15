@@ -1,4 +1,5 @@
 {% extends 'brewery/base.html' %}
+{% block title %}Brauen -{% endblock title %}
 {% block content %}
 <div class="container-sm bottom">
     <h2>Brauen</h2>
@@ -12,7 +13,7 @@
     <table id="datatable" class="table table-sm table-hover display dt-responsive dataTable dtr-inline collapsed" width="100%">
         <thead class="thead-dark">
             <tr>
-                <th class="never"></th><th>Charge</th> <th>Rezept</th> <th class="desktop">Menge</th> <th class="desktop">Datum</th>
+                <th class="never"></th><th>Charge</th> <th>Rezept</th> <th class="desktop">Menge</th> <th class="desktop">Produktion</th>
             </tr>
         </thead>
         <tbody>
@@ -22,7 +23,7 @@
             <td><a href="{% url 'protocol' c.id %}">{{ c }}</a></td>
             <td>{{ c.recipe.name }}</td>
             <td>{{ c.amount }}</td>
-            <td>{{ c.production |date:'d. M Y'}}</td>
+            <td>{{ c.production |date:'d.m.Y'}}</td>
         </tr>
         {% endfor %}
         </tbody>
