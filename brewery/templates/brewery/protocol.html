@@ -2,66 +2,112 @@
 {% block content %}
 
 <div class="container-sm">
-    <h2><u>Protokoll:</u> {{ charge.recipe.name }}, {{ charge.amount }} Liter </h2>
-    <u>Charge:</u> {{ charge.cid }} <br>
-    <u>Braumeister:</u> {{ charge.brewmaster }} <br>
-    <u>Menge:</u> {{ charge.amount }} Liter <br>
-    <u>Wasser:</u> {{ hg }} Liter / {{ ng }} Liter (HG/NG) <br>
-    <u>Ausstoß:</u> {{ output }} Liter<br>
-    <u>EVG:</u> {{ evg }} °Plato<br>
-    <u>Brautag:</u> {{ charge.production }} <br>
-    <u>Gesamtdauer:</u> {{ charge.duration }} <br><br>
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex">
+                <div class="title pt-4 pb-4 w-100">
+                    {% load static %}
+                    <div class="text-center">
+                        <img src="{% static 'img/logo-white-long.png' %}" height=100px;></td>
+                    </div>
+                    <br>
+                    <h3>Protokoll: {{ charge.recipe.name }}</h3>
+                </div>
+            </div>
+      
+            <!-- START TABS DIV -->
+            <div class="tabbable-responsive">
+                <div class="tabbable">
+                    <ul class="nav nav-tabs" id="myTab" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active" id="first-tab" data-toggle="tab" href="#first" role="tab" aria-controls="first" aria-selected="true">Parameter</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="second-tab" data-toggle="tab" href="#second" role="tab" aria-controls="second" aria-selected="false">Brauprotokoll</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="third-tab" data-toggle="tab" href="#third" role="tab" aria-controls="second" aria-selected="false">Gärprotokoll</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="tab-content">
+                <div class="tab-pane fade show active" id="first" role="tabpanel" aria-labelledby="first-tab">
+                    <p class="card-text">
+                        <table class="table table-sm table-hover" style="vertical-align:top;">
+                            <tbody>
+                                <tr><td><u>Braumeister:</u></td><td>{{ charge.brewmaster }}</td></tr>
+                                <tr><td><u>Charge:</u></td><td>{{ charge.cid }} </td></tr>
+                                <tr><td><u>Braudatum:</u></td><td>{{ charge.production }} </td></tr>
+                                <tr><td><u>Gesamtdauer:</u></td><td>{{ charge.duration }} </td></tr>
+                                <tr><td><u>Menge:</u></td><td>{{ charge.amount }} Liter </td></tr>
+                                <tr><td><u>Wasser:</u></td><td>{{ hg }} Liter / {{ ng }} Liter (HG/NG) </td></tr>
+                                <tr><td><u>Ausstoß:</u></td><td>{{ output }} Liter</td></tr>
+                                <tr><td><u>Restextrakt:</u></td><td>{{ restextract }} °Plato</td></tr>
+                            </tbody>
+                        </table>
+                    </p>
+                </div>
+                <div class="tab-pane fade" id="second" role="tabpanel" aria-labelledby="second-tab">
+                    <p class="card-text">
+                        <table class="table table-sm table-hover" style="vertical-align:top;">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th>Schritt</th> <th>Titel</th> <th>Beschreibung</th> <th>Zutaten</th> <th>Menge</th> <th>Dauer</th> <th>Start</th> <th>Ende</th> <th>Notizen</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for p in protocol %}
+                                <tr>
+                                    <td>{{ p.step }}</td>
+                                    <td>{{ p.title }}</td>
+                                    <td>{{ p.description }}</td>
+                                    <td>{% if p.ingredient %}{{ p.ingredient }}{% endif %}</td>
+                                    <td>{% if p.amount %}{{ p.amount }}{% endif %}</td>
+                                    <td>{% if p.duration %}{{ p.duration }}{% endif %}</td>
+                                    <td>{{ p.tstart }}</td>
+                                    <td>{{ p.tend }}</td>
+                                    <td>{{ p.comment }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </p>
+                </div>
+                <div class="tab-pane fade" id="third" role="tabpanel" aria-labelledby="third-tab">
+                    <p class="card-text">
+                        {% if plot %}
+                            {% autoescape off %}
+                            {{ plot }}
+                            {% endautoescape %}
 
-    <table class="table table-sm table-hover" style="vertical-align:top;">
-        <thead class="thead-dark">
-            <tr>
-                <th>Schritt</th> <th>Titel</th> <th>Beschreibung</th> <th>Zutaten</th> <th>Menge</th> <th>Dauer</th> <th>Start</th> <th>Ende</th> <th>Notizen</th>
-            </tr>
-        </thead>
-        <tbody>
-        {% for p in protocol %}
-        <tr>
-            <td>{{ p.step }}</td>
-            <td>{{ p.title }}</td>
-            <td>{{ p.description }}</td>
-            <td>{{ p.ingredient }}</td>
-            <td>{{ p.amount }}</td>
-            <td>{{ p.duration }}</td>
-            <td>{{ p.tstart }}</td>
-            <td>{{ p.tend }}</td>
-            <td>{{ p.comment }}</td>
-        </tr>
-        {% endfor %}
-        </tbody>
-    </table>
-
-    <h2><u>Gärung:</u></h2>
-
-    {% if plot %}
-        {% autoescape off %}
-        {{ plot }}
-        {% endautoescape %}
-
-    {% elif fermentation %}
-        <table class="table table-sm table-hover" style="vertical-align:top;">
-            <thead class="thead-dark">
-                <tr>
-                    <th>Schritt</th> <th>Temperatur</th> <th>Plato</th> <th>Datum</th>
-                </tr>
-            </thead>
-        <tbody>
-        {% for f in fermentation %}
-        <tr>
-            <td>{{ f.step }}</td>
-            <td>{{ f.temperature }}</td>
-            <td>{{ f.plato }}</td>
-            <td>{{ f.date }}</td>
-        </tr>
-        {% endfor %}
-        </tbody>
-    </table>
-    {% endif %}
-
+                        {% elif fermentation %}
+                            <table class="table table-sm table-hover" style="vertical-align:top;">
+                                <thead class="thead-dark">
+                                    <tr>
+                                        <th>Schritt</th> <th>Temperatur</th> <th>Plato</th> <th>Datum</th>
+                                    </tr>
+                                </thead>
+                            <tbody>
+                            {% for f in fermentation %}
+                            <tr>
+                                <td>{{ f.step }}</td>
+                                <td>{{ f.temperature }}</td>
+                                <td>{{ f.plato }}</td>
+                                <td>{{ f.date }}</td>
+                            </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>      
+        </div>
+    </div>
 </div>
+
 {% endblock content %}
 
