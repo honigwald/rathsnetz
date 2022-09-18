@@ -13,7 +13,6 @@ from .analyse import *
 from .ingredient import *
 from .brewing import *
 from .ispindel import *
-from .misc import *
 
 
 
@@ -400,6 +399,7 @@ def protocol(request, cid):
     context['output'] = c.output
     context['restextract'] = c.restextract
     context['navi'] = 'brewing'
+    context['qrurl'] = 'https://braurat.de/brewing/protocol/'+str(c.id)
 
     if c.ispindel:
         context['plot'] = get_plot(c)
