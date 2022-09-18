@@ -420,16 +420,28 @@ def fermentation(request, cid):
     context['form'] = FermentationProtocolForm()
     context['cform'] = FinishFermentationForm()
     context['f_keg_select'] = KegSelectForm()
+    context['f_charge_wort'] = ChargeWortForm()
     context['navi'] = 'brewing'
 
     if request.POST:
-        # checking if ispindel is activated
-        if request.POST.get('spindel') == "True":
-            c.ispindel = True
-            c.save()
-            context['plot'] = get_plot(c)
-            logging.debug("fermentation: ispindel activated")
-            return render(request, 'brewery/fermentation.html', context)
+        if request.POST.get('continue'):
+            logging.debug("fermentation: save reached wort")
+            f_charge_wort = ChargeWortForm(request.POST)
+            if f_charge_wort.is_valid():
+                c.reached_wort = f_charge_wort.cleaned_data['reached_wort']
+                c.save()
+                # checking if ispindel is activated
+                if request.POST.get('spindel') == "True":
+                    c.ispindel = True
+                    c.save()
+                    context['plot'] = get_plot(c)
+                    logging.debug("fermentation: ispindel activated")
+                    return render(request, 'brewery/fermentation.html', context)
+                else:
+                    if not c.fermentation:
+                        c.fermentation = True
+                        c.save()
+                    return render(request, 'brewery/fermentation.html', context)
 
         # checking if fermentation is finished
         if request.POST.get('finished'):
@@ -473,12 +485,6 @@ def fermentation(request, cid):
             logging.debug("fermentation: rendering manual fermentation-protocol and -form.")
             return render(request, 'brewery/fermentation.html', context)
 
-        # default case - this maybe obsolete
-        else:
-            if not c.fermentation:
-                c.fermentation = True
-                c.save()
-        return render(request, 'brewery/fermentation.html', context)
     else:
         # Check if ispindel should be used
         logging.debug("fermentation: using ispindel: %s", c.ispindel)
