@@ -66,15 +66,8 @@
             <form action="" method="post">
                 {% csrf_token %}
                 {{ f_charge_wort|crispy }}
-                Willst du die iSpindel benutzen?
-                <br><br>
-                <input type="radio" id="yes" name="spindel" value=True>
-                <label for="yes">Ja</label>
-                <input type="radio" id="no" name="spindel" value=False>
-                <label for="no">Nein</label>
                 <br><br>
                 <input type="submit" class="btn btn-primary btn-lg btn-block" name="continue" value="Weiter">
-                <br><br>
             </form>
         {% endif %}
         </form>

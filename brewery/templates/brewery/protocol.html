@@ -47,8 +47,11 @@
                                 <tr><td><u>Gesamtdauer:</u></td><td>{{ charge.duration }} </td></tr>
                                 <tr><td><u>Menge:</u></td><td>{{ charge.amount }} Liter </td></tr>
                                 <tr><td><u>Wasser:</u></td><td>{{ hg }} Liter / {{ ng }} Liter (HG/NG) </td></tr>
-                                <tr><td><u>Ausstoß:</u></td><td>{{ output }} Liter</td></tr>
-                                <tr><td><u>Restextrakt:</u></td><td>{{ restextract }} °Plato</td></tr>
+                                <tr><td><u>Ausstoß:</u></td><td>{{ charge.output }} Liter</td></tr>
+                                <tr><td><u>Restextrakt:</u></td><td>{{ charge.restextract }} °Plato</td></tr>
+                                <tr><td><u>Stammwürze:</u></td><td>{{ charge.reached_wort }} °Plato</td></tr>
+                                <tr><td><u>EVG:</u></td><td>{{ evg }} %</td></tr>
+                                <tr><td><u>Alkohol:</u></td><td>{{ alc }} Vol.%</td></tr>
                             </tbody>
                         </table>
                     </p>

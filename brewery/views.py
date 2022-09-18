@@ -396,8 +396,18 @@ def protocol(request, cid):
     context['protocol'] = RecipeProtocol.objects.filter(charge=c.id)
     context['hg'] = c.amount * c.recipe.hg / AMOUNT_FACTOR
     context['ng'] = c.amount * c.recipe.ng / AMOUNT_FACTOR
-    context['output'] = c.output
-    context['restextract'] = c.restextract
+    try:
+        real_restextract = 0.1808 * c.reached_wort + 0.8192 - c.restextract
+    except TypeError:
+        real_restextract = None
+    try:
+        context['evg'] = (c.reached_wort - real_restextract) * 100 / c.reached_wort
+    except TypeError:
+        context['evg'] = None
+    try:
+        context['alc'] = (c.reached_wort - real_restextract) / (2.0665 - 0.010665 * c.reached_wort)
+    except TypeError:
+        context['alc'] = None
     context['navi'] = 'brewing'
     context['qrurl'] = 'https://braurat.de/brewing/protocol/'+str(c.id)
 
@@ -420,27 +430,26 @@ def fermentation(request, cid):
     context['form'] = FermentationProtocolForm()
     context['cform'] = FinishFermentationForm()
     context['f_keg_select'] = KegSelectForm()
-    context['f_charge_wort'] = ChargeWortForm()
+    context['f_charge_wort'] = InitFermentationForm()
     context['navi'] = 'brewing'
 
     if request.POST:
         if request.POST.get('continue'):
             logging.debug("fermentation: save reached wort")
-            f_charge_wort = ChargeWortForm(request.POST)
-            if f_charge_wort.is_valid():
-                c.reached_wort = f_charge_wort.cleaned_data['reached_wort']
+            f_init_fermenation = InitFermentationForm(request.POST)
+            if f_init_fermenation.is_valid():
+                c.reached_wort = f_init_fermenation.cleaned_data['reached_wort']
                 c.save()
                 # checking if ispindel is activated
-                if request.POST.get('spindel') == "True":
+                if f_init_fermenation.cleaned_data['use_ispindel'] == "True":
                     c.ispindel = True
                     c.save()
                     context['plot'] = get_plot(c)
                     logging.debug("fermentation: ispindel activated")
                     return render(request, 'brewery/fermentation.html', context)
                 else:
-                    if not c.fermentation:
-                        c.fermentation = True
-                        c.save()
+                    c.fermentation = True
+                    c.save()
                     return render(request, 'brewery/fermentation.html', context)
 
         # checking if fermentation is finished
