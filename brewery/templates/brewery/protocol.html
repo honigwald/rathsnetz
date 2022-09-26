@@ -2,6 +2,9 @@
 {% block content %}
 
 <div class="container-sm">
+    {% if not charge %}
+    <h1> HIER STIMMT WAS NICHT! </h1>
+    {% else %}
     <div class="card">
         <div class="card-header">
             <div class="d-flex">
@@ -28,9 +31,11 @@
                         <li class="nav-item">
                             <a class="nav-link" id="third-tab" data-toggle="tab" href="#third" role="tab" aria-controls="third" aria-selected="false">Gärprotokoll</a>
                         </li>
+                        {% if not public %}
                         <li class="nav-item">
                             <a class="nav-link" id="fourth-tab" data-toggle="tab" href="#fourth" role="tab" aria-controls="fourth" aria-selected="false">QR-Code</a>
                         </li>
+                        {% endif %}
                     </ul>
                 </div>
             </div>
@@ -110,6 +115,7 @@
                         {% endif %}
                     </p>
                 </div>
+                {% if not public %}
                 <div class="tab-pane fade" id="fourth" role="tabpanel" aria-labelledby="fourth-tab">
                     <p class="card-text">
                         <div class="h-100 d-flex align-items-center justify-content-center">
@@ -118,9 +124,11 @@
                         </div>
                     </p>
                 </div>
+                {% endif %}
             </div>      
         </div>
     </div>
+    {% endif %}
 </div>
 
 {% endblock content %}

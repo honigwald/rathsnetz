@@ -14,6 +14,10 @@ from .ingredient import *
 from .brewing import *
 from .ispindel import *
 
+import zlib
+from base64 import urlsafe_b64encode as b64e, urlsafe_b64decode as b64d
+import base64
+
 
 
 ### STARTING WITH SOME CONFIGURATIONS
@@ -389,8 +393,7 @@ def brewing_add(request):
     return render(request, 'brewery/brewing.html', context)
 
 
-@login_required
-def protocol(request, cid):
+def get_protocol_context(request, cid):
     context = {}
     c = Charge.objects.get(pk=cid)
     context['charge'] = c
@@ -410,14 +413,33 @@ def protocol(request, cid):
     except TypeError:
         context['alc'] = None
     context['navi'] = 'brewing'
-    context['qrurl'] = 'https://braurat.de/brewing/protocol/'+str(c.id)
 
     if c.ispindel:
         context['plot'] = get_plot(c)
     else:
         context['fermentation'] = FermentationProtocol.objects.filter(charge=c.id)
 
-    return render(request, 'brewery/protocol.html', context)
+    host_port = request.META['HTTP_HOST']
+    riddle_id = base64.b64encode(("braurat" + str(c.id)).encode())
+    context['qrurl'] = "https://" + host_port + "/public/protocol/" + riddle_id.decode()
+
+    return context
+
+
+@login_required
+def protocol(request, cid):
+    return render(request, 'brewery/protocol.html', get_protocol_context(request, cid))
+
+
+def public_protocol(request, riddle_id):
+    try:
+        unriddle_id = base64.b64decode(riddle_id.encode()).decode().replace("braurat","")
+        context = get_protocol_context(request, int(unriddle_id))
+        context['public'] = True
+        return render(request, 'brewery/protocol.html', context)
+    except:
+        return render(request, 'brewery/protocol.html', {})
+
 
 
 @login_required
