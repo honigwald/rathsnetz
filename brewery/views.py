@@ -666,7 +666,7 @@ def protocol(request, cid):
     context['hg'] = c.amount * c.recipe.hg / AMOUNT_FACTOR
     context['ng'] = c.amount * c.recipe.ng / AMOUNT_FACTOR
     context['output'] = c.output
-    context['evg'] = c.evg
+    context['restextract'] = c.restextract
     context['navi'] = 'brewing'
 
     if c.ispindel:
