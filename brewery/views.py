@@ -29,6 +29,7 @@ logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 def index(request):
     return render(request, 'brewery/index.html', {'navi': 'overview'})
 
+@login_required
 def analyse(request):
     logging.debug("analyse: running now!")
     config = {'displayModeBar': False}
