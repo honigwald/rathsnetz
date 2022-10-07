@@ -1,11 +1,13 @@
-import logging
+import logging, os, json
 import plotly.graph_objects as go
 import plotly.io as pio
 from plotly.offline import plot
 from plotly.subplots import make_subplots
 from influxdb import InfluxDBClient
+from pathlib import Path
 
-CONFIG_FILE = '../static/config/config.json'
+BASE_DIR =  Path(__file__).resolve().parent.parent
+CONFIG_FILE = os.path.join(BASE_DIR, 'static/config/config.json')
 
 def save_plot(charge):
     # Get charge
