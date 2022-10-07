@@ -22,5 +22,6 @@ urlpatterns = [
     path('recipe/<int:recipe_id>/steps/', views.recipe_edit, name='recipe_edit'),
     path('recipe/<int:recipe_id>/steps/add', views.step_edit, name='step_add'),
     path('recipe/<int:recipe_id>/steps/<int:step_id>', views.step_edit, name='step_edit'),
-    path('public/protocol/<str:riddle_id>/', views.public_protocol, name='public_protocol')
+    path('public/protocol/<str:riddle_id>/', views.public_protocol, name='public_protocol'),
+    path('<int:cid>', views.create_pdf_protocol, name='create_pdf_protocol')
 ]

@@ -1,8 +1,9 @@
-from influxdb import InfluxDBClient
+import logging
 import plotly.graph_objects as go
+import plotly.io as pio
 from plotly.offline import plot
 from plotly.subplots import make_subplots
-import logging
+from influxdb import InfluxDBClient
 
 CONFIG_FILE = './brewery/config.json'
 
@@ -134,5 +135,6 @@ def get_plot(charge):
     client.close()
 
     logging.debug("get_plot: process finished")
+    fig.write_image("/tmp/ispindelfig.png",format="PNG")
 
     return plt_div

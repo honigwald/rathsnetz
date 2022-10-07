@@ -13,6 +13,7 @@ from .analyse import *
 from .ingredient import *
 from .brewing import *
 from .ispindel import *
+from .protocol import *
 
 import zlib
 from base64 import urlsafe_b64encode as b64e, urlsafe_b64decode as b64d
@@ -440,6 +441,10 @@ def public_protocol(request, riddle_id):
     except:
         return render(request, 'brewery/protocol.html', {})
 
+
+@login_required
+def create_pdf_protocol(request, cid):
+    return FileResponse(processing_pdf(cid), as_attachment=True, filename=str(Charge.objects.get(pk=cid))+'_protokoll.pdf')
 
 
 @login_required
