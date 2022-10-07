@@ -5,7 +5,7 @@ from plotly.offline import plot
 from plotly.subplots import make_subplots
 from influxdb import InfluxDBClient
 
-CONFIG_FILE = './brewery/config.json'
+CONFIG_FILE = '../static/config/config.json'
 
 def save_plot(charge):
     # Get charge
