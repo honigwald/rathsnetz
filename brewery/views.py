@@ -1,6 +1,6 @@
 import locale
 locale.setlocale(locale.LC_ALL, 'de_DE.UTF-8')
-import logging, sys, json
+import logging, sys
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseRedirect
@@ -23,7 +23,6 @@ import base64
 ### STARTING WITH SOME CONFIGURATIONS
 # Used for recipe scaling
 AMOUNT_FACTOR = 100
-
 # Configure log level
 logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 ### END OF CONFIGURATIONS
