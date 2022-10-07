@@ -1,0 +1,17 @@
+{
+    "influxdb": [
+        {
+            "host": "HOST",
+            "port": "PORT",
+            "user": "USER",
+            "password": "PASSWORD"
+        }
+    ],
+
+    "django": [
+        {
+            "secretkey": "MYSECRET"
+        }
+    ]
+}
+
