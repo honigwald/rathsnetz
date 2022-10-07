@@ -150,3 +150,16 @@ class StepForm(ModelForm):
             self.errors['unit'] = self.error_class(['Einheit wird benötigt!'])
 
         return self.cleaned_data
+
+
+class InitFermentationForm(ModelForm):
+    CHOICES=[('True','Ja'),
+             ('False','Nein')]
+    use_ispindel = forms.ChoiceField(choices=CHOICES, widget=forms.RadioSelect, label='Willst du die iSpindel benutzen?')
+    reached_wort = forms.FloatField(required=True,
+                           widget=forms.NumberInput(attrs={'class': 'form-control mr-sm', 'placeholder': '°Plato'}),
+                           label='Erreichte Stammwürze:')
+
+    class Meta:
+        model = Charge
+        fields = ['reached_wort']

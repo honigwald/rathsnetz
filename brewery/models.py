@@ -97,6 +97,7 @@ class Charge(models.Model):
     fermentation = models.BooleanField(default=False)
     current_step = models.ForeignKey(Step, on_delete=models.DO_NOTHING, blank=True, null=True)
     hop_calculation_finished = models.BooleanField(default=False)
+    reached_wort = models.FloatField(blank=True, null=True)
 
     def __str__(self):
         return str(self.cid)
