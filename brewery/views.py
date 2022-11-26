@@ -478,14 +478,6 @@ def fermentation(request, cid):
                     return render(request, 'brewery/fermentation.html', context)
 
         # checking if fermentation is finished
-        if request.POST.get('finished'):
-            c.finished = True
-            c.save()
-            if c.ispindel:
-                logging.debug("fermentation: saving fermentation data")
-                save_plot(c)
-            logging.debug("fermentation: fermentation is finished. beer is ready for storing.")
-            return HttpResponseRedirect(reverse('protocol', kwargs={'cid': c.id}))
         if request.POST.get('save'):
             c_form = FinishFermentationForm(request.POST, instance=c)
             f_keg_select = KegSelectForm(request.POST)
@@ -494,12 +486,16 @@ def fermentation(request, cid):
                 c.finished = True
                 c.save()
                 c_form.save()
+                if c.ispindel:
+                    logging.debug("fermentation: saving fermentation data")
+                    save_plot(c)
                 if f_keg_select.is_valid():
                     for keg in f_keg_select.cleaned_data['id']:
                         keg.content = c
                         keg.filling = timezone.now()
                         keg.save()
 
+                logging.debug("fermentation: fermentation is finished. beer is ready for storing.")
                 return HttpResponseRedirect(reverse('protocol', kwargs={'cid': c.id}))
             context['cform'] = FinishFermentationForm(instance=c)
             return render(request, 'brewery/fermentation.html', context)
