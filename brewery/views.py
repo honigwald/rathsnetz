@@ -878,7 +878,7 @@ def keg_edit(request, keg_id):
                 keg.content = None
                 keg.filling = None
                 keg.notes = None
-                keg.status = "Unverplant"
+                keg.status = 'F'
                 keg.save()
                 return HttpResponseRedirect(reverse('keg'))
     context = {'form': form, 'navi': 'kegs'}
