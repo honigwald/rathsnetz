@@ -100,17 +100,41 @@
                 <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
+                {% if user.is_authenticated %}
                 <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
                     <ul class="nav navbar-nav">
-                        {% if user.is_authenticated %}
                         <li class="nav-item {% if navi == 'kegs' %}active{% endif %}"><a class="nav-link" href="{% url 'keg' %}">Bierblick</a></li>
                         <li class="nav-item {% if navi == 'brewing' %}active{% endif %}"><a class="nav-link" href="{% url 'brewing_overview' %}">Brauen</a></li>
                         <li class="nav-item {% if navi == 'recipe' %}active{% endif %}"><a class="nav-link" href="{% url 'recipe' %}">Rezepte</a></li>
                         <li class="nav-item {% if navi == 'storage' %}active{% endif %}"><a class="nav-link" href="{% url 'storage' %}">Lager</a></li>
                         <li class="nav-item {% if navi == 'analyse' %}active{% endif %}"><a class="nav-link " href='{% url 'analyse' %}'>Analyse</a></li>
-                        {% endif %}
                     </ul>
                 </div>
+                {% endif %}
+                {% if user.is_authenticated %}
+                <div class="col text-md-right">
+                    <nav class="navbar bottom-nav navbar-expand-sm navbar-dark text-md-right">
+                        <ul class="navbar-nav ml-auto">
+                            <!-- https://fontawesome.com/v4/cheatsheet/ -->
+                            <li class="nav-item text-md-right"> 
+                                <a class="nav-link" href="{% url 'logout' %}" style="font-size: 1em;">
+                                    {{ user.first_name|make_list|first }}
+                                    {{ user.last_name|make_list|first }}
+                                    <i class="fa">&#xf08b;</i>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+                {% else %}
+                <div class="col text-md-right">
+                    <nav class="navbar bottom-nav navbar-expand-sm navbar-dark text-md-right">
+                        <ul class="navbar-nav ml-auto">
+                            <li class="nav-item text-md-right"> <a class="nav-link" href="{% url 'login' %}"><i style="font-size:30px;" class="fa">&#xf2be;</i></a></li>
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
             </nav>
         </header>
         <div class="container container-content pt-5">
@@ -127,11 +151,6 @@
                             <li class="nav-item"> <a class="nav-link"> Disclaimer </a> </li>
                             <li class="nav-item"> <a class="nav-link"> Presse </a> </li>
                             <li class="nav-item"> <a class="nav-link"> Unterstützer </a> </li>
-                            {% if user.is_authenticated %}
-                            <li class="nav-item"><a class="nav-link " href="{% url 'logout' %}">Logout</a></li>
-                            {% else %}
-                            <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Login</a></li>
-                            {% endif %}
                         </ul>
                     </nav>
                 </div>
