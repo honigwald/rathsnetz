@@ -21,10 +21,11 @@ def save_plot(charge):
             ifdb_port = ifdb['port']
             ifdb_user = ifdb['user']
             ifdb_pass = ifdb['password']
+            ifdb_db = ifdb['database']
 
-    logging.debug("save_plot: connecting to influx db")
+    logging.debug("save_plot: connecting to influx db: %s", ifdb_db)
     client = InfluxDBClient(host=ifdb_host, port=ifdb_port, username=ifdb_user, password=ifdb_pass)
-    client.switch_database('ispindel')
+    client.switch_database(ifdb_db)
 
     # Build query
     query = 'SELECT * INTO "' + charge.cid + '" FROM "measurements"'
@@ -50,10 +51,11 @@ def get_plot(charge):
             ifdb_port = ifdb['port']
             ifdb_user = ifdb['user']
             ifdb_pass = ifdb['password']
+            ifdb_db = ifdb['database']
 
-    logging.debug("get_plot: connecting to influx db")
+    logging.debug("get_plot: connecting to influx db: %s", ifdb_db)
     client = InfluxDBClient(host=ifdb_host, port=ifdb_port, username=ifdb_user, password=ifdb_pass)
-    client.switch_database('ispindel')
+    client.switch_database(ifdb_db)
 
     # Build query
     if charge.finished:

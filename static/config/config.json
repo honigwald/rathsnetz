@@ -2,7 +2,8 @@
     "influxdb": [
         {
             "host": "HOST",
-            "port": "PORT",
+            "port": "8888",
+            "database": "DB",
             "user": "USER",
             "password": "PASSWORD"
         }
