@@ -1,4 +1,5 @@
 import locale
+import random
 locale.setlocale(locale.LC_ALL, 'de_DE.UTF-8')
 import logging, sys
 from django.shortcuts import render, get_object_or_404
@@ -14,6 +15,8 @@ from .ingredient import *
 from .brewing import *
 from .ispindel import *
 from .protocol import *
+import os
+from pathlib import Path
 
 import zlib
 from base64 import urlsafe_b64encode as b64e, urlsafe_b64decode as b64d
@@ -29,7 +32,11 @@ logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 
 
 def index(request):
-    return render(request, 'brewery/index.html', {'navi': 'overview'})
+    context = {
+        'navi': 'overview',
+        'image_url': load_dynamic_bg_image()
+    }
+    return render(request, 'brewery/index.html', context)
 
 @login_required
 def analyse(request):
@@ -114,7 +121,15 @@ def analyse(request):
     ab_fig.update_layout(title = "Geld.Balance: Eingang/Ausgang", waterfallgap = 0.1)
     ab_plt = plot(ab_fig, output_type='div', config=config)
 
-    return render(request, 'brewery/analyse.html', {'navi': 'analyse', 'cq_plt': cq_plt, 'bis_plt': bis_plt, 'bb_plt': bb_plt, 'ab_plt': ab_plt})
+    context = {
+        'navi': 'analyse',
+        'image_url': load_dynamic_bg_image(),
+        'cq_plt': cq_plt,
+        'bis_plt': bis_plt,
+        'bb_plt': bb_plt,
+        'ab_plt': ab_plt,
+    }
+    return render(request, 'brewery/analyse.html', context)
 
 
 @login_required
@@ -124,7 +139,8 @@ def brewing_overview(request):
     context = {
         'charge': c,
         'active': active,
-        'navi': "brewing"
+        'navi': "brewing",
+        'image_url': load_dynamic_bg_image()
     }
     return render(request, 'brewery/brewing_overview.html', context)
 
@@ -135,6 +151,7 @@ def brewing(request, cid):
     c = get_object_or_404(Charge, pk=cid)
     preps = PreparationProtocol.objects.filter(charge=c)
     context['navi'] = "brewing"
+    context['image_url'] = load_dynamic_bg_image()
     # Charge finished. Goto protocol
     if c.finished:
         logging.debug("brewing: Charge finished [Finished: Preparations, Brewing, Fermentation]")
@@ -167,7 +184,6 @@ def brewing(request, cid):
         context['protocol'] = RecipeProtocol.objects.filter(charge=cid)
         context['form'] = BrewingProtocol()
         context['progress'] = get_progress(c.recipe, step)
-        context['navi'] = 'brewing'
 
         return render(request, 'brewery/brewing.html', context)
 
@@ -314,6 +330,7 @@ def brewing(request, cid):
                     context['ng'] = c.amount * c.recipe.ng / AMOUNT_FACTOR
                     context['progress'] = get_progress(c.recipe, step)
                     context['navi'] = 'brewing'
+                    context['image_url'] = load_dynamic_bg_image()
                     c.current_step = step
                     c.save()
                     return render(request, 'brewery/brewing.html', context)
@@ -349,7 +366,7 @@ def brewing(request, cid):
             total_ibu = 0
             for item in HopCalculation.objects.filter(charge=c):
                 total_ibu += item.ibu
-            context = {'charge': c, 'list': zipped_list, 'ingredients': ingredients, 'total_ibu': round(total_ibu,1), 'missing': missing_ingredients, 'calc_hop_ingr': calculated_hop_ingredients, 'navi': 'brewing'}
+            context = {'charge': c, 'list': zipped_list, 'ingredients': ingredients, 'total_ibu': round(total_ibu,1), 'missing': missing_ingredients, 'calc_hop_ingr': calculated_hop_ingredients, 'navi': 'brewing', 'image_url': load_dynamic_bg_image()}
             return render(request, 'brewery/brewing.html', context)
 
 @login_required
@@ -387,7 +404,7 @@ def brewing_add(request):
 
     else:
         charge_form = BrewingCharge()
-    context = {'form': charge_form, 'navi': 'brewing'}
+    context = {'form': charge_form, 'navi': 'brewing', 'image_url': load_dynamic_bg_image()}
     return render(request, 'brewery/brewing.html', context)
 
 
@@ -411,6 +428,7 @@ def get_protocol_context(request, cid):
     except TypeError:
         context['alc'] = None
     context['navi'] = 'brewing'
+    context['image_url'] = load_dynamic_bg_image()
 
     if c.ispindel:
         context['plot'] = get_plot(c)
@@ -457,6 +475,7 @@ def fermentation(request, cid):
     context['f_keg_select'] = KegSelectForm()
     context['f_charge_wort'] = InitFermentationForm()
     context['navi'] = 'brewing'
+    context['image_url'] = load_dynamic_bg_image()
 
     if request.POST:
         if request.POST.get('continue'):
@@ -530,6 +549,7 @@ def recipe(request):
     r = Recipe.objects.all()
     context = {'recipes': r}
     context['navi'] = 'recipe'
+    context['image_url'] = load_dynamic_bg_image()
     return render(request, 'brewery/recipe.html', context)
 
 @login_required
@@ -550,6 +570,7 @@ def recipe_detail(request, recipe_id):
     context['steps'] = s
     context['preparation'] = p
     context['navi'] = 'recipe'
+    context['image_url'] = load_dynamic_bg_image()
 
     return render(request, 'brewery/recipe_detail.html', context)
 
@@ -576,6 +597,7 @@ def recipe_add(request):
     context['add_recipe'] = add_recipe
     context['select_preparation'] = select_preparation
     context['navi'] = 'recipe'
+    context['image_url'] = load_dynamic_bg_image()
 
     return render(request, 'brewery/recipe_add.html', context)
 
@@ -615,6 +637,7 @@ def recipe_edit(request, recipe_id):
     context['unused'] = unused_steps
     context['preps'] = preps
     context['navi'] = 'recipe'
+    context['image_url'] = load_dynamic_bg_image()
 
     return render(request, 'brewery/recipe_edit.html', context)
 
@@ -789,17 +812,17 @@ def step_edit(request, recipe_id, step_id=None):
             return HttpResponseRedirect(reverse('recipe_detail', kwargs={'recipe_id': r.id}))
         else:
             logging.debug(dict(form.errors))
-            context = {'form': form, 'recipe': r, 'navi': 'recipe'}
+            context = {'form': form, 'recipe': r, 'navi': 'recipe', 'image_url': load_dynamic_bg_image()}
             return render(request, 'brewery/step_edit.html', context)
 
-    context = {'form': form, 'recipe': r, 'navi': 'recipe'}
+    context = {'form': form, 'recipe': r, 'navi': 'recipe', 'image_url': load_dynamic_bg_image()}
     return render(request, 'brewery/step_edit.html', context)
 
 
 @login_required
 def storage(request):
     items = Storage.objects.all()
-    context = {'storage': items, 'navi': 'storage'}
+    context = {'storage': items, 'navi': 'storage', 'image_url': load_dynamic_bg_image()}
     return render(request, 'brewery/storage.html', context)
 
 
@@ -816,7 +839,7 @@ def storage_add(request):
             return HttpResponseRedirect(reverse('storage'))
 
     form = StorageAddItem()
-    context = {'storage': storage, 'form': form, 'navi': 'storage', 'called': 'add'}
+    context = {'storage': storage, 'form': form, 'navi': 'storage', 'called': 'add', 'image_url': load_dynamic_bg_image()}
     return render(request, 'brewery/storage_edit.html', context)
 
 
@@ -834,7 +857,7 @@ def storage_edit(request, s_id):
             if request.POST.get('delete'):
                 item.delete()
                 return HttpResponseRedirect(reverse('storage'))
-    context = {'storage': storage, 'form': form, 'navi': 'storage', 'called': 'edit'}
+    context = {'storage': storage, 'form': form, 'navi': 'storage', 'called': 'edit', 'image_url': load_dynamic_bg_image()}
     return render(request, 'brewery/storage_edit.html', context)
 
 
@@ -855,7 +878,7 @@ def keg(request):
 
             return HttpResponseRedirect(reverse('keg'))
     else:
-        context = {'kegs': kegs, 'navi': 'kegs'}
+        context = {'kegs': kegs, 'navi': 'kegs', 'image_url': load_dynamic_bg_image()}
         return render(request, 'brewery/keg.html', context)
 
 @login_required
@@ -881,5 +904,16 @@ def keg_edit(request, keg_id):
                 keg.status = 'F'
                 keg.save()
                 return HttpResponseRedirect(reverse('keg'))
-    context = {'form': form, 'navi': 'kegs'}
+    context = {'form': form, 'navi': 'kegs', 'image_url': load_dynamic_bg_image()}
     return render(request, 'brewery/keg_edit.html', context)
+
+def load_dynamic_bg_image():
+    BASE_DIR =  Path(__file__).resolve().parent.parent
+    PATH = os.path.join(BASE_DIR, 'static/img/background/')
+    filenames = []
+    for filename in os.listdir(PATH):
+        filenames.append(filename)
+    logging.debug(filenames[random.randrange(0,len(filenames))])
+
+    image_url = "img/background/" + filenames[random.randrange(0,len(filenames))]
+    return image_url
