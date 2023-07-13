@@ -8,6 +8,8 @@ body {
     /*background: rgba(52,58,64,1);*/
     background: black;
     height: 8.125em;
+    border-bottom-right-radius: 15px;
+    border-bottom-left-radius: 15px;
 }
 .footer:before {
     content: "";
@@ -47,8 +49,10 @@ body {
 .container-content {
     position: relative;
     background-color: white;
-    height: 100%;
+    height: 85%;
+    /*
     padding-bottom: 100px;
+    */
     z-index: 4;
     opacity: 0.92;
 }
@@ -60,6 +64,8 @@ body {
     /*background: rgba(52,58,64,1);*/
     background: black;
     color: white;
+    border-top-right-radius: 15px;
+    border-top-left-radius: 15px;
 }
 
 #ingredient_calculation {
@@ -70,7 +76,7 @@ body {
 
 #hop_calculator {
     margin: 5px;
-padding: 20px;
+    padding: 20px;
     border: 2px solid black;
     border-radius: 5px;
 }
