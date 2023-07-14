@@ -22,7 +22,7 @@
                 <tr>
                     <td></td>
                     <td>{{ k.id }}</td>
-                    <td><a href="{% url 'keg_edit' k.id %}">{% if k.content %} {{ k.content.recipe }}{% else %} -------------- {% endif %}</a></td>
+                    <td><a href="{% url 'keg_edit' k.id %}">{% if k.content %} {{ k.content.recipe }} {{ k.content }} {% else %} ------------------- {% endif %}</a></td>
                     <td>{% if k.content %}<a href="{% url 'protocol' k.content.id %}">{{ k.content }}</a>{% endif %}</td>
                     <td>{% if k.filling %} {{ k.filling|date:'d. M Y' }}{% endif %}</td>
                     <td>{% if k.notes %} {{ k.notes }}{% endif %}</td>
