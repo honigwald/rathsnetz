@@ -6,28 +6,33 @@
     {% if active %}
         <u>Aktive Charge:</u>
         {% for c in active %}
-            <a href="{% url 'brewing' c.id %}">{{ c }}</a>&nbsp;
+            <a class="number" href="{% url 'brewing' c.id %}">{{ c }}</a>&nbsp;
         {% endfor %}
         <br> <br>
     {% endif %}
+    <style>
+    </style>
     <table id="datatable" class="table table-sm table-hover display dt-responsive dataTable dtr-inline collapsed" width="100%">
         <thead class="thead-dark">
             <tr>
                 <th class="never"></th>
                 <th>Charge</th>
                 <th>Rezept</th>
-                <th class="desktop" data-halign="right" data-align="center">Menge (SOLL/IST)</th>
-                <th class="desktop">Produktion</th>
+                <th class="desktop align-right" data-halign="center" data-align="center">Menge (Ist/Soll)</th>
+                <th class="desktop align-right">Produktion</th>
             </tr>
         </thead>
         <tbody>
         {% for c in charge %}
         <tr>
             <td></td>
-            <td><a href="{% url 'protocol' c.id %}">{{ c }}</a></td>
+            <td class="number"><a href="{% url 'protocol' c.id %}">{{ c }}</a></td>
             <td>{{ c.recipe.name }}</td>
-            <td>{{ c.amount }} / {{ c.output }}</td>
-            <td>{{ c.production |date:'d.m.Y'}}</td>
+            <td class="number align-right">
+                {% if c.output %} {{ c.output|floatformat:0 }} {% else %} -- {% endif %}
+                / {{ c.amount }}
+            </td>
+            <td class="number align-right">{{ c.production |date:'d.m.Y'}}</td>
         </tr>
         {% endfor %}
         </tbody>

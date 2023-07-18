@@ -38,6 +38,14 @@ body {
     height: 100%;
 }
 
+.number {
+    font-family: Andale Mono, AndaleMono, monospace; 
+}
+
+.align-right {
+    text-align: right;
+}
+
 .boxed {
     margin-top:10px; 
     padding:5px; 

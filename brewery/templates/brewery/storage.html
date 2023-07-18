@@ -43,7 +43,7 @@
         <table id="dt_storage" class="table table-sm table-hover display dt-responsive dataTable dtr-inline collapsed" width="100%">
             <thead class="thead-dark">
             <tr>
-                <th class="never">ID</th><th class="all">Name</th> <th data-sortable="true">Typ</th> <th class="desktop">Anzahl</th>
+                <th class="never">ID</th><th class="all">Name</th> <th data-sortable="true">Typ</th> <th class="align-right desktop">Anzahl</th>
             </tr>
             </thead>
             <tbody>
@@ -58,7 +58,7 @@
                 <td>{{ item.id }}</td>
                 <td><a href="{% url 'storage_edit' item.id %}">{{ item.name }} {% if item.alpha %} &#945; = {{ item.alpha }} {% endif %}</a></td>
                 <td>{{ item.type }}</td>
-                <td align="right">{{ item.amount|floatformat:1 }} {{ item.unit }}</td>
+                <td class="number align-right">{{ item.amount|floatformat:1 }} {{ item.unit }}</td>
             </tr>
             {% endfor %}
             </tbody>

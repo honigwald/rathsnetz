@@ -12,8 +12,8 @@
                 <tr>
                     <th class="never"></th><th class="always">Keg</th>
                     <th class="always">Inhalt</th>
-                    <th class="none">Charge</th> <th class="none">Abfüllung</th>
-                    <th class="desktop">Notizen</th> <th class="desktop tablet-l">Status</th>
+                    <th class="always">Charge</th> <th class="none">Abfüllung</th>
+                    <th class="desktop">Notizen</th> <th class="desktop tablet-l align-right">Status</th>
                     <th class="none">Volumen</th>
                 </tr>
             </thead>
@@ -21,12 +21,12 @@
                 {% for k in kegs %}
                 <tr>
                     <td></td>
-                    <td>{{ k.id }}</td>
-                    <td><a href="{% url 'keg_edit' k.id %}">{% if k.content %} {{ k.content.recipe }} {{ k.content }} {% else %} ------------------- {% endif %}</a></td>
-                    <td>{% if k.content %}<a href="{% url 'protocol' k.content.id %}">{{ k.content }}</a>{% endif %}</td>
+                    <td class="number">{{ k.id }}</td>
+                    <td><a href="{% url 'keg_edit' k.id %}">{% if k.content %} {{ k.content.recipe }}{% else %} -------------------{% endif %}</a></td>
+                    <td class="number">{% if k.content %}<a href="{% url 'protocol' k.content.id %}">{{ k.content }}</a>{% endif %}</td>
                     <td>{% if k.filling %} {{ k.filling|date:'d. M Y' }}{% endif %}</td>
                     <td>{% if k.notes %} {{ k.notes }}{% endif %}</td>
-                    <td>{% if k.content %} {{ k.get_status_display }}{% endif %}</td>
+                    <td class="align-right">{% if k.content %} {{ k.get_status_display }}{% endif %}</td>
                     <td>{% if k.volume %} {{ k.volume }} l{% endif %}</td>
                 </tr>
                 {% endfor %}
