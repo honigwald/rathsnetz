@@ -24,7 +24,7 @@ def save_plot(charge):
             ifdb_db = ifdb['database']
 
     logging.debug("save_plot: connecting to influx db: %s", ifdb_db)
-    client = InfluxDBClient(host=ifdb_host, port=ifdb_port, username=ifdb_user, password=ifdb_pass)
+    client = InfluxDBClient(host=ifdb_host, port=ifdb_port, username=ifdb_user, password=ifdb_pass, ssl=True)
     client.switch_database(ifdb_db)
 
     # Build query
@@ -54,7 +54,7 @@ def get_plot(charge):
             ifdb_db = ifdb['database']
 
     logging.debug("get_plot: connecting to influx db: %s", ifdb_db)
-    client = InfluxDBClient(host=ifdb_host, port=ifdb_port, username=ifdb_user, password=ifdb_pass)
+    client = InfluxDBClient(host=ifdb_host, port=ifdb_port, username=ifdb_user, password=ifdb_pass, ssl=True)
     client.switch_database(ifdb_db)
 
     # Build query
