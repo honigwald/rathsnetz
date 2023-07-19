@@ -1,5 +1,6 @@
 import locale
 import random
+import math
 locale.setlocale(locale.LC_ALL, 'de_DE.UTF-8')
 import logging, sys
 from django.shortcuts import render, get_object_or_404
@@ -416,15 +417,19 @@ def get_protocol_context(request, cid):
     context['hg'] = c.amount * c.recipe.hg / AMOUNT_FACTOR
     context['ng'] = c.amount * c.recipe.ng / AMOUNT_FACTOR
     try:
-        real_restextract = 0.1808 * c.reached_wort + 0.8192 - c.restextract
-    except TypeError:
-        real_restextract = None
-    try:
-        context['evg'] = (c.reached_wort - real_restextract) * 100 / c.reached_wort
+        # Scheinbarer EVG (%) = (1 - SRE [°P] / Stammwürze [°P]) · 100
+        EVG_f = (1 - c.restextract / c.reached_wort) * 100
+        context['evg'] = round(EVG_f,1)
     except TypeError:
         context['evg'] = None
     try:
-        context['alc'] = (c.reached_wort - real_restextract) / (2.0665 - 0.010665 * c.reached_wort)
+        # TRE = 0,1808 · Stammwürze [°P] + 0,8192 · SRE [°P]
+        TRE = 0.1808 * c.reached_wort + 0.8192 * c.restextract
+
+        #  Tatsächlicher EVG (%) = (1 - TRE [°P] / Stammwürze [°P]) · 100
+        EVG_t = (1 - TRE/ c.reached_wort) * 100
+        ALC_v = 1/0.79 * (c.reached_wort - TRE) / (2.0665 - 0.010665 * c.reached_wort)
+        context['alc'] = round(ALC_v, 1)
     except TypeError:
         context['alc'] = None
     context['navi'] = 'brewing'
