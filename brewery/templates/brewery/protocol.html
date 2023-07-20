@@ -55,17 +55,17 @@
                     <p class="card-text">
                         <table class="table table-sm table-hover" style="vertical-align:top;">
                             <tbody>
-                                <tr><td><u>Braumeister:</u></td><td>{{ charge.brewmaster }}</td></tr>
-                                <tr><td><u>Charge:</u></td><td>{{ charge.cid }} </td></tr>
-                                <tr><td><u>Braudatum:</u></td><td>{{ charge.production }} </td></tr>
-                                <tr><td><u>Gesamtdauer:</u></td><td>{{ charge.duration }} </td></tr>
-                                <tr><td><u>Menge:</u></td><td>{{ charge.amount }} Liter </td></tr>
-                                <tr><td><u>Wasser:</u></td><td>{{ hg }} Liter / {{ ng }} Liter (HG/NG) </td></tr>
-                                <tr><td><u>Ausstoß:</u></td><td>{{ charge.output }} Liter</td></tr>
-                                <tr><td><u>Restextrakt:</u></td><td>{{ charge.restextract }} °Plato</td></tr>
-                                <tr><td><u>Stammwürze:</u></td><td>{{ charge.reached_wort }} °Plato</td></tr>
-                                <tr><td><u>EVG:</u></td><td>{{ evg }} %</td></tr>
-                                <tr><td><u>Alkohol:</u></td><td>{{ alc }} Vol.%</td></tr>
+                                <tr><td><u>Braumeister:</u></td><td class="number">{{ charge.brewmaster }}</td></tr>
+                                <tr><td><u>Charge:</u></td><td class="number">{{ charge.cid }} </td></tr>
+                                <tr><td><u>Braudatum:</u></td><td class="number">{{ charge.production }} </td></tr>
+                                <tr><td><u>Gesamtdauer:</u></td><td class="number">{{ charge.duration }} </td></tr>
+                                <tr><td><u>Menge:</u></td><td class="number">{{ charge.amount }} Liter </td></tr>
+                                <tr><td><u>Wasser (HG/NG):</u></td><td class="number">{{ hg }} Liter / {{ ng }} Liter</td></tr>
+                                <tr><td><u>Ausstoß:</u></td><td class="number">{{ charge.output }} Liter</td></tr>
+                                <tr><td><u>Restextrakt:</u></td><td class="number">{% if charge.restextract %}{{ charge.restextract }}{% else %} -- {% endif %}°Plato</td></tr>
+                                <tr><td><u>Stammwürze:</u></td><td class="number">{% if charge.reached_wort %}{{ charge.reached_wort }} {% else %} -- {% endif %}°Plato</td></tr>
+                                <tr><td><u>EVG:</u></td><td class="number">{% if evg %}{{ evg }} {% else %} -- {% endif %}°Plato</td></tr>
+                                <tr><td><u>Alkohol:</u></td><td class="number">{% if alc %}{{ alc }} {% else %} -- {% endif %}Vol.%</td></tr>
                             </tbody>
                         </table>
                     </p>
@@ -81,14 +81,14 @@
                             <tbody>
                                 {% for p in protocol %}
                                 <tr>
-                                    <td>{{ p.step }}</td>
+                                    <td class="number">{{ p.step }}</td>
                                     <td>{{ p.title }}</td>
                                     <td>{{ p.description }}</td>
                                     <td>{% if p.ingredient %}{{ p.ingredient }}{% endif %}</td>
-                                    <td>{% if p.amount %}{{ p.amount }}{% endif %}</td>
-                                    <td>{% if p.duration %}{{ p.duration }}{% endif %}</td>
-                                    <td>{{ p.tstart }}</td>
-                                    <td>{{ p.tend }}</td>
+                                    <td class="number">{% if p.amount %}{{ p.amount|floatformat:2 }}{% endif %}</td>
+                                    <td class="number">{% if p.duration %}{{ p.duration }}{% endif %}</td>
+                                    <td class="number">{{ p.tstart }}</td>
+                                    <td class="number">{{ p.tend }}</td>
                                     <td>{{ p.comment }}</td>
                                 </tr>
                                 {% endfor %}
