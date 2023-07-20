@@ -34,10 +34,6 @@ body {
   z-index: 6;
 }
 
-.container-custom {
-    height: 100%;
-}
-
 .number {
     font-family: Andale Mono, AndaleMono, monospace; 
 }
@@ -57,10 +53,8 @@ body {
 .container-content {
     position: relative;
     background-color: white;
-    height: 85%;
-    /*
+    min-height: 550px;
     padding-bottom: 100px;
-    */
     z-index: 4;
     opacity: 0.92;
 }
