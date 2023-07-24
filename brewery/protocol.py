@@ -7,8 +7,11 @@ from reportlab.platypus.tables import Table, TableStyle
 from reportlab.lib import colors
 from .models import Charge, RecipeProtocol, FermentationProtocol
 from .ispindel import get_plot
+import os
+from pathlib import Path
 
 AMOUNT_FACTOR = 100
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 class RotatedImage(Image):
 
@@ -33,7 +36,7 @@ def processing_pdf(cid):
     # if you want to see all the sample styles, this prints them
     sample_style_sheet.list()
 
-    logo = Image('./static/img/logo-white-long.png', width=384, height=80)
+    logo = Image(os.path.join(BASE_DIR, 'static/img/logo-white-long.png'), width=384, height=80)
     title = Paragraph("Protokoll: "+c.recipe.name, sample_style_sheet['Heading1'])
     p1title = Paragraph("Parameter", sample_style_sheet['Heading2'])
 
