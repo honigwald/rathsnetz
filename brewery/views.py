@@ -1,35 +1,37 @@
-import locale
-import random
-import math
-locale.setlocale(locale.LC_ALL, 'de_DE.UTF-8')
-import logging, sys
+import locale, random, logging, sys, os
+from base64 import urlsafe_b64encode as b64e, urlsafe_b64decode as b64d
+from datetime import datetime
+from pathlib import Path
+
+# Django imports
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.utils import timezone
-from datetime import datetime
-from .models import Recipe, Step, Charge, RecipeProtocol, Keg, Hint, FermentationProtocol, HopCalculation, BeerOutput, Account
+
+# Local imports (custom modules)
+from .models import (
+    Recipe, Step, Charge, RecipeProtocol, Keg, Hint, FermentationProtocol,
+    HopCalculation, BeerOutput, Account
+)
 from .forms import *
 from .analyse import *
 from .ingredient import *
 from .brewing import *
 from .ispindel import *
 from .protocol import *
-import os
-from pathlib import Path
 
-import zlib
-from base64 import urlsafe_b64encode as b64e, urlsafe_b64decode as b64d
-import base64
+### Custom configuration
+# Set locale for currency formatting (German in this case)
+locale.setlocale(locale.LC_ALL, 'de_DE.UTF-8')
 
+# Set up logging configurations
+logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
-### STARTING WITH SOME CONFIGURATIONS
 # Used for recipe scaling
 AMOUNT_FACTOR = 100
-# Configure log level
-logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
-### END OF CONFIGURATIONS
+### End of configuration
 
 
 def index(request):
@@ -441,7 +443,7 @@ def get_protocol_context(request, cid):
         context['fermentation'] = FermentationProtocol.objects.filter(charge=c.id)
 
     host_port = request.META['HTTP_HOST']
-    riddle_id = base64.b64encode(("braurat" + str(c.id)).encode())
+    riddle_id = b64e(("braurat" + str(c.id)).encode())
     context['qrurl'] = "https://" + host_port + "/public/protocol/" + riddle_id.decode()
 
     return context
@@ -454,7 +456,7 @@ def protocol(request, cid):
 
 def public_protocol(request, riddle_id):
     try:
-        unriddle_id = base64.b64decode(riddle_id.encode()).decode().replace("braurat","")
+        unriddle_id = b64d(riddle_id.encode()).decode().replace("braurat","")
         context = get_protocol_context(request, int(unriddle_id))
         context['public'] = True
         return render(request, 'brewery/protocol.html', context)
