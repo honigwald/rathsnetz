@@ -97,35 +97,3 @@ body {
 .warning {
     color: red;
 }
-
-/* Responsive Bootstrap Tabs without JS */
-.tabbable-responsive {
-  display: block;
-  min-width: 100%;
-  overflow-x: auto;
-
-  /* Some tweaks for card-header */
-  margin: 0px -20px -13px -20px;
-}
-
-.tabbable {
-    min-width: 100%;
-
-    .nav-tabs {
-      white-space: nowrap;
-      display: inline-block;
-      min-width: 100%;
-
-      /* Some tweaks for card-header */
-      padding: 0px 21px;
-
-      .nav-item {
-        display: inline-block;
-
-        .nav-link {
-          display: inline-block;
-        }
-      }
-    }
-}
-/* ----- END */

@@ -27,7 +27,7 @@ from .protocol import *
 locale.setlocale(locale.LC_ALL, 'de_DE.UTF-8')
 
 # Set up logging configurations
-logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
 
 # Used for recipe scaling
 AMOUNT_FACTOR = 100
@@ -152,9 +152,10 @@ def brewing_overview(request):
 def brewing(request, cid):
     context = {}
     c = get_object_or_404(Charge, pk=cid)
-    preps = PreparationProtocol.objects.filter(charge=c)
     context['navi'] = "brewing"
     context['image_url'] = load_dynamic_bg_image()
+    preps = PreparationProtocol.objects.filter(charge=c)
+    context['preps'] = preps
     # Charge finished. Goto protocol
     if c.finished:
         logging.debug("brewing: Charge finished [Finished: Preparations, Brewing, Fermentation]")
@@ -187,6 +188,7 @@ def brewing(request, cid):
         context['protocol'] = RecipeProtocol.objects.filter(charge=cid)
         context['form'] = BrewingProtocol()
         context['progress'] = get_progress(c.recipe, step)
+        context['preps'] = PreparationProtocol.objects.filter(charge=c)
 
         return render(request, 'brewery/brewing.html', context)
 
@@ -231,6 +233,7 @@ def brewing(request, cid):
                 context['hg'] = c.amount * c.recipe.hg / AMOUNT_FACTOR
                 context['ng'] = c.amount * c.recipe.ng / AMOUNT_FACTOR
                 context['progress'] = get_progress(c.recipe, step)
+                context['preps'] = PreparationProtocol.objects.filter(charge=c)
                 return render(request, 'brewery/brewing.html', context)
             else:
                 logging.debug("brewing: there are still preparations todo.")
@@ -483,6 +486,8 @@ def fermentation(request, cid):
     context['f_charge_wort'] = InitFermentationForm()
     context['navi'] = 'brewing'
     context['image_url'] = load_dynamic_bg_image()
+    context['protocol'] = RecipeProtocol.objects.filter(charge=c.id)
+    context['preps'] = PreparationProtocol.objects.filter(charge=c)
 
     if request.POST:
         if request.POST.get('continue'):
@@ -497,11 +502,11 @@ def fermentation(request, cid):
                     c.save()
                     context['plot'] = get_plot(c)
                     logging.debug("fermentation: ispindel activated")
-                    return render(request, 'brewery/fermentation.html', context)
+                    return render(request, 'brewery/brewing.html', context)
                 else:
                     c.fermentation = True
                     c.save()
-                    return render(request, 'brewery/fermentation.html', context)
+                    return render(request, 'brewery/brewing.html', context)
 
         # checking if fermentation is finished
         if request.POST.get('save'):
@@ -524,7 +529,7 @@ def fermentation(request, cid):
                 logging.debug("fermentation: fermentation is finished. beer is ready for storing.")
                 return HttpResponseRedirect(reverse('protocol', kwargs={'cid': c.id}))
             context['cform'] = FinishFermentationForm(instance=c)
-            return render(request, 'brewery/fermentation.html', context)
+            return render(request, 'brewery/brewing.html', context)
 
         # checking for new measure point
         if request.POST.get('add_mp'):
@@ -539,7 +544,7 @@ def fermentation(request, cid):
             context['form'] = FermentationProtocolForm()
             context['fermentation'] = FermentationProtocol.objects.filter(charge=c)
             logging.debug("fermentation: rendering manual fermentation-protocol and -form.")
-            return render(request, 'brewery/fermentation.html', context)
+            return render(request, 'brewery/brewing.html', context)
 
     else:
         # Check if ispindel should be used
@@ -547,7 +552,7 @@ def fermentation(request, cid):
         if c.ispindel:
             context['plot'] = get_plot(c)
 
-        return render(request, 'brewery/fermentation.html', context)
+        return render(request, 'brewery/brewing.html', context)
 
 
 
