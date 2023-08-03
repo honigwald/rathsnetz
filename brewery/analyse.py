@@ -1,21 +1,23 @@
-from .models import Recipe, Step, Charge, RecipeProtocol, Keg, Hint, FermentationProtocol, HopCalculation, BeerOutput, Account
+from .models import Recipe, Charge, Keg, BeerOutput, Account
 from datetime import datetime
 import logging
 import pandas as pd
+
 
 def get_account_balance():
     ab = []
     min_month = "2022-01"
     max_month = "2022-12"
-    months = pd.date_range(min_month, max_month,freq='MS').strftime("%b").tolist()
+    months = pd.date_range(min_month, max_month, freq="MS").strftime("%b").tolist()
     ab.append(months)
 
     total_amount = []
-    cur_month = datetime.now().month
     cur_year = datetime.now().year
     for i in range(12):
         amount = 0
-        monthly_volume = Account.objects.all().filter(date__year=cur_year).filter(date__month=i+1)
+        monthly_volume = (
+            Account.objects.all().filter(date__year=cur_year).filter(date__month=i + 1)
+        )
         for mv in monthly_volume:
             if mv.income:
                 amount = amount + mv.amount
@@ -26,22 +28,30 @@ def get_account_balance():
     logging.debug(ab)
     return ab
 
+
 def get_beer_balance():
     bb = []
     min_month = "2020-01"
     max_month = "2020-12"
-    months = pd.date_range(min_month, max_month,freq='MS').strftime("%b").tolist()
+    months = pd.date_range(min_month, max_month, freq="MS").strftime("%b").tolist()
     bb.append(months)
 
     total_amount = []
-    cur_month = datetime.now().month
     cur_year = datetime.now().year
     for i in range(12):
         income_amount = output_amount = 0
-        income = Charge.objects.all().filter(production__year=cur_year).filter(production__month=i+1)
+        income = (
+            Charge.objects.all()
+            .filter(production__year=cur_year)
+            .filter(production__month=i + 1)
+        )
         for c in income:
             income_amount = income_amount + c.amount
-        output = BeerOutput.objects.all().filter(date__year=cur_year).filter(date__month=i+1)
+        output = (
+            BeerOutput.objects.all()
+            .filter(date__year=cur_year)
+            .filter(date__month=i + 1)
+        )
         for o in output:
             output_amount = output_amount - o.amount
         total_amount.append(income_amount + output_amount)

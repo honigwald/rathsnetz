@@ -5,3 +5,4 @@ db.sqlite3*
 pyenv
 static/img/background/*img
 static/img/background/*.jpg
+rathsnetz/static/

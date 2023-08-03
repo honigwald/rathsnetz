@@ -4,6 +4,7 @@ import logging
 
 AMOUNT_FACTOR = 100
 
+
 def load_calculated_hopping(step, hopping):
     logging.debug("load_calculated_hopping")
     step.amount = hopping[0].amount
@@ -11,7 +12,8 @@ def load_calculated_hopping(step, hopping):
     step.description = "Hopfenrechner: " + str(hopping[0].ibu) + " IBU"
     return step
 
-### HELPER FUNCTION
+
+# HELPER FUNCTION
 def get_steps(rid, charge, amount):
     try:
         step = Step.objects.get(pk=rid.first)
@@ -45,6 +47,7 @@ def get_steps(rid, charge, amount):
             step = None
     return s
 
+
 def get_next_step(charge, step):
     try:
         hopping = HopCalculation.objects.filter(charge=charge).filter(step=step)
@@ -57,11 +60,17 @@ def get_next_step(charge, step):
         else:
             next_step = step.next
             logging.debug("brewing: get_next_step: %s", next_step)
-            next_step.amount = (next_step.amount * charge.amount) / AMOUNT_FACTOR if next_step.amount else next_step.amount
-            hopping = HopCalculation.objects.filter(charge=charge).filter(step=next_step)
+            next_step.amount = (
+                (next_step.amount * charge.amount) / AMOUNT_FACTOR
+                if next_step.amount
+                else next_step.amount
+            )
+            hopping = HopCalculation.objects.filter(charge=charge).filter(
+                step=next_step
+            )
             if step.category.name == "Würzekochung" and hopping:
                 logging.debug("brewing: get_next_step: get calculated hoppings.")
-                #next_step = Step.objects.get(id=step.id)
+                # next_step = Step.objects.get(id=step.id)
                 next_step.description = str(hopping[0].ibu) + "_berechnet"
                 next_step.amount = hopping[0].amount
                 next_step.ingredient = hopping[0].ingredient
