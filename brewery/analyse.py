@@ -17,7 +17,7 @@ def get_account_balance():
         amount = 0
         monthly_volume = Account.objects.all().filter(date__year=cur_year).filter(date__month=i+1)
         for mv in monthly_volume:
-            if mv.income: 
+            if mv.income:
                 amount = amount + mv.amount
             else:
                 amount = amount - mv.amount

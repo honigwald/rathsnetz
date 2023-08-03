@@ -35,7 +35,7 @@ body {
 }
 
 .number {
-    font-family: Andale Mono, AndaleMono, monospace; 
+    font-family: Andale Mono, AndaleMono, monospace;
 }
 
 .align-right {
@@ -43,9 +43,9 @@ body {
 }
 
 .boxed {
-    margin-top:10px; 
-    padding:5px; 
-    border:1px solid black; 
+    margin-top:10px;
+    padding:5px;
+    border:1px solid black;
     background-color:white;
     border-radius: 5px;
 }

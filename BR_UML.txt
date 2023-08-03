@@ -20,7 +20,7 @@ Table Keg as k {
   id int [pk, increment] // auto-increment
   content int [ref: > c.id]
   status varchar
-  notes varchar 
+  notes varchar
   volume int
   filling datetime
 }

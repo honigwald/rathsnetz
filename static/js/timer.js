@@ -68,7 +68,7 @@ function startTimer() {
       timeLeft
     );
     /*
-    document.getElementById("ts").innerHTML = "tStart: " + tStart + "<br>" 
+    document.getElementById("ts").innerHTML = "tStart: " + tStart + "<br>"
 						+ "tNow: "+ Date.now() + "<br>"
 						+ "tRunning: " + Math.round((Date.now() - tStart) / 1000) + "<br>"
 						+ "tLeft: " + Math.round((tEnd - Date.now())/1000) + "<br>"
@@ -85,7 +85,7 @@ function startTimer() {
 }
 
 function stopTimer(time) {
-        clearInterval(timerInterval);        
+        clearInterval(timerInterval);
         initTimer(time);
 }
 
