@@ -42,7 +42,9 @@ class Recipe(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=25)
     creation = models.DateTimeField(default=timezone.now)
-    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, blank=True, null=True)
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, blank=True, null=True
+    )
     hg = models.FloatField()
     ng = models.FloatField()
     first = models.IntegerField(default=None, blank=True, null=True)
@@ -65,12 +67,16 @@ class Category(models.Model):
 class Step(models.Model):
     id = models.AutoField(primary_key=True)
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
-    prev = models.OneToOneField('self', null=True, blank=True, related_name="next", on_delete=models.DO_NOTHING)
+    prev = models.OneToOneField(
+        "self", null=True, blank=True, related_name="next", on_delete=models.DO_NOTHING
+    )
     step = models.IntegerField(blank=True, null=True)
     title = models.CharField(max_length=50)
     description = models.CharField(max_length=200)
     duration = models.DurationField(blank=True, null=True)
-    ingredient = models.ForeignKey(Storage, on_delete=models.CASCADE, blank=True, null=True)
+    ingredient = models.ForeignKey(
+        Storage, on_delete=models.CASCADE, blank=True, null=True
+    )
     amount = models.FloatField(blank=True, null=True)
     unit = models.ForeignKey(Unit, on_delete=models.CASCADE, blank=True, null=True)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
@@ -89,13 +95,17 @@ class Charge(models.Model):
     restextract = models.FloatField(blank=True, null=True)
     production = models.DateTimeField()
     duration = models.DurationField(blank=True, null=True)
-    brewmaster = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, blank=True, null=True)
+    brewmaster = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, blank=True, null=True
+    )
     preps_finished = models.BooleanField(default=False)
     brewing_finished = models.BooleanField(default=False)
     finished = models.BooleanField(default=False)
     ispindel = models.BooleanField(default=False)
     fermentation = models.BooleanField(default=False)
-    current_step = models.ForeignKey(Step, on_delete=models.DO_NOTHING, blank=True, null=True)
+    current_step = models.ForeignKey(
+        Step, on_delete=models.DO_NOTHING, blank=True, null=True
+    )
     hop_calculation_finished = models.BooleanField(default=False)
     reached_wort = models.FloatField(blank=True, null=True)
     brew_factor = models.IntegerField(default=1)
@@ -107,13 +117,19 @@ class Charge(models.Model):
 class Keg(models.Model):
     id = models.AutoField(primary_key=True)
     STATUS_CHOICES = (
-        ('F', 'Unverplant'),
-        ('E', 'Leer'),
-        ('S', 'Verkauft'),
-        ('D', 'Defekt'),
+        ("F", "Unverplant"),
+        ("E", "Leer"),
+        ("S", "Verkauft"),
+        ("D", "Defekt"),
     )
-    content = models.ForeignKey(Charge, on_delete=models.SET_NULL, blank=True, null=True, limit_choices_to={'finished': True})
-    status = models.CharField(max_length=1, default='F', choices=STATUS_CHOICES)
+    content = models.ForeignKey(
+        Charge,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        limit_choices_to={"finished": True},
+    )
+    status = models.CharField(max_length=1, default="F", choices=STATUS_CHOICES)
     notes = models.CharField(max_length=200, blank=True, null=True)
     volume = models.IntegerField()
     filling = models.DateTimeField(blank=True, null=True)

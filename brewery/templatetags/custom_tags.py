@@ -8,4 +8,4 @@ def seconds(td):
     return total_seconds
 
 
-register.filter('seconds', seconds)
+register.filter("seconds", seconds)

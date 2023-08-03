@@ -1,6 +1,23 @@
 from django.contrib import admin
 
-from .models import *
+from .models import (
+    Recipe,
+    Step,
+    Charge,
+    RecipeProtocol,
+    Keg,
+    Hint,
+    FermentationProtocol,
+    HopCalculation,
+    BeerOutput,
+    Preparation,
+    Storage,
+    PreparationProtocol,
+    Unit,
+    Type,
+    Category,
+    Account,
+)
 
 # Register your models here.
 admin.site.register(Recipe)
