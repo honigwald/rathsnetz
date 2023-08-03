@@ -98,6 +98,7 @@ class Charge(models.Model):
     current_step = models.ForeignKey(Step, on_delete=models.DO_NOTHING, blank=True, null=True)
     hop_calculation_finished = models.BooleanField(default=False)
     reached_wort = models.FloatField(blank=True, null=True)
+    brew_factor = models.IntegerField(default=1)
 
     def __str__(self):
         return str(self.cid)
@@ -147,7 +148,7 @@ class Preparation(models.Model):
     short = models.CharField(max_length=20)
     detail = models.CharField(max_length=600)
     recipe = models.ManyToManyField(Recipe, blank=True)
-    
+
     def __str__(self):
         return self.short
 

@@ -15,6 +15,15 @@ class BrewingCharge(ModelForm):
                    'amount': NumberInput(attrs={'class': 'form-control mr-sm', 'placeholder': 'Menge in Liter'}),
                    'brewmaster': Select(attrs={'class': 'custom-select mr-sm'})
                    }
+        labels = {'recipe': 'Rezept',
+                  'amount': 'Menge',
+                  'brewmaster': 'Braumeister',
+        }
+    CHOICES = [
+        ('Y', 'Ja'),
+        ('N', 'Nein'),
+    ]
+    dsud_active = forms.ChoiceField(choices=CHOICES, widget=forms.RadioSelect, label="Doppelsud", initial='N')
 
 
 class BrewingProtocol(forms.Form):

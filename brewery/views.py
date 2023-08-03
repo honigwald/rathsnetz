@@ -395,6 +395,8 @@ def brewing_add(request):
                 c.brewmaster = charge_form.cleaned_data['brewmaster']
                 c.production = datetime.now()
                 c.current_step = Step.objects.get(pk=c.recipe.first)
+                if charge_form.cleaned_data['dsud_active'] == 'Y':
+                    c.brew_factor = 2
                 c.save()
 
                 # Create required preparations
@@ -634,7 +636,7 @@ def recipe_edit(request, recipe_id):
             used_steps = used_steps.next
         except AttributeError:
             used_steps = None
-    
+
     if request.method == 'POST':
         if request.POST.get('add'):
             return HttpResponseRedirect(reverse('step_add', kwargs={'recipe_id': r.id}))
