@@ -18,52 +18,44 @@ import plotly.graph_objects as go
 from plotly.offline import plot
 
 # Local imports (custom modules)
-from .models import (
-    Recipe,
-    Step,
-    Charge,
-    RecipeProtocol,
-    Keg,
-    Hint,
-    FermentationProtocol,
-    HopCalculation,
-    BeerOutput,
+from .models.charge import Charge
+from .models.recipe import Recipe
+#from .models.step import RecipeStep
+from .models.keg import Keg
+from .models.hint import Hint
+from .models.protocol import BrewProtocol, FermentationProtocol, PreparationProtocol
+from .models.hop_calculation import HopCalculation
+from .models.beer_output import BeerOutput
+from .models.preparation import Preparation
+from .models.storage import Storage
+from .models.account import Account
+
+from .models.hop_calculation import (
+    load_calculated_hopping,
+    get_next_step,
+    get_steps,
+    calculate_ingredients,
+    protocol_step,
+    storage_delta,
 )
+from .protocol import processing_pdf
+from .ispindel import save_plot, get_plot
+
 from .forms import (
     EditKegContent,
-    StepForm,
-    FinishFermentationForm,
-    PreparationProtocolForm,
-    FermentationProtocolForm,
-    InitFermentationForm,
-    KegSelectForm,
-    StorageAddItem,
-    Storage,
-    EditRecipe,
-    SelectPreparation,
-    AddRecipe,
-    Preparation,
-    BrewingCharge,
     BrewingProtocol,
-    PreparationProtocol,
+    PreparationProtocolForm,
+    BrewingCharge,
+    FermentationProtocolForm,
+    FinishFermentationForm,
+    KegSelectForm,
+    SelectPreparation,
+    EditRecipe,
+    InitFermentationForm,
+    AddRecipe,
+    StepForm,
+    StorageAddItem,
 )
-from .analyse import (
-    get_account_balance,
-    get_beer_balance,
-    get_beer_in_stock,
-    get_charge_quantity,
-)
-from .ingredient import calculate_ingredients
-from .brewing import (
-    get_next_step,
-    storage_delta,
-    load_calculated_hopping,
-    get_progress,
-    get_steps,
-    protocol_step,
-)
-from .ispindel import get_plot, save_plot
-from .protocol import processing_pdf
 
 # Custom configuration
 # Set locale for currency formatting (German in this case)
@@ -87,7 +79,8 @@ def analyse(request):
     logging.debug("analyse: running now!")
     config = {"displayModeBar": False}
     # BIER TOTAL
-    cq = get_charge_quantity()
+    c = Charge()
+    cq = c.get_quantity()
     key = []
     value = []
     data = []
@@ -119,7 +112,8 @@ def analyse(request):
     cq_plt = plot(cq_fig, output_type="div", config=config)
 
     # BIER IM AUGE
-    bis = get_beer_in_stock()
+    k = Keg()
+    bis = k.get_beer_in_stock()
     key.clear()
     value.clear()
     for k, v in bis.items():
@@ -134,7 +128,8 @@ def analyse(request):
     bis_plt = plot(bis_fig, output_type="div", config=config)
 
     # BIER BALANCE
-    bb_data = get_beer_balance()
+    bo = BeerOutput()
+    bb_data = bo.get_balance()
     bb_fig = go.Figure(
         go.Waterfall(
             name="20",
@@ -158,7 +153,8 @@ def analyse(request):
     bb_plt = plot(bb_fig, output_type="div", config=config)
 
     # GELD BALANCE
-    ab_data = get_account_balance()
+    ac = Account()
+    ab_data = ac.get_balance()
     ab_fig = go.Figure(
         go.Waterfall(
             name="20",
@@ -211,8 +207,7 @@ def brewing(request, cid):
     c = get_object_or_404(Charge, pk=cid)
     context["navi"] = "brewing"
     context["image_url"] = load_dynamic_bg_image()
-    preps = PreparationProtocol.objects.filter(charge=c)
-    context["preps"] = preps
+    context["preps"] = c.recipe.preps
     # Charge finished. Goto protocol
     if c.finished:
         logging.debug(
@@ -248,9 +243,9 @@ def brewing(request, cid):
         context["recipe"] = get_steps(c.recipe, c, c.amount)
         context["hg"] = c.amount * c.recipe.hg / AMOUNT_FACTOR
         context["ng"] = c.amount * c.recipe.ng / AMOUNT_FACTOR
-        context["protocol"] = RecipeProtocol.objects.filter(charge=cid)
+        context["protocol"] = BrewProtocol.objects.filter(charge=cid)
         context["form"] = BrewingProtocol()
-        context["progress"] = get_progress(c.recipe, step)
+        context["progress"] = c.get_progress()
         context["preps"] = PreparationProtocol.objects.filter(charge=c)
 
         return render(request, "brewery/brewing.html", context)
@@ -289,7 +284,7 @@ def brewing(request, cid):
                 logging.debug("brewing: preparations finished")
                 c.preps_finished = True
                 c.save()
-                step = Step.objects.get(pk=c.recipe.first)
+                step = RecipeStep.objects.get(pk=c.recipe.first)
                 step.amount = (
                     (step.amount * c.amount) / AMOUNT_FACTOR
                     if step.amount
@@ -309,7 +304,7 @@ def brewing(request, cid):
                 context["recipe"] = get_steps(c.recipe, c, c.amount)
                 context["hg"] = c.amount * c.recipe.hg / AMOUNT_FACTOR
                 context["ng"] = c.amount * c.recipe.ng / AMOUNT_FACTOR
-                context["progress"] = get_progress(c.recipe, step)
+                context["progress"] = c.get_progress()
                 context["preps"] = PreparationProtocol.objects.filter(charge=c)
                 return render(request, "brewery/brewing.html", context)
             else:
@@ -403,7 +398,7 @@ def brewing(request, cid):
                         context["recipe"] = get_steps(c.recipe, c, c.amount)
                         context["hg"] = c.amount * c.recipe.hg / AMOUNT_FACTOR
                         context["ng"] = c.amount * c.recipe.ng / AMOUNT_FACTOR
-                        context["progress"] = get_progress(c.recipe, step)
+                        context["progress"] = c.get_progress()
                         c.current_step = step
                         c.save()
                         return render(request, "brewery/brewing.html", context)
@@ -444,7 +439,7 @@ def brewing(request, cid):
                     context["recipe"] = get_steps(c.recipe, c, c.amount)
                     context["hg"] = c.amount * c.recipe.hg / AMOUNT_FACTOR
                     context["ng"] = c.amount * c.recipe.ng / AMOUNT_FACTOR
-                    context["progress"] = get_progress(c.recipe, step)
+                    context["progress"] = c.get_progress()
                     context["navi"] = "brewing"
                     context["image_url"] = load_dynamic_bg_image()
                     c.current_step = step
@@ -461,8 +456,7 @@ def brewing(request, cid):
             if request.POST.get("recalculate"):
                 c.hop_calculation_finished = False
                 c.save()
-                hops = HopCalculation.objects.filter(charge=c.id)
-                for hop in hops:
+                for hop in c.hopcalculation.all():
                     hop.delete()
             # Collecting all necessary ingredients
             logging.debug("brewing: calculate necessary ingredients")
@@ -473,9 +467,9 @@ def brewing(request, cid):
             logging.debug("brewing: collecting necessary preparations")
             preps_form = [
                 PreparationProtocolForm(prefix=str(item), instance=item)
-                for item in preps
+                for item in c.recipe.preps.all()
             ]
-            zipped_list = zip(preps, preps_form)
+            zipped_list = zip(c.recipe.preps.all(), preps_form)
             # Collecting missing ingredients
             missing_ingredients = list()
             for s in Step.objects.filter(recipe=c.recipe):
@@ -483,7 +477,7 @@ def brewing(request, cid):
                     delta = storage_delta(c, s)
                     if not delta:
                         missing_ingredients.append(s.ingredient)
-            calculated_hop_ingredients = HopCalculation.objects.filter(charge=c.id)
+            calculated_hop_ingredients = c.hopcalculation
             total_ibu = 0
             for item in HopCalculation.objects.filter(charge=c):
                 total_ibu += item.ibu
@@ -523,19 +517,15 @@ def brewing_add(request):
                 c.amount = charge_form.cleaned_data["amount"]
                 c.brewmaster = charge_form.cleaned_data["brewmaster"]
                 c.production = datetime.now()
-                c.current_step = Step.objects.get(pk=c.recipe.first)
+                c.current_step = c.recipe.first_step
                 if charge_form.cleaned_data["dsud_active"] == "Y":
                     c.brew_factor = 2
                 c.save()
 
                 # Create required preparations
-                preps = Preparation.objects.filter(recipe__id=c.recipe.id)
-                for p in preps:
-                    preps_protocol = PreparationProtocol()
-                    preps_protocol.charge = c
-                    preps_protocol.preparation = p
-                    preps_protocol.done = False
-                    preps_protocol.save()
+                #preps = Preparation.objects.filter(recipe__id=c.recipe.id)
+                for prep in c.recipe.preps.all():
+                    preps_protocol = PreparationProtocol.objects.create(preparation=prep, done=False)
 
                 return HttpResponseRedirect(reverse("brewing", kwargs={"cid": c.id}))
 
@@ -553,7 +543,8 @@ def get_protocol_context(request, cid):
     context = {}
     c = Charge.objects.get(pk=cid)
     context["charge"] = c
-    context["protocol"] = RecipeProtocol.objects.filter(charge=c.id)
+    #context["protocol"] = RecipeProtocol.objects.filter(charge=c.id)
+    context["protocol"] = ""
     context["hg"] = c.amount * c.recipe.hg / AMOUNT_FACTOR
     context["ng"] = c.amount * c.recipe.ng / AMOUNT_FACTOR
     try:
@@ -578,7 +569,8 @@ def get_protocol_context(request, cid):
     if c.ispindel:
         context["plot"] = get_plot(c)
     else:
-        context["fermentation"] = FermentationProtocol.objects.filter(charge=c.id)
+        #context["fermentation"] = FermentationProtocol.objects.filter(charge=c.id)
+        context["fermentation"] = ""
 
     host_port = request.META["HTTP_HOST"]
     riddle_id = b64e(("braurat" + str(c.id)).encode())
@@ -625,7 +617,7 @@ def fermentation(request, cid):
     context["f_charge_wort"] = InitFermentationForm()
     context["navi"] = "brewing"
     context["image_url"] = load_dynamic_bg_image()
-    context["protocol"] = RecipeProtocol.objects.filter(charge=c.id)
+    context["protocol"] = BrewingProtocol.objects.filter(charge=c.id)
     context["preps"] = PreparationProtocol.objects.filter(charge=c)
 
     if request.POST:
@@ -711,8 +703,6 @@ def recipe(request):
 def recipe_detail(request, recipe_id):
     context = {}
     r = Recipe.objects.get(pk=recipe_id)
-    s = get_steps(r, None, AMOUNT_FACTOR)
-    p = Preparation.objects.filter(recipe=r)
 
     if request.method == "POST":
         if request.POST.get("delete"):
@@ -722,8 +712,8 @@ def recipe_detail(request, recipe_id):
             return HttpResponseRedirect(reverse("step_add", kwargs={"recipe_id": r.id}))
 
     context["recipe"] = r
-    context["steps"] = s
-    context["preparation"] = p
+    context["steps"] = r.steps()
+    context["preparation"] = r.preparation()
     context["navi"] = "recipe"
     context["image_url"] = load_dynamic_bg_image()
 
@@ -763,7 +753,6 @@ def recipe_add(request):
 def recipe_edit(request, recipe_id):
     context = {}
     r = Recipe.objects.get(pk=recipe_id)
-    s = get_steps(r, None, AMOUNT_FACTOR)
     preps = SelectPreparation()
 
     # Get steps which aren't properly linked
@@ -789,8 +778,8 @@ def recipe_edit(request, recipe_id):
 
     form = EditRecipe()
     context["form"] = form
-    context["steps"] = s
     context["recipe"] = r
+    context["steps"] = r.steps()
     context["unused"] = unused_steps
     context["preps"] = preps
     context["navi"] = "recipe"

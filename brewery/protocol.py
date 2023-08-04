@@ -4,7 +4,10 @@ from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, PageBreak
 from reportlab.platypus.tables import Table, TableStyle
 from reportlab.lib import colors
-from .models import Charge, RecipeProtocol, FermentationProtocol
+
+from .models.charge import Charge
+from .models.protocol import FermentationProtocol, BrewProtocol
+
 from .ispindel import get_plot
 import os
 from pathlib import Path

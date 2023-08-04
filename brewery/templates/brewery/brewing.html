@@ -134,17 +134,7 @@
                                         {% endfor %}
                                     </tr>
                                     {% endfor %}
-                                    {% for hop in calc_hop_ingr %}
-                                        <tr>
-                                        {% if forloop.counter == 1 %}
-                                            <td>{{ hop.ingredient.type }}</td>
-                                        {% else %}
-                                            <td></td>
-                                        {% endif %}
-                                        <td>{{ hop.ingredient }}</td>
-                                        <td>{{ hop.amount }} {{ hop.step.unit}} &#8594; {{ hop.ibu }} IBU</td>
-                                        </tr>
-                                    {% endfor %}
+                                    {{ calc_hop_ingr }}
                                 </table>
 
                                 {% if missing %}
@@ -162,12 +152,6 @@
                                     <h5><u>Hopfenrechner</u><sup>1</sup></h5>
                                     Soll-Wert: {{ charge.recipe.ibu }} IBU <br>
                                     Ist-Wert: {{ total_ibu }} IBU (=
-                                    {% for item in calc_hop_ingr %}
-                                        {% if forloop.counter > 1 %}
-                                            +
-                                        {% endif %}
-                                        {{ item.ibu }}
-                                    {% endfor %}
                                     )
                                     </br></br>
                                     <form action="" method="post">
