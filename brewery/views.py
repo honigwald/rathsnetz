@@ -20,7 +20,8 @@ from plotly.offline import plot
 # Local imports (custom modules)
 from .models.charge import Charge
 from .models.recipe import Recipe
-#from .models.step import RecipeStep
+
+# from .models.step import RecipeBrewStep
 from .models.keg import Keg
 from .models.hint import Hint
 from .models.protocol import BrewProtocol, FermentationProtocol, PreparationProtocol
@@ -284,7 +285,7 @@ def brewing(request, cid):
                 logging.debug("brewing: preparations finished")
                 c.preps_finished = True
                 c.save()
-                step = RecipeStep.objects.get(pk=c.recipe.first)
+                step = RecipeBrewStep.objects.get(pk=c.recipe.first)
                 step.amount = (
                     (step.amount * c.amount) / AMOUNT_FACTOR
                     if step.amount
@@ -523,9 +524,11 @@ def brewing_add(request):
                 c.save()
 
                 # Create required preparations
-                #preps = Preparation.objects.filter(recipe__id=c.recipe.id)
+                # preps = Preparation.objects.filter(recipe__id=c.recipe.id)
                 for prep in c.recipe.preps.all():
-                    preps_protocol = PreparationProtocol.objects.create(preparation=prep, done=False)
+                    preps_protocol = PreparationProtocol.objects.create(
+                        preparation=prep, done=False
+                    )
 
                 return HttpResponseRedirect(reverse("brewing", kwargs={"cid": c.id}))
 
@@ -543,7 +546,7 @@ def get_protocol_context(request, cid):
     context = {}
     c = Charge.objects.get(pk=cid)
     context["charge"] = c
-    #context["protocol"] = RecipeProtocol.objects.filter(charge=c.id)
+    # context["protocol"] = RecipeProtocol.objects.filter(charge=c.id)
     context["protocol"] = ""
     context["hg"] = c.amount * c.recipe.hg / AMOUNT_FACTOR
     context["ng"] = c.amount * c.recipe.ng / AMOUNT_FACTOR
@@ -569,7 +572,7 @@ def get_protocol_context(request, cid):
     if c.ispindel:
         context["plot"] = get_plot(c)
     else:
-        #context["fermentation"] = FermentationProtocol.objects.filter(charge=c.id)
+        # context["fermentation"] = FermentationProtocol.objects.filter(charge=c.id)
         context["fermentation"] = ""
 
     host_port = request.META["HTTP_HOST"]
@@ -713,7 +716,7 @@ def recipe_detail(request, recipe_id):
 
     context["recipe"] = r
     context["steps"] = r.steps()
-    context["preparation"] = r.preparation()
+    context["preparation"] = r.preparations()
     context["navi"] = "recipe"
     context["image_url"] = load_dynamic_bg_image()
 
@@ -755,19 +758,19 @@ def recipe_edit(request, recipe_id):
     r = Recipe.objects.get(pk=recipe_id)
     preps = SelectPreparation()
 
-    # Get steps which aren't properly linked
-    unused_steps = Step.objects.filter(recipe=r)
-    try:
-        used_steps = Step.objects.get(pk=r.first)
-    except Step.DoesNotExist:
-        used_steps = None
+    ## Get steps which aren't properly linked
+    # unused_steps = Step.objects.filter(recipe=r)
+    # try:
+    #    used_steps = Step.objects.get(pk=r.first)
+    # except Step.DoesNotExist:
+    #    used_steps = None
 
-    while used_steps:
-        unused_steps = unused_steps.exclude(pk=used_steps.id)
-        try:
-            used_steps = used_steps.next
-        except AttributeError:
-            used_steps = None
+    # while used_steps:
+    #    unused_steps = unused_steps.exclude(pk=used_steps.id)
+    #    try:
+    #        used_steps = used_steps.next
+    #    except AttributeError:
+    #        used_steps = None
 
     if request.method == "POST":
         if request.POST.get("add"):
@@ -780,7 +783,7 @@ def recipe_edit(request, recipe_id):
     context["form"] = form
     context["recipe"] = r
     context["steps"] = r.steps()
-    context["unused"] = unused_steps
+    # context["unused"] = unused_steps
     context["preps"] = preps
     context["navi"] = "recipe"
     context["image_url"] = load_dynamic_bg_image()

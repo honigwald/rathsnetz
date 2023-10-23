@@ -2,27 +2,29 @@ from django.db import models
 from .storage import Storage
 from .unit import Unit
 from .category import Category
+from .hop_calculation import HopCalculation
 
 
 class Step(models.Model):
     id = models.AutoField(primary_key=True)
-    step_number = models.IntegerField(blank=True, null=True)
+    no = models.IntegerField(blank=True, null=True)
     prev = models.OneToOneField(
         "self", null=True, blank=True, related_name="next", on_delete=models.DO_NOTHING
     )
+
     class Meta:
         abstract = True
 
-    def list(self):
-        los = []
+    def dict(self):
+        dos = {}
         step = self
         while step:
-            los.append(step)
-            try:
+            dos[step.id] = step
+            if hasattr(step, "next"):
                 step = step.next
-            except Step.DoesNotExist:
-                step = None
-        return los 
+            else:
+                return dos
+
 
 class BrewStep(Step):
     title = models.CharField(max_length=50, default="")
@@ -32,8 +34,10 @@ class BrewStep(Step):
     )
     amount = models.FloatField(blank=True, null=True)
     unit = models.ForeignKey(Unit, on_delete=models.DO_NOTHING, blank=True, null=True)
+
     class Meta:
         abstract = True
+
 
 class RecipeBrewStep(BrewStep):
     duration = models.DurationField(blank=True, null=True)
@@ -42,9 +46,23 @@ class RecipeBrewStep(BrewStep):
 
     def __str__(self):
         return "[" + str(self.id) + "] " + str(self.step) + ". " + str(self.title)
-    
 
-class ProtocolBrewStep(BrewStep):
+    def calculate_hopping(self, charge):
+        hc = HopCalculation(charge=charge, step=self)
+        hc.calculate()
+
+    def has_substitue(self, charge):
+        return HopCalculation.objects.filter(charge=charge).filter(step=self)
+
+    # def load_calculated_hopping(step, hopping):
+    #    logging.debug("load_calculated_hopping")
+    #    step.amount = hopping[0].amount
+    #    step.ingredient = hopping[0].ingredient
+    #    step.description = "Hopfenrechner: " + str(hopping[0].ibu) + " IBU"
+    #    return step
+
+
+class BrewProtocolStep(BrewStep):
     tstart = models.TimeField()
     tend = models.TimeField()
     comment = models.CharField(max_length=200, blank=True, null=True)
@@ -52,7 +70,8 @@ class ProtocolBrewStep(BrewStep):
     def __str__(self):
         return "[]"
 
-class ProtocolFermentationStep(Step):
+
+class FermentationProtocolStep(Step):
     temperature = models.FloatField()
     plato = models.FloatField()
     date = models.DateTimeField()

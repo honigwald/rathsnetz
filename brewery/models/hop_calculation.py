@@ -1,6 +1,6 @@
 from django.db import models
-#from .charge import Charge
-from .step import RecipeStep
+from .charge import Charge
+from .step import RecipeBrewStep
 from .storage import Storage
 from .protocol import BrewProtocol
 from django.db import transaction
@@ -11,74 +11,124 @@ import logging
 
 AMOUNT_FACTOR = 100
 
+
 class HopCalculation(models.Model):
     id = models.AutoField(primary_key=True)
-    charge = models.CharField(max_length=50, default="")
-    step = models.ForeignKey(RecipeStep, on_delete=models.DO_NOTHING, blank=True, null=True)
+    # charge = models.CharField(max_length=50, default="")
+    charge = models.ForeignKey(
+        Charge, on_delete=models.DO_NOTHING, blank=True, null=True
+    )
+    step = models.ForeignKey(
+        RecipeBrewStep, on_delete=models.DO_NOTHING, blank=True, null=True
+    )
+    ingredient = models.ForeignKey(
+        Storage, on_delete=models.DO_NOTHING, blank=True, null=True
+    )
     amount = models.FloatField()
     ibu = models.FloatField()
 
     def __str__(self):
         return str(self.charge_id) + "_" + str(self.step.step)
 
+    @staticmethod
+    def glenn_tinseth_hop(self, hop, ibu):
+        est = self.charge.recipe.test_after_recipe_head(self.step)
+        boiltime = self.charge.recipe.boiltime.total_seconds() - est
+        # logging.debug("{}(bt) min = {}(total_bt) - {}(progr)".format(
+        #    boiltime/60, charge.recipe.boiltime.total_seconds(), progress))
+
+        utilization = 10
+        # 10% higher utilization of hop, when pellets are used.
+        # Currently we're not distingush between pellets and dolden. Therefore pellet is always true.
+        utilization += utilization / 100 * 10 if True else 0
+
+        # 10% higher utilization of hop, when added after 15min.
+        utilization += utilization / 100 * 10 if (est / 60) >= 15 else 0
+
+        A = (ibu * self.charge.amount) / (hop.alpha * utilization)
+        B = 1.65 * pow(0.000125, (0.004 * self.charge.recipe.wort))
+        C = (1 - exp((-0.04) * boiltime / 60)) / (4.15)
+        # logging.debug("Formula_A: {} = ({} * {})/ ({} * {})".format(
+        #    A, ibu, charge.amount, hop.alpha, utilization))
+        # logging.debug("Formula_B: %s = (1.65 * pow(0.000125, (0.004 * %s)))", B, charge.recipe.wort)
+        # logging.debug("Formula_C: %s = (1 - exp( (-0.04) * %s /60 )) / 4.15", C, boiltime)
+        calculated_hop = A / (B * C)
+
+        # units are important!!!
+        calculated_hop /= 1000 if hop.unit.name == "kg" else 1
+
+        return round(calculated_hop, 2)
+
+    @staticmethod
+    def glenn_tinseth_ibu(self, hop, amount):
+        est = self.charge.recipe.test_after_recipe_head(self.step)
+        boiltime = self.charge.recipe.boiltime.total_seconds() - est
+        # units are important!!!
+        amount *= 1000 if hop.unit.name == "kg" else 1
+
+        utilization = 10
+        # 10% higher utilization of hop, when pellets are used.
+        # Currently we're not distingush between pellets and dolden. Therefore pellet is always true.
+        utilization += utilization / 100 * 10 if True else 0
+
+        # 10% higher utilization of hop, when added after 15min.
+        utilization += utilization / 100 * 10 if (est / 60) >= 15 else 0
+
+        # logging.debug("{}(bt) min = {}(total_bt) - {}(progr)".format(
+        #    boiltime/60, charge.recipe.boiltime.total_seconds(), progress))
+        A = (amount * hop.alpha * (utilization)) / self.charge.amount
+        B = 1.65 * pow(0.000125, (0.004 * self.charge.recipe.wort))
+        C = (1 - exp((-0.04) * boiltime / 60)) / (4.15)
+        # logging.debug("Formula_A: {} = ({} * {})/ ({} * {})".format(
+        #    A, ibu, charge.amount, hop.alpha, utilization))
+        # logging.debug("Formula_B: %s = (1.65 * pow(0.000125, (0.004 * %s)))", B, charge.recipe.wort)
+        # logging.debug("Formula_C: %s = (1 - exp( (-0.04) * %s /60 )) / 4.15", C, boiltime)
+        ibu = round(A * B * C, 1)
+
+        return ibu
+
+    def calculate(self):
+        scaled_amount = self.charge.amount * self.step.amount / AMOUNT_FACTOR
+        # calculate IBU of current step, which is required by the recipe
+        required_ibu = self.glenn_tinseth_ibu(self.step.ingredient, scaled_amount)
+        remaining_ibu = required_ibu
+
+        hops = Storage.objects.filter(name=self.step.ingredient.name).order_by(
+            "-amount"
+        )
+        for hop in hops:
+            if hop.amount == 0:
+                continue
+            # Calculate possible IBU with available hop in stock
+            possible_ibu = self.glenn_tinseth_ibu(hop, hop.amount)
+            if possible_ibu > remaining_ibu:
+                calc_hop_amount = self.glenn_tinseth_hop(hop, remaining_ibu)
+                possible_ibu = self.glenn_tinseth_ibu(hop, calc_hop_amount)
+            else:
+                calc_hop_amount = self.glenn_tinseth_hop(hop, possible_ibu)
+
+            remaining_ibu -= possible_ibu
+            self.ingredient = hop
+            self.amount = calc_hop_amount
+            self.ibu = possible_ibu
+
+            if remaining_ibu <= 0:
+                break
+            else:
+                # Create next HC for current step
+                self = HopCalculation(self)
+                self.pk = None
+                self.save()
+
+    def load_calculated_hopping(step, hopping):
+        logging.debug("load_calculated_hopping")
+        step.amount = hopping[0].amount
+        step.ingredient = hopping[0].ingredient
+        step.description = "Hopfenrechner: " + str(hopping[0].ibu) + " IBU"
+        return step
 
 
-
-def glenn_tinseth_hop(charge, hop, progress, ibu):
-    boiltime = charge.recipe.boiltime.total_seconds() - progress
-    # logging.debug("{}(bt) min = {}(total_bt) - {}(progr)".format(
-    #    boiltime/60, charge.recipe.boiltime.total_seconds(), progress))
-
-    utilization = 10
-    # 10% higher utilization of hop, when pellets are used.
-    # Currently we're not distingush between pellets and dolden. Therefore pellet is always true.
-    utilization += utilization / 100 * 10 if True else 0
-
-    # 10% higher utilization of hop, when added after 15min.
-    utilization += utilization / 100 * 10 if (progress / 60) >= 15 else 0
-
-    A = (ibu * charge.amount) / (hop.alpha * utilization)
-    B = 1.65 * pow(0.000125, (0.004 * charge.recipe.wort))
-    C = (1 - exp((-0.04) * boiltime / 60)) / (4.15)
-    # logging.debug("Formula_A: {} = ({} * {})/ ({} * {})".format(
-    #    A, ibu, charge.amount, hop.alpha, utilization))
-    # logging.debug("Formula_B: %s = (1.65 * pow(0.000125, (0.004 * %s)))", B, charge.recipe.wort)
-    # logging.debug("Formula_C: %s = (1 - exp( (-0.04) * %s /60 )) / 4.15", C, boiltime)
-    calculated_hop = A / (B * C)
-
-    # units are important!!!
-    calculated_hop /= 1000 if hop.unit.name == "kg" else 1
-
-    return round(calculated_hop, 2)
-
-
-def glenn_tinseth_ibu(charge, hop, progress, amount):
-    boiltime = charge.recipe.boiltime.total_seconds() - progress
-    # units are important!!!
-    amount *= 1000 if hop.unit.name == "kg" else 1
-
-    utilization = 10
-    # 10% higher utilization of hop, when pellets are used.
-    # Currently we're not distingush between pellets and dolden. Therefore pellet is always true.
-    utilization += utilization / 100 * 10 if True else 0
-
-    # 10% higher utilization of hop, when added after 15min.
-    utilization += utilization / 100 * 10 if (progress / 60) >= 15 else 0
-
-    # logging.debug("{}(bt) min = {}(total_bt) - {}(progr)".format(
-    #    boiltime/60, charge.recipe.boiltime.total_seconds(), progress))
-    A = (amount * hop.alpha * (utilization)) / charge.amount
-    B = 1.65 * pow(0.000125, (0.004 * charge.recipe.wort))
-    C = (1 - exp((-0.04) * boiltime / 60)) / (4.15)
-    # logging.debug("Formula_A: {} = ({} * {})/ ({} * {})".format(
-    #    A, ibu, charge.amount, hop.alpha, utilization))
-    # logging.debug("Formula_B: %s = (1.65 * pow(0.000125, (0.004 * %s)))", B, charge.recipe.wort)
-    # logging.debug("Formula_C: %s = (1 - exp( (-0.04) * %s /60 )) / 4.15", C, boiltime)
-    ibu = round(A * B * C, 1)
-
-    return ibu
-
-
+"""
 @transaction.atomic
 def calculate_ingredients(charge):
     step = charge.recipe.first_step
@@ -92,7 +142,6 @@ def calculate_ingredients(charge):
         if step.duration and step.category.name == "Würzekochung":
             if step.duration:
                 progress += step.duration.total_seconds()
-
         if step.ingredient:
             required_amount = charge.amount * step.amount / AMOUNT_FACTOR
             # Calculate hops
@@ -104,10 +153,11 @@ def calculate_ingredients(charge):
                         "-amount"
                     )
                     # Calculate IBU of current step, which is required by the recipe
-                    target_step_ibu = glenn_tinseth_ibu(
-                        charge, step.ingredient, progress, required_amount
-                    )
+                    target_step_ibu = glenn_tinseth_ibu( charge, step.ingredient, progress, required_amount)
                     remaining_ibu = target_step_ibu
+
+
+
                     for hop in hops:
                         if finished:
                             break
@@ -139,6 +189,8 @@ def calculate_ingredients(charge):
                             )
                             hop.amount = 0
                             total_ibu += possible_ibu
+
+
                         else:
                             calc_hop_amount = glenn_tinseth_hop(
                                 charge, hop, progress, remaining_ibu
@@ -187,7 +239,7 @@ def calculate_ingredients(charge):
             logging.debug("Item: %s", calculated_hop[4])
             store_it = HopCalculation()
             store_it.charge_id = charge
-            store_it.step = RecipeStep.objects.get(id=calculated_hop[4])
+            store_it.step = RecipeBrewStep.objects.get(id=calculated_hop[4])
             store_it.ingredient = Storage.objects.get(id=calculated_hop[0])
             store_it.amount = calculated_hop[1]
             store_it.ibu = calculated_hop[3]
@@ -201,19 +253,13 @@ def calculate_ingredients(charge):
 AMOUNT_FACTOR = 100
 
 
-def load_calculated_hopping(step, hopping):
-    logging.debug("load_calculated_hopping")
-    step.amount = hopping[0].amount
-    step.ingredient = hopping[0].ingredient
-    step.description = "Hopfenrechner: " + str(hopping[0].ibu) + " IBU"
-    return step
 
 
 # HELPER FUNCTION
 def get_steps(rid, charge, amount):
     try:
-        step = RecipeStep.objects.get(pk=rid.first)
-    except RecipeStep.DoesNotExist:
+        step = RecipeBrewStep.objects.get(pk=rid.first)
+    except RecipeBrewStep.DoesNotExist:
         step = None
     s = []
     while step:
@@ -225,7 +271,7 @@ def get_steps(rid, charge, amount):
             if hops:
                 for idx, hop in enumerate(hops):
                     if idx:
-                        add_step = RecipeStep.objects.get(id=step.id)
+                        add_step = RecipeBrewStep.objects.get(id=step.id)
                         step.next = add_step
                         step = add_step
                     step.description = str(hop.ibu) + "_berechnet"
@@ -248,7 +294,7 @@ def get_next_step(charge, step):
     try:
         hopping = HopCalculation.objects.filter(charge=charge).filter(step=step)
         if step.category.name == "Würzekochung" and hopping and len(hopping) > 1:
-            next_step = RecipeStep.objects.get(id=step.id)
+            next_step = RecipeBrewStep.objects.get(id=step.id)
             next_step.description = str(hopping[1].ibu) + "_berechnet"
             next_step.amount = hopping[1].amount
             next_step.ingredient = hopping[1].ingredient
@@ -270,7 +316,7 @@ def get_next_step(charge, step):
                 next_step.description = str(hopping[0].ibu) + "_berechnet"
                 next_step.amount = hopping[0].amount
                 next_step.ingredient = hopping[0].ingredient
-    except RecipeStep.DoesNotExist:
+    except RecipeBrewStep.DoesNotExist:
         next_step = None
 
     return next_step
@@ -310,3 +356,5 @@ def storage_delta(charge, step):
     available = Storage.objects.get(id=step.ingredient.id).amount
     delta = available - required
     return delta if delta > 0 else 0
+
+"""

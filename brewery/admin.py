@@ -3,8 +3,7 @@ from django.contrib import admin
 # Import models
 from .models.charge import Charge
 from .models.recipe import Recipe
-from .models.step import BrewProtocolStep, RecipeStep
-from .models.step import BrewProtocolStep
+from .models.step import BrewProtocolStep, RecipeBrewStep
 from .models.protocol import BrewProtocol, FermentationProtocol, PreparationProtocol
 from .models.keg import Keg
 from .models.hint import Hint
@@ -28,7 +27,7 @@ admin.site.register(Keg)
 admin.site.register(Charge)
 admin.site.register(FermentationProtocol)
 admin.site.register(BrewProtocolStep)
-admin.site.register(RecipeStep)
+admin.site.register(RecipeBrewStep)
 admin.site.register(Unit)
 admin.site.register(Type)
 admin.site.register(Category)

@@ -9,11 +9,11 @@ from django.forms import (
 )
 from bootstrap_datepicker_plus.widgets import DateTimePickerInput
 
-from .models.charge import Charge
 from .models.recipe import Recipe
-from .models.step import RecipeStep
+from .models.charge import Charge
+from .models.step import RecipeBrewStep
 from .models.keg import Keg
-from .models.protocol import FermentationProtocol, PreparationProtocol
+from .models.protocol import FermentationProtocolStep, PreparationProtocol
 from .models.preparation import Preparation
 from .models.storage import Storage
 
@@ -21,7 +21,7 @@ from .models.storage import Storage
 class BrewingCharge(ModelForm):
     class Meta:
         model = Charge
-        fields = ["recipe", "brewmaster", "amount"]
+        fields = ["brewmaster", "amount", "recipe"]
         widgets = {
             "recipe": Select(attrs={"class": "custom-select mr-sm"}),
             "amount": NumberInput(
@@ -134,7 +134,7 @@ class AddRecipe(ModelForm):
 
 class EditRecipe(ModelForm):
     class Meta:
-        model = RecipeStep
+        model = RecipeBrewStep
         exclude = ("recipe",)
 
 
@@ -164,7 +164,7 @@ class PreparationProtocolForm(ModelForm):
 
 class FermentationProtocolForm(ModelForm):
     class Meta:
-        model = FermentationProtocol
+        model = FermentationProtocolStep
         fields = ["temperature", "plato", "date"]
         widgets = {
             "date": DateTimePickerInput(format="%d.%m.%Y %H:%M"),
@@ -212,7 +212,7 @@ class KegSelectForm(ModelForm):
 
 class StepForm(ModelForm):
     class Meta:
-        model = RecipeStep
+        model = RecipeBrewStep
         fields = [
             "prev",
             "category",
