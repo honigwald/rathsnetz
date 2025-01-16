@@ -3,6 +3,7 @@ db.sqlite3*
 .idea/
 *.pyc
 pyenv
+.venv
 static/img/background/*img
 static/img/background/*.jpg
 rathsnetz/static/
