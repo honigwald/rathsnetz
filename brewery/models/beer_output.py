@@ -1,7 +1,8 @@
-from django.db import models
-from .charge import Charge
 import pandas as pd
+from django.db import models
 from datetime import datetime
+
+from brewery.models import Charge
 
 
 class BeerOutput(models.Model):

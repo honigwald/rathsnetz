@@ -107,8 +107,8 @@
                                 </thead>
                                 {% for p in preps %}
                                 <tr style="vertical-align:top;">
-                                    <td>{{ p.preparation.short }}</td>
-                                    <td>{{ p.preparation.detail}}</td>
+                                    <td>{{ p.short }}</td>
+                                    <td>{{ p.detail}}</td>
                                     <td> &#x2611;</td>
                                 </tr>
                                 {% endfor %}
@@ -134,7 +134,17 @@
                                         {% endfor %}
                                     </tr>
                                     {% endfor %}
-                                    {{ calc_hop_ingr }}
+                                    {% for hop in calc_hop_ingr %}
+                                        <tr>
+                                        {% if forloop.counter == 1 %}
+                                            <td>{{ hop.ingredient.type }}</td>
+                                        {% else %}
+                                            <td></td>
+                                        {% endif %}
+                                        <td>{{ hop.ingredient }}</td>
+                                        <td>{{ hop.amount }} {{ hop.step.unit}} &#8594; {{ hop.ibu }} IBU</td>
+                                        </tr>
+                                    {% endfor %}
                                 </table>
 
                                 {% if missing %}
@@ -152,6 +162,12 @@
                                     <h5><u>Hopfenrechner</u><sup>1</sup></h5>
                                     Soll-Wert: {{ charge.recipe.ibu }} IBU <br>
                                     Ist-Wert: {{ total_ibu }} IBU (=
+                                    {% for item in calc_hop_ingr %}
+                                        {% if forloop.counter > 1 %}
+                                            +
+                                        {% endif %}
+                                        {{ item.ibu }}
+                                    {% endfor %}
                                     )
                                     </br></br>
                                     <form action="" method="post">
@@ -182,7 +198,7 @@
                                                     <th>Kategorie</th><th>Beschreibung</th><th>Erledigt</th>
                                                 </tr>
                                             </thead>
-                                            {% for p, f in list %}
+                                            {% for p, f in pending_preps %}
                                             <tr style="vertical-align:top;">
                                                 <td>{{ p.preparation.short }}</td>
                                                 <td>{{ p.preparation.detail}}</td>
@@ -210,7 +226,7 @@
                                 <tbody>
                                 {% for p in protocol %}
                                 <tr>
-                                    <td>{{ p.step }}</td>
+                                    <td>{{ p.pos }}</td>
                                     <td>{{ p.title }}</td>
                                     <td>{{ p.description }}</td>
                                     <td>{{ p.ingredient }}</td>
@@ -252,7 +268,7 @@
                                                 </thead>
                                                 <tbody>
                                                 <tr style="vertical-align: top;">
-                                                    <td>{{ step.step }}</td>
+                                                    <td>{{ step.pos }}</td>
                                                     <td>{{ step.title }}</td>
                                                     <td>{{ step.description }}</td>
                                                     <td>{% if step.ingredient %}{{ step.ingredient }}{% endif %}</td>
@@ -304,7 +320,7 @@
                                             </thead>
                                             <tbody>
                                                 <tr style="background-color:white;">
-                                                    <td>{{ s_next.step }}</td>
+                                                    <td>{{ s_next.pos }}</td>
                                                     <td>{{ s_next.title }}</td>
                                                     <td>{{ s_next.description }}</td>
                                                     <td>{% if s_next.ingredient %}{{ s_next.ingredient }}{% endif %}</td>
@@ -322,16 +338,16 @@
                                         </thead>
                                         <tbody>
                                         {% for s in recipe %}
-                                            {% if forloop.counter > step.next.step %}
+                                            <!-- if forloop.counter > step.next.step -->
                                                 <tr>
-                                                    <td>{{ forloop.counter }}</td>
+                                                    <td>{{ s.pos }}</td>
                                                     <td>{% if s.title %}{{ s.title }}{% else %}{{ s.step.title}}{% endif %}</td>
                                                     <td>{{ s.description }}</td>
                                                     <td>{% if s.ingredient %}{{ s.ingredient }}{% endif %}</td>
                                                     <td style="white-space:nowrap;">{% if s.amount %}{{ s.amount }} {{ s.unit }}{% endif %}</td>
                                                     <td>{% if s.duration %}{{ s.duration }}{% endif %}</td>
                                                 </tr>
-                                            {% endif %}
+                                            <!-- endif -->
                                         {% endfor %}
                                         </tbody>
                                     </table>
@@ -353,7 +369,7 @@
                                             <tbody>
                                             {% for p in protocol %}
                                             <tr>
-                                                <td>{{ p.step }}</td>
+                                                <td>{{ p.pos }}</td>
                                                 <td>{{ p.title }}</td>
                                                 <td>{{ p.description }}</td>
                                                 <td>{{ p.ingredient }}</td>

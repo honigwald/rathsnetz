@@ -27,4 +27,4 @@ sqlparse==0.4.3
 tenacity==8.1.0
 typing_extensions==4.3.0
 urllib3==1.26.12
-mysqlclient==2.2.5
+mysqlclient>=2.2.5

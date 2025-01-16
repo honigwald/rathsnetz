@@ -1,7 +1,7 @@
 from django.db import models
 from datetime import datetime
-import logging
 import pandas as pd
+import logging
 
 
 class Account(models.Model):

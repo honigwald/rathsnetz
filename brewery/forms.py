@@ -9,19 +9,19 @@ from django.forms import (
 )
 from bootstrap_datepicker_plus.widgets import DateTimePickerInput
 
-from .models.charge import Charge
-from .models.recipe import Recipe
-from .models.step import RecipeStep
-from .models.keg import Keg
-from .models.protocol import FermentationProtocol, PreparationProtocol
-from .models.preparation import Preparation
-from .models.storage import Storage
+from brewery.models import Recipe
+from brewery.models import Charge, PendingPreparation
+from brewery.models import RecipeBrewStep
+from brewery.models import Keg
+from brewery.models import FermentationProtocolStep
+from brewery.models import Preparation
+from brewery.models import Storage
 
 
 class BrewingCharge(ModelForm):
     class Meta:
         model = Charge
-        fields = ["recipe", "brewmaster", "amount"]
+        fields = ["brewmaster", "amount", "recipe"]
         widgets = {
             "recipe": Select(attrs={"class": "custom-select mr-sm"}),
             "amount": NumberInput(
@@ -134,7 +134,7 @@ class AddRecipe(ModelForm):
 
 class EditRecipe(ModelForm):
     class Meta:
-        model = RecipeStep
+        model = RecipeBrewStep
         exclude = ("recipe",)
 
 
@@ -156,15 +156,15 @@ class SelectPreparation(Form):
     )
 
 
-class PreparationProtocolForm(ModelForm):
+class PendingPreparationForm(ModelForm):
     class Meta:
-        model = PreparationProtocol
+        model = PendingPreparation
         fields = ["done"]
 
 
 class FermentationProtocolForm(ModelForm):
     class Meta:
-        model = FermentationProtocol
+        model = FermentationProtocolStep
         fields = ["temperature", "plato", "date"]
         widgets = {
             "date": DateTimePickerInput(format="%d.%m.%Y %H:%M"),
@@ -210,11 +210,37 @@ class KegSelectForm(ModelForm):
         fields = ["id"]
 
 
+class StepPredecessorForm(ModelForm):
+    preds = forms.ModelChoiceField(
+        queryset=RecipeBrewStep.objects.none(),  # filter(content=None),
+        required=False,
+        label="Vorgänger",
+    )
+
+    class Meta:
+        model = RecipeBrewStep
+        fields = ["id", "preds"]
+
+    def __init__(self, *args, **kwargs):
+        # Pop the name filter from kwargs (default to None if not provided)
+        recipe = kwargs.pop("recipe", None)
+        step_id = kwargs.pop("step_id", None)
+        super().__init__(*args, **kwargs)
+
+        # Set the queryset for the filtered field based on the dynamic name_filter
+        if recipe is not None:
+            self.fields["preds"].queryset = RecipeBrewStep.objects.filter(
+                rname=recipe
+            ).exclude(id=step_id)
+        else:
+            # If no filter is provided, set an empty queryset or a default queryset
+            self.fields["preds"].queryset = RecipeBrewStep.objects.all()
+
+
 class StepForm(ModelForm):
     class Meta:
-        model = RecipeStep
+        model = RecipeBrewStep
         fields = [
-            "prev",
             "category",
             "title",
             "description",
@@ -227,7 +253,6 @@ class StepForm(ModelForm):
             "description": Textarea(attrs={"class": "form-control mr-sm", "rows": 4})
         }
         labels = {
-            "prev": "Vorgänger (wenn leer, dann als 1. Schritt einfügen)",
             "category": "Kategorie",
             "titel": "Titel",
             "description": "Beschreibung",

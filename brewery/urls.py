@@ -29,5 +29,5 @@ urlpatterns = [
         views.public_protocol,
         name="public_protocol",
     ),
-    path("<int:cid>", views.create_pdf_protocol, name="create_pdf_protocol"),
+    # path("<int:cid>", views.create_pdf_protocol, name="create_pdf_protocol"),
 ]

@@ -1,7 +1,7 @@
 from django.db import models
 from django.core.validators import MinValueValidator
-from .type import Type
-from .unit import Unit
+
+from brewery.models import Type, Unit
 
 
 class Storage(models.Model):

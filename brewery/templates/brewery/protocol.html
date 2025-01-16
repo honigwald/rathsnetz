@@ -21,7 +21,8 @@
                             <span class="float-md-left"> <h3>Protokoll: {{ charge.recipe.name }}</h3> </span>
                         </div>
                         <div class="col-md-6 text-center">
-                            <span class="float-md-right"> <a href="{% url 'create_pdf_protocol' charge.id %}" title="Erzeuge PDF"><i class="fa fa-file-pdf-o" style="font-size:35px;color:red"></i></a> </span>
+                            <!-- { url 'create_pdf_protocol' charge.id } -->
+                            <span class="float-md-right"> <a href="" title="Erzeuge PDF"><i class="fa fa-file-pdf-o" style="font-size:35px;color:red"></i></a> </span>
                         </div>
                     </div>
                 </div>
@@ -81,7 +82,7 @@
                             <tbody>
                                 {% for p in protocol %}
                                 <tr>
-                                    <td class="number">{{ p.step }}</td>
+                                    <td class="number">{{ p.pos }}</td>
                                     <td>{{ p.title }}</td>
                                     <td>{{ p.description }}</td>
                                     <td>{% if p.ingredient %}{{ p.ingredient }}{% endif %}</td>
@@ -113,9 +114,9 @@
                             <tbody>
                             {% for f in fermentation %}
                             <tr>
-                                <td>{{ f.step }}</td>
-                                <td>{{ f.temperature }}</td>
-                                <td>{{ f.plato }}</td>
+                                <td class="number">{{ f.pos }}</td>
+                                <td class="number">{{ f.temperature }}</td>
+                                <td class="number">{{ f.plato }}</td>
                                 <td>{{ f.date }}</td>
                             </tr>
                             {% endfor %}
