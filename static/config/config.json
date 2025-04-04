@@ -1,10 +1,11 @@
 {
     "influxdb": [
         {
-            "host": "HOST",
-            "port": "PORT",
-            "user": "USER",
-            "password": "PASSWORD"
+            "host": "CHANGE-ME-TO-HOST",
+            "port": "9999",
+            "database": "CHANGE-ME-TO-DB",
+            "user": "CHANGE-ME-TO-USER",
+            "password": "CHANGE-ME-TO-PW"
         }
     ],
 
@@ -14,4 +15,3 @@
         }
     ]
 }
-

@@ -3,8 +3,14 @@
 {% endblock %}
 
 {% block content %}
+{% load static %}
 <div class="container-sm">
-    <h2>Wasser &centerdot; Gerste &centerdot; Hopfen &centerdot; Hefe</h2>
+    <h2 style="padding-top: 10px;">Wasser &centerdot; Gerste &centerdot; Hopfen &centerdot; Hefe</h2>
     &rarr; Original seit 2015.
+    <p style="padding-bottom: 30px;"></p>
+    <img src="{% static 'img/sorte_pils.jpg' %}" alt="Logo" height="210px">
+    <img src="{% static 'img/sorte_maerzen.jpg' %}" alt="Logo" height="210px">
+    <img src="{% static 'img/sorte_weizen.jpg' %}" alt="Logo" height="210px">
+    <img src="{% static 'img/sorte_helles.jpg' %}" alt="Logo" height="210px">
 </div>
 {% endblock content %}

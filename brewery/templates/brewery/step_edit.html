@@ -4,14 +4,15 @@
 {% load crispy_forms_tags %}
 
 <div class="container-sm">
-    {% if form.id %}
+    {% if f_step.id %}
         <h2>Schritt bearbeiten</h2>
     {% else %}
         <h2>Schritt hinzufügen</h2>
     {% endif %}
     <form action="" method="post">
         {% csrf_token %}
-        {{ form|crispy }}
+        {{ f_successor|crispy }}
+        {{ f_step|crispy }}
         <input type="submit" class="btn btn-primary btn-lg btn-block" name="save" value="Speichern">
         <input type="button" class="btn btn-secondary btn-lg btn-block" value="Abbrechen"  onclick="window.location.href = '{% url 'recipe_detail' recipe.id %}';">
     </form>

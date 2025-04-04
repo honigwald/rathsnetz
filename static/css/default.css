@@ -3,13 +3,13 @@ body {
   height: 100%;
 }
 
-footer {
-}
 .footer {
     position: relative;
     /*background: rgba(52,58,64,1);*/
     background: black;
     height: 8.125em;
+    border-bottom-right-radius: 15px;
+    border-bottom-left-radius: 15px;
 }
 .footer:before {
     content: "";
@@ -34,23 +34,29 @@ footer {
   z-index: 6;
 }
 
-#bg-image {
-    background-image: url("/static/img/bg.jpg");
-    background-size: 100%;
-    background-repeat: no-repeat;
-    background-color: black;
+.number {
+    font-family: Andale Mono, AndaleMono, monospace;
 }
 
-.container-custom {
-    height: 100%;
+.align-right {
+    text-align: right;
+}
+
+.boxed {
+    margin-top:10px;
+    padding:5px;
+    border:1px solid black;
+    background-color:white;
+    border-radius: 5px;
 }
 
 .container-content {
     position: relative;
     background-color: white;
-    height: 100%;
+    min-height: 550px;
     padding-bottom: 100px;
     z-index: 4;
+    opacity: 0.92;
 }
 .bottom {
     padding-bottom: 50px;
@@ -60,6 +66,8 @@ footer {
     /*background: rgba(52,58,64,1);*/
     background: black;
     color: white;
+    border-top-right-radius: 15px;
+    border-top-left-radius: 15px;
 }
 
 #ingredient_calculation {
@@ -70,7 +78,7 @@ footer {
 
 #hop_calculator {
     margin: 5px;
-padding: 20px;
+    padding: 20px;
     border: 2px solid black;
     border-radius: 5px;
 }
@@ -89,35 +97,3 @@ padding: 20px;
 .warning {
     color: red;
 }
-
-// Responsive Bootstrap Tabs without JS
-.tabbable-responsive {
-  display: block;
-  min-width: 100%;
-  overflow-x: auto;
-
-  // Some tweaks for card-header
-  margin: 0px -20px -13px -20px;
-}
-
-.tabbable {
-    min-width: 100%;
-
-    .nav-tabs {
-      white-space: nowrap;
-      display: inline-block;
-      min-width: 100%;
-
-      // Some tweaks for card-header
-      padding: 0px 21px;
-
-      .nav-item {
-        display: inline-block;
-
-        .nav-link {
-          display: inline-block;
-        }
-      }
-    }
-}
-// ----- END

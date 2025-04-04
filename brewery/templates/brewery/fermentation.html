@@ -1,12 +1,6 @@
-{% extends 'brewery/base.html' %}
-{% block title %}Fermentation - {{ charge.recipe.name }}{% endblock title %}
-{% block extrahead %}
-{% endblock %}
-
-{% block content %}
+{% block ferment %}
 {% load crispy_forms_tags %}
 <div class="container-sm">
-    <h2>Fermentation</h2>
     <div style="margin-top:10px; padding:5px; border:1px solid black;">
         <h3><u>Charge:</u> {{ charge.cid }}</h3>
         <form action="" method="post">
@@ -73,4 +67,4 @@
         </form>
     </div>
 </div>
-{% endblock content %}
+{% endblock ferment %}

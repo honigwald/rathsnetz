@@ -1,279 +1,413 @@
 {% extends 'brewery/base.html' %}
 {% block title %}{% if charge.recipe.name %}Brauen: {{ charge.recipe.name }} -{% else %}Brauen: Neue Charge -{% endif %}{% endblock title %}
 {% block extrahead %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+<link rel="stylesheet" href="{% static 'css/arrow_bar.css' %}">
+{% if charge.brew_factor == 2 %}
+<style>
+    #myTab .nav-item .nav-link {
+        width: 15% !important;
+    }
+</style>
+{% endif %}
 {% endblock %}
 
 {% block content %}
-<div class="container-sm bottom">
+
+<div class="container-sm">
     <h2>Brauen: {{ charge.amount }} Liter {{ charge.recipe }}</h2>
-    {% if charge and charge.preps_finished %}
-        <u>Rezept:</u> {{ charge.recipe.name }} <br>
-        <u>Menge:</u> {{ charge.amount }} Liter <br>
-        <u>Wasser:</u> (HG: {{ hg }}l / NG: {{ ng }}l) <br>
-        <u>Braumeister:</u> {{ charge.brewmaster }}
-
-    <br>
-    <br>
-    <div style="margin-top:10px; padding:5px; border:1px solid black; background-color:white;">
-        <h3><u>Fortschritt:</u></h3>
-        <div class="progress">
-            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="{{ progress }}" aria-valuemin="0" aria-valuemax="100" style="width: {{ progress }}%">
-                {{ progress }}%
-            </div>
-        </div>
-    </div>
-
-
-    <form action="" method="post">
-        <div class="container">
-            <div class="row">
-                <div class="col" style="margin-top:10px; padding:5px; border:1px solid black; background-color:white;">
-                    <h3><u>Aktuell:</u></h3>
-                    {% csrf_token %}
-                    <table class="table table-sm table-hover" style="vertical-align:top;">
-                        <thead class="thead-dark">
-                        <tr>
-                            <th>Schritt</th> <th>Titel</th> <th>Beschreibung</th> <th>Zutaten</th> <th>Menge</th> <th>Dauer</th> <th>Notizen</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <tr style="vertical-align: top;">
-                            <td>{{ step.step }}</td>
-                            <td>{{ step.title }}</td>
-                            <td>{{ step.description }}</td>
-                            <td>{% if step.ingredient %}{{ step.ingredient }}{% endif %}</td>
-                            <td>{% if step.amount %}{{ step.amount }} {{ step.unit }}{% endif %}</td>
-                            <td>{% if step.duration %}{{ step.duration }}{% endif %}</td>
-                            <td>{{ form.comment }}</td>
-                        </tr>
-                        </tbody>
-                    </table>
-                    {% if hint %}
-                    <h3><u>Hinweis:</u></h3>
-                    <ul>
-                        {% for h in hint %}
-                        <li>{{ h }}</li>
-                        {% endfor %}
+    <div class="card">
+        <!-- Tabs: Header -->
+        <div class="card-header">
+            <div class="tabbable-responsive">
+                <div class="tabbable">
+                    <ul class="nav nav-tabs" id="myTab" role="tablist">
+                        <li class="nav-item">
+                            <a  class="nav-link first {% if not charge %}active{% else %}done{% endif %}"
+                                id="create" data-toggle="tab" href="#tab-create" role="tab" aria-controls="create" aria-selected="true" >
+                                Details
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a  class="nav-link
+                                {% if charge and not charge.preps_finished %}active{% endif %}
+                                {% if charge and charge.preps_finished %}done{% endif %}
+                                {% if not charge%}disabled{% endif %}"
+                                id="prepare" data-toggle="tab" href="#tab-prepare" role="tab" aria-controls="nav-prepare" aria-selected="false">
+                                Vorarbeiten
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a  class="nav-link
+                                {% if charge.preps_finished and not charge.brewing_finished %}active{% endif %}
+                                {% if charge.preps_finished and charge.brewing_finished %}done{% endif %}
+                                {% if not charge.preps_finished %}disabled{% endif %}
+                                brewing"
+                                id="brew" data-toggle="tab" href="#tab-brew" role="tab" aria-controls="brew" aria-selected="false">
+                                {% if charge.brew_factor == 2 %}
+                                Brauen: 1. Sud
+                                {% else %}
+                                Brauen
+                                {% endif %}
+                            </a>
+                        </li>
+                        {% if charge.brew_factor == 2 %}
+                        <li class="nav-item">
+                            <a  class="nav-link
+                                {% if charge.preps_finished and not charge.brewing_finished %}active{% endif %}
+                                {% if charge.preps_finished and charge.brewing_finished %}done{% endif %}
+                                {% if not charge.preps_finished %}disabled{% endif %}
+                                id="brew" data-toggle="tab" href="#tab-brew" role="tab" aria-controls="brew" aria-selected="false">
+                                Brauen: 2. Sud
+                            </a>
+                        </li>
+                        {% endif %}
+                        <li class="nav-item">
+                            <a  class="nav-link
+                                {% if charge.brewing_finished %}active{% else %}disabled{% endif %}"
+                                id="ferment" data-toggle="tab" href="#tab-ferment" role="tab" aria-controls="ferment" aria-selected="false">
+                                Fermentation
+                            </a>
+                        </li>
                     </ul>
-                    <br>
-                    {% endif %}
                 </div>
-
-                {% if step.duration %}
-                {% load custom_tags %}
-                {% load static %}
-                <div class="col-3" style="margin-top:10px; padding:5px; border:1px solid black;">
-                    <h3><u>Timer:</u></h3>
-                    <div id="timer"></div>
-                    <audio id="alert" src="{% static 'misc/sc_laboratory_alert.mp3' %}" preload="auto"></audio>
-                    <script src="{% static 'js/timer.js' %}"></script>
-                    <script>
-                        initTimer({{ step.duration|seconds }});
-                    </script>
-                    <br>
-                    <button type="button" class="btn btn-primary btn-sm btn-block" onclick="startTimer()">Start</button>
-                    <button type="button" class="btn btn-danger btn-sm btn-block" onclick="stopTimer({{ step.duration|seconds }})">Reset</button>
-                </div>
-                {% endif %}
             </div>
         </div>
+        <!-- Tabs: Content -->
+        <div class="card-body">
+            <div class="tab-content">
+                <div class="tab-pane fade {% if not charge %}show active{% endif %}" id="tab-create" role="tabpanel" aria-labelledby="first-tab">
+                    <p class="card-text">
+                        {% if charge %}
+                            <u>Rezept:</u> {{ charge.recipe.name }} <br>
+                            <u>Menge:</u> {{ charge.amount }} Liter <br>
+                            <u>Wasser:</u> (HG: {{ hg }}l / NG: {{ ng }}l) <br>
+                            <u>Braumeister:</u> {{ charge.brewmaster }}
+                        {% else %}
+                            <b><u>Hinweis:</u></b> Wähle Rezept, Menge und Braumeister.<br><br>
+                            <form action="" method="post">
+                                {% csrf_token %}
+                                {{ form|crispy }}
+                                <br>
+                                <input type="submit" class="btn btn-primary btn-lg btn-block" name="create" value="Weiter">
+                            </form>
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="tab-pane fade {% if charge and not charge.preps_finished %}show active{% endif %}" id="tab-prepare" role="tabpanel" aria-labelledby="second-tab">
+                    <p class="card-text">
+                        {% if charge.preps_finished %}
+                            <table class="table table-hover table-sm">
+                                <thead class="thead-dark">
+                                    <tr>
+                                        <th>Kategorie</th><th>Beschreibung</th><th>Erledigt</th>
+                                    </tr>
+                                </thead>
+                                {% for p in preps %}
+                                <tr style="vertical-align:top;">
+                                    <td>{{ p.short }}</td>
+                                    <td>{{ p.detail}}</td>
+                                    <td> &#x2611;</td>
+                                </tr>
+                                {% endfor %}
+                            </table>
+                        {% else %}
+                            <div id="ingredient_calculation">
+                                <h3><u>Kalkulierte Zutaten</u></h3>
+                                <table class="table table-sm table-hover" style="vertical-align:top;">
+                                    <thead class="thead-dark">
+                                        <tr>
+                                            <th>Kategorie</th><th>Zutat</th><th>Menge</th>
+                                        </tr>
+                                    </thead>
+                                    {% for key, value in ingredients.items %}
+                                    <tr>
+                                        <td>{{ key }}</td>
+                                        {% for ingr in value %}
+                                            {% if forloop.counter > 1 %}
+                                                <tr></tr><td></td>
+                                            {% endif %}
+                                            <td>{{ ingr.0 }}</td>
+                                            <td>{{ ingr.1 }} {{ ingr.2 }}</td>
+                                        {% endfor %}
+                                    </tr>
+                                    {% endfor %}
+                                    {% for hop in calc_hop_ingr %}
+                                        <tr>
+                                        {% if forloop.counter == 1 %}
+                                            <td>{{ hop.ingredient.type }}</td>
+                                        {% else %}
+                                            <td></td>
+                                        {% endif %}
+                                        <td>{{ hop.ingredient }}</td>
+                                        <td>{{ hop.amount }} {{ hop.step.unit}} &#8594; {{ hop.ibu }} IBU</td>
+                                        </tr>
+                                    {% endfor %}
+                                </table>
+
+                                {% if missing %}
+                                <div id="missing_ingredient">
+                                    <h5><u class="warning">Achtung! Folgende Zutaten sind nicht ausreichend im Lager vorhanden:</u></h5>
+                                    <ol>
+                                        {% for item in missing %}
+                                            <li>{{ item }}</li>
+                                        {% endfor %}
+                                    </ol>
+                                </div>
+                                {% endif %}
+
+                                <div id="hop_calculator">
+                                    <h5><u>Hopfenrechner</u><sup>1</sup></h5>
+                                    Soll-Wert: {{ charge.recipe.ibu }} IBU <br>
+                                    Ist-Wert: {{ total_ibu }} IBU (=
+                                    {% for item in calc_hop_ingr %}
+                                        {% if forloop.counter > 1 %}
+                                            +
+                                        {% endif %}
+                                        {{ item.ibu }}
+                                    {% endfor %}
+                                    )
+                                    </br></br>
+                                    <form action="" method="post">
+                                        {% csrf_token %}
+                                        <input type="submit" class="btn btn-info btn-lg" name="recalculate" value="Neu Berechnen">
+                                    </form>
+                                    <br><br>
+                                    <p class="warning">
+                                        <sup>1</sup><u>Hinweis:</u>
+                                        <br>
+                                        Der Hopfenrechner basiert auf der Formel von Glenn Tinseth und
+                                        ist in dieser Version nur oberflächlich geprüft. Unter
+                                        Berücksichtigung der &alpha;-Säure, wird eine mögliche Auswahl
+                                        an Hopfen aus dem Lager vorgeschlagen. Hierbei soll die im
+                                        Rezept vorgegebene Gesamtbittere erreicht werden. <br><br>
+                                        Jeder Braumeister ist angehalten das errechnete Ergebnis zu
+                                        überprüfen bzw. eigene Rechnungen aufzustellen.
+                                    </p>
+                                </div>
+                            </div>
+                            <form action="" method="post">
+                                {% csrf_token %}
+                                <div style="margin-top:10px; padding:5px; border:1px solid black;">
+                                    <h3><u>Vorarbeiten</u></h3>
+                                        <table class="table table-hover table-sm">
+                                            <thead class="thead-dark">
+                                                <tr>
+                                                    <th>Kategorie</th><th>Beschreibung</th><th>Erledigt</th>
+                                                </tr>
+                                            </thead>
+                                            {% for p, f in pending_preps %}
+                                            <tr style="vertical-align:top;">
+                                                <td>{{ p.preparation.short }}</td>
+                                                <td>{{ p.preparation.detail}}</td>
+                                                <td>{{ f.done }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </table>
+                                </div>
+                                <br>
+                                <input type="submit" class="btn btn-primary btn-lg btn-block" name="preps_next" value="Weiter">
+                                <input type="submit" class="btn btn-secondary btn-lg btn-block" name="preps_save" value="Speichern">
+                            </form>
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="tab-pane fade {% if charge.preps_finished and not charge.brewing_finished %}show active{% endif %}" id="tab-brew" role="tabpanel" aria-labelledby="third-tab">
+                    <p class="card-text">
+                        {% if charge.brewing_finished %}
+                            <table class="table table-sm table-hover" style="vertical-align:top;">
+                                <thead class="thead-dark">
+                                    <tr>
+                                        <th>Schritt</th> <th>Titel</th> <th>Beschreibung</th> <th>Zutaten</th> <th>Menge</th> <th>Dauer</th> <th>Start</th> <th>Ende</th> <th>Notizen</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {% for p in protocol %}
+                                <tr>
+                                    <td>{{ p.pos }}</td>
+                                    <td>{{ p.title }}</td>
+                                    <td>{{ p.description }}</td>
+                                    <td>{{ p.ingredient }}</td>
+                                    <td>{{ p.amount }}</td>
+                                    <td>{{ p.duration }}</td>
+                                    <td>{{ p.tstart }}</td>
+                                    <td>{{ p.tend }}</td>
+                                    <td>{{ p.comment }}</td>
+                                </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        {% else %}
+                            <div class="boxed">
+                                <h3><u>Fortschritt:</u></h3>
+                                <div class="progress">
+                                    <div class="progress-bar progress-bar-striped progress-bar-animated progress-bar-custom"
+                                         role="progressbar"
+                                         aria-valuenow="{{ progress }}"
+                                         aria-valuemin="0"
+                                         aria-valuemax="100"
+                                         style="width: {{ progress }}%;">
+                                        {{ progress }}%
+                                    </div>
+                                </div>
+                            </div>
+
+                            <form action="" method="post">
+                                <div class="container">
+                                    <div class="row">
+                                        <div class="col boxed">
+                                            <h3><u>Aktuell:</u></h3>
+                                            {% csrf_token %}
+                                            <table class="table table-sm table-hover" style="vertical-align:top;">
+                                                <thead class="thead-dark">
+                                                <tr>
+                                                    <th>Schritt</th> <th>Titel</th> <th>Beschreibung</th> <th>Zutaten</th> <th>Menge</th> <th>Dauer</th> <th>Notizen</th>
+                                                </tr>
+                                                </thead>
+                                                <tbody>
+                                                <tr style="vertical-align: top;">
+                                                    <td>{{ step.pos }}</td>
+                                                    <td>{{ step.title }}</td>
+                                                    <td>{{ step.description }}</td>
+                                                    <td>{% if step.ingredient %}{{ step.ingredient }}{% endif %}</td>
+                                                    <td>{% if step.amount %}{{ step.amount }} {{ step.unit }}{% endif %}</td>
+                                                    <td>{% if step.duration %}{{ step.duration }}{% endif %}</td>
+                                                    <td>{{ form.comment }}</td>
+                                                </tr>
+                                                </tbody>
+                                            </table>
+                                            {% if hint %}
+                                            <h3><u>Hinweis:</u></h3>
+                                            <ul>
+                                                {% for h in hint %}
+                                                <li>{{ h }}</li>
+                                                {% endfor %}
+                                            </ul>
+                                            <br>
+                                            {% endif %}
+                                        </div>
+
+                                        {% if step.duration %}
+                                        {% load custom_tags %}
+                                        {% load static %}
+                                        <div class="col-3 boxed">
+                                            <h3><u>Timer:</u></h3>
+                                            <div id="timer"></div>
+                                            <audio id="alert" src="{% static 'misc/sc_laboratory_alert.mp3' %}" preload="auto"></audio>
+                                            <script src="{% static 'js/timer.js' %}"></script>
+                                            <script>
+                                                initTimer('{{ step.duration|seconds }}');
+                                            </script>
+                                            <br>
+                                            <button type="button" class="btn btn-primary btn-sm btn-block" onclick="startTimer()">Start</button>
+                                            <button type="button" class="btn btn-danger btn-sm btn-block" onclick="stopTimer('{{ step.duration|seconds }}')">Reset</button>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
 
 
-        {% if step.next %}
-        <div style="margin-top:10px; padding:5px; border:1px solid black; background-color:white; opacity:0.5;">
-            <h3><u>Nächster Schritt:</u></h3>
-                <table class="table table-sm table-hover" style="vertical-align:top;">
-                    <thead class="thead-dark">
-                        <tr>
-                            <th>Schritt</th> <th>Titel</th> <th>Beschreibung</th> <th>Zutaten</th> <th>Menge</th> <th>Dauer</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr style="background-color:white;">
-                            <td>{{ s_next.step }}</td>
-                            <td>{{ s_next.title }}</td>
-                            <td>{{ s_next.description }}</td>
-                            <td>{% if s_next.ingredient %}{{ s_next.ingredient }}{% endif %}</td>
-                            <td>{% if s_next.amount %}{{ s_next.amount }} {{ s_next.unit }}{% endif %}</td>
-                            <td>{% if s_next.duration %}{{ s_next.duration }}{% endif %}</td>
-                        </tr>
-                    </tbody>
-                </table>
-          <a data-toggle="collapse" href="#collapseRecipe" aria-expanded="false" aria-controls="collapseRecipe">
-            <u>Aufklappen:</u>
-          </a>
-          <div class="collapse" id="collapseRecipe" aria-expanded="false" aria-controls="collapseProtocol">
-            <table class="table table-sm table-hover" style="vertical-align:top;">
-                <thead class="thead-dark">
-                </thead>
-                <tbody>
-                {% for s in recipe %}
-                    {% if forloop.counter > step.next.step %}
-                        <tr>
-                            <td>{{ forloop.counter }}</td>
-                            <td>{% if s.title %}{{ s.title }}{% else %}{{ s.step.title}}{% endif %}</td>
-                            <td>{{ s.description }}</td>
-                            <td>{% if s.ingredient %}{{ s.ingredient }}{% endif %}</td>
-                            <td style="white-space:nowrap;">{% if s.amount %}{{ s.amount }} {{ s.unit }}{% endif %}</td>
-                            <td>{% if s.duration %}{{ s.duration }}{% endif %}</td>
-                        </tr>
-                    {% endif %}
-                {% endfor %}
-                </tbody>
-            </table>
-          </div>
-        </div>
-        {% endif %}
+                                {% if step.next %}
+                                <div class="boxed" style="opacity:0.5;">
+                                    <h3><u>Nächster Schritt:</u></h3>
+                                        <table class="table table-sm table-hover" style="vertical-align:top;">
+                                            <thead class="thead-dark">
+                                                <tr>
+                                                    <th>Schritt</th> <th>Titel</th> <th>Beschreibung</th> <th>Zutaten</th> <th>Menge</th> <th>Dauer</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr style="background-color:white;">
+                                                    <td>{{ s_next.pos }}</td>
+                                                    <td>{{ s_next.title }}</td>
+                                                    <td>{{ s_next.description }}</td>
+                                                    <td>{% if s_next.ingredient %}{{ s_next.ingredient }}{% endif %}</td>
+                                                    <td>{% if s_next.amount %}{{ s_next.amount }} {{ s_next.unit }}{% endif %}</td>
+                                                    <td>{% if s_next.duration %}{{ s_next.duration }}{% endif %}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                  <a data-toggle="collapse" href="#collapseRecipe" aria-expanded="false" aria-controls="collapseRecipe">
+                                    <u>Aufklappen:</u>
+                                  </a>
+                                  <div class="collapse" id="collapseRecipe" aria-expanded="false" aria-controls="collapseProtocol">
+                                    <table class="table table-sm table-hover" style="vertical-align:top;">
+                                        <thead class="thead-dark">
+                                        </thead>
+                                        <tbody>
+                                        {% for s in recipe %}
+                                            <!-- if forloop.counter > step.next.step -->
+                                                <tr>
+                                                    <td>{{ s.pos }}</td>
+                                                    <td>{% if s.title %}{{ s.title }}{% else %}{{ s.step.title}}{% endif %}</td>
+                                                    <td>{{ s.description }}</td>
+                                                    <td>{% if s.ingredient %}{{ s.ingredient }}{% endif %}</td>
+                                                    <td style="white-space:nowrap;">{% if s.amount %}{{ s.amount }} {{ s.unit }}{% endif %}</td>
+                                                    <td>{% if s.duration %}{{ s.duration }}{% endif %}</td>
+                                                </tr>
+                                            <!-- endif -->
+                                        {% endfor %}
+                                        </tbody>
+                                    </table>
+                                  </div>
+                                </div>
+                                {% endif %}
 
-        <div style="margin-top:10px; padding:5px; border:1px solid black; background-color:white;">
-          <a data-toggle="collapse" href="#collapseProtocol" aria-expanded="false" aria-controls="collapseProtocol">
-            <h3><u>Protokoll:</u></h3>
-          </a>
-          <div class="collapse" id="collapseProtocol">
-                <table class="table table-sm table-hover" style="vertical-align:top;">
-                    <thead class="thead-dark">
-                        <tr>
-                            <th>Schritt</th> <th>Titel</th> <th>Beschreibung</th> <th>Zutaten</th> <th>Menge</th> <th>Dauer</th> <th>Start</th> <th>Ende</th> <th>Notizen</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    {% for p in protocol %}
-                    <tr>
-                        <td>{{ p.step }}</td>
-                        <td>{{ p.title }}</td>
-                        <td>{{ p.description }}</td>
-                        <td>{{ p.ingredient }}</td>
-                        <td>{{ p.amount }}</td>
-                        <td>{{ p.duration }}</td>
-                        <td>{{ p.tstart }}</td>
-                        <td>{{ p.tend }}</td>
-                        <td>{{ p.comment }}</td>
-                    </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
-          </div>
-        </div>
-        <br/>
-        {% if step.next %}
-            <input type="submit" class="btn btn-primary btn-lg btn-block" name="brew_next" value="Weiter">
-        {% else %}
-            <input type="submit" class="btn btn-primary btn-lg btn-block" name="brew_next" value="Gärung starten">
-        {% endif %}
+                                <div class="boxed">
+                                  <a data-toggle="collapse" href="#collapseProtocol" aria-expanded="false" aria-controls="collapseProtocol">
+                                    <h3><u>Protokoll:</u></h3>
+                                  </a>
+                                  <div class="collapse" id="collapseProtocol">
+                                        <table class="table table-sm table-hover" style="vertical-align:top;">
+                                            <thead class="thead-dark">
+                                                <tr>
+                                                    <th>Schritt</th> <th>Titel</th> <th>Beschreibung</th> <th>Zutaten</th> <th>Menge</th> <th>Dauer</th> <th>Start</th> <th>Ende</th> <th>Notizen</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                            {% for p in protocol %}
+                                            <tr>
+                                                <td>{{ p.pos }}</td>
+                                                <td>{{ p.title }}</td>
+                                                <td>{{ p.description }}</td>
+                                                <td>{{ p.ingredient }}</td>
+                                                <td>{{ p.amount }}</td>
+                                                <td>{{ p.duration }}</td>
+                                                <td>{{ p.tstart }}</td>
+                                                <td>{{ p.tend }}</td>
+                                                <td>{{ p.comment }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                            </tbody>
+                                        </table>
+                                  </div>
+                                </div>
+                                <br/>
+                                {% if step.next %}
+                                    <input type="submit" class="btn btn-primary btn-lg btn-block" name="brew_next" value="Weiter">
+                                {% else %}
+                                    <input type="submit" class="btn btn-primary btn-lg btn-block" name="brew_next" value="Gärung starten">
+                                {% endif %}
 
-        <input type="hidden" name="charge" value="{{ charge.id }}">
-        <input type="hidden" name="t_start" value="{{ t_start|date:'YmdHisu' }} ">
-        <input type="hidden" name="step" value="{{ step.id }} ">
-    </form>
-
-    {% elif charge and not charge.preparations %}
-    <div id="ingredient_calculation">
-        <h3><u>Kalkulierte Zutaten</u></h3>
-        <table class="table table-sm table-hover" style="vertical-align:top;">
-            <thead class="thead-dark">
-                <tr>
-                    <th>Kategorie</th><th>Zutat</th><th>Menge</th>
-                </tr>
-            </thead>
-            {% for key, value in ingredients.items %}
-            <tr>
-                <td>{{ key }}</td>
-                {% for ingr in value %}
-                    {% if forloop.counter > 1 %}
-                        <tr></tr><td></td>
-                    {% endif %}
-                    <td>{{ ingr.0 }}</td>
-                    <td>{{ ingr.1 }} {{ ingr.2 }}</td>
-                {% endfor %}
-            </tr>
-            {% endfor %}
-            {% for hop in calc_hop_ingr %}
-                <tr>
-                {% if forloop.counter == 1 %}
-                    <td>{{ hop.ingredient.type }}</td>
-                {% else %}
-                    <td></td>
-                {% endif %}
-                <td>{{ hop.ingredient }}</td>
-                <td>{{ hop.amount }} {{ hop.step.unit}} &#8594; {{ hop.ibu }} IBU</td>
-                </tr>
-            {% endfor %}
-        </table>
-
-        {% if missing %}
-        <div id="missing_ingredient">
-            <h5><u class="warning">Achtung! Folgende Zutaten sind nicht ausreichend im Lager vorhanden:</u></h5>
-            <ol>
-                {% for item in missing %}
-                    <li>{{ item }}</li>
-                {% endfor %}
-            </ol>
-        </div>
-        {% endif %}
-
-        <div id="hop_calculator">
-            <h5><u>Hopfenrechner</u><sup>1</sup></h5>
-            Soll-Wert: {{ charge.recipe.ibu }} IBU <br>
-            Ist-Wert: {{ total_ibu }} IBU (= 
-            {% for item in calc_hop_ingr %}
-                {% if forloop.counter > 1 %}
-                    +
-                {% endif %}
-                {{ item.ibu }}
-            {% endfor %}
-            )
-            </br></br>
-            <form action="" method="post">
-                {% csrf_token %}
-                <input type="submit" class="btn btn-info btn-lg" name="recalculate" value="Neu Berechnen">
-            </form>
-            <br><br>
-            <p class="warning">
-                <sup>1</sup><u>Hinweis:</u>
-                <br>
-                Der Hopfenrechner basiert auf der Formel von Glenn Tinseth und
-                ist in dieser Version nur oberflächlich geprüft. Unter
-                Berücksichtigung der &alpha;-Säure, wird eine mögliche Auswahl
-                an Hopfen aus dem Lager vorgeschlagen. Hierbei soll die im
-                Rezept vorgegebene Gesamtbittere erreicht werden. <br><br>
-                Jeder Braumeister ist angehalten das errechnete Ergebnis zu
-                überprüfen bzw. eigene Rechnungen aufzustellen.
-            </p>
+                                <input type="hidden" name="charge" value="{{ charge.id }}">
+                                <input type="hidden" name="t_start" value="{{ t_start|date:'YmdHisu' }} ">
+                                <input type="hidden" name="step" value="{{ step.id }} ">
+                            </form>
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="tab-pane fade {% if charge.brewing_finished %}show active{% endif %}" id="tab-ferment" role="tabpanel" aria-labelledby="fourth-tab">
+                    <p class="card-text">
+                        {% if charge.brewing_finished %}
+                            {% include 'brewery/fermentation.html' %}
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
         </div>
     </div>
-
-    <form action="" method="post">
-        {% csrf_token %}
-        <div style="margin-top:10px; padding:5px; border:1px solid black;">
-            <h3><u>Vorarbeiten</u></h3>
-                <table class="table table-hover table-sm">
-                    <thead class="thead-dark">
-                        <tr>
-                            <th>Kategorie</th><th>Beschreibung</th><th>Erledigt</th>
-                        </tr>
-                    </thead>
-                    {% for p, f in list %}
-                    <tr style="vertical-align:top;">
-                        <td>{{ p.preparation.short }}</td>
-                        <td>{{ p.preparation.detail}}</td>
-                        <td>{{ f.done }}</td>
-                    </tr>
-                    {% endfor %}
-                </table>
-        </div>
-        <br>
-        <input type="submit" class="btn btn-primary btn-lg btn-block" name="preps_next" value="Weiter">
-        <input type="submit" class="btn btn-secondary btn-lg btn-block" name="preps_save" value="Speichern">
-    </form>
-    {% else %}
-        <b><u>Hinweis:</u></b> Wähle Rezept, Menge und Braumeister.<br><br>
-        <form action="" method="post">
-            {% csrf_token %}
-            {{ form.as_table }}
-            <br>
-            <input type="submit" class="btn btn-primary btn-lg btn-block" name="create" value="Erstellen">
-        </form>
-    {% endif %}
 </div>
 
 {% endblock content %}

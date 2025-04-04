@@ -45,7 +45,7 @@
                 <tr style="background-color: #A9E2F3;">
             {% endif %}
                 <td></td>
-                <td><a href="{% url 'step_edit' recipe_id=recipe.id step_id=s.id %}"> {{ s.step }}. {{ s.title }}</a></td>
+                <td><a href="{% url 'step_edit' recipe_id=recipe.id step_id=s.id %}"> {{ s.pos }}. {{ s.title }}</a></td>
                 <td>{{ s.description }} {% if s.duration %} für {{ s.duration }}{% endif %} </td>
                 <td>{% if s.ingredient %}{{ s.ingredient }}{% endif %}</td>
                 <td style="white-space:nowrap;">{% if s.amount %}{{ s.amount }} {{ s.unit }}{% endif %}</td>
