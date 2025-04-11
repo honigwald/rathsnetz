@@ -331,7 +331,6 @@ class Charge(models.Model):
         ingredients = {}
         progress = 0
         savepoint = transaction.savepoint()
-        details = []
         calculated_hops = list()
         for s in self.recipe.steps():
             if s.ingredient:
@@ -345,19 +344,15 @@ class Charge(models.Model):
 
                 # Calculate other ingredients
                 else:
+                    if not s.ingredient.type in ingredients:
+                        ingredients[s.ingredient.type] = list()
+
+                    details = list()
                     details.append(s.ingredient.name)
                     details.append(required_amount)
                     details.append(s.unit.name)
 
-                    if s.ingredient.type in ingredients:
-                        tmp = ingredients[s.ingredient.type]
-                        tmp.append(details)
-                        ingredients[s.ingredient.type] = details
-                    else:
-                        tmp = list()
-                        tmp.append(details)
-                        ingredients[s.ingredient.type] = tmp
-                    details = []
+                    ingredients[s.ingredient.type].append(details)
 
         ingredients["Wasser"] = [
             ["Hauptguss", self.recipe.hg * self.amount / AMOUNT_FACTOR, "Liter"],
