@@ -298,6 +298,7 @@ def brewing(request, cid):
             context["total_ibu"] = total_ibu
             context["calc_hop_ingr"] = hops
             context["missing"] = c.get_missing_ingredients()
+            logging.debug(c.calculate_ingredients())
             return render(request, "brewery/brewing.html", context)
 
 

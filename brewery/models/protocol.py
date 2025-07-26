@@ -53,7 +53,7 @@ class BrewProtocol(models.Model):
             rname=current_step.rname,
             title=current_step.title,
             description=current_step.description,
-            ingredient=current_step.ingredient,
+            ingredient=current_step.ingredient.name if current_step.ingredient else None,
             amount=current_step.amount,
             unit=current_step.unit,
             comment=comment,
@@ -105,7 +105,7 @@ class BrewProtocol(models.Model):
 
         if charge.ispindel:
             # TODO: make plots work again
-            # context["plot"] = get_plot(c)
+            #context["plot"] = get_plot(c)
             context["plot"] = ""
 
         else:
