@@ -213,6 +213,7 @@ class Charge(models.Model):
             for hop in hops:
                 hop.delete()
             self.hop_calculation_finished = False
+            self.save()
             return
 
         if self.hop_calculation_finished:
@@ -221,11 +222,10 @@ class Charge(models.Model):
         # TODO_SIB: check for reached overall IBU. It could be, that recipe and steps don't match
         calculated_substitutes = list()
         for step in self.recipe.steps_with_hops():
-            scaled_amount = self.amount * step.amount / AMOUNT_FACTOR
             # calculate IBU of current step, which is required by the recipe
             est = self.recipe.est_during_boiltime(step)
             required_ibu = self.glenn_tinseth_ibu(
-                step.ingredient, scaled_amount, step.unit.name, est
+                step.ingredient, step.amount, step.unit.name, est
             )
             remaining_ibu = required_ibu
 
