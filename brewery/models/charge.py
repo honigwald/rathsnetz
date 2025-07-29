@@ -229,7 +229,7 @@ class Charge(models.Model):
             )
             remaining_ibu = required_ibu
 
-            hops = Storage.objects.filter(name=step.ingredient.name).order_by("-amount")
+            hops = Storage.objects.filter(name=step.ingredient.name).order_by("amount")
             for hop in hops:
                 if hop.amount == 0:
                     continue
