@@ -163,7 +163,7 @@
                 <div class="col">
                     <nav class="navbar bottom-nav navbar-expand-sm navbar-dark ">
                         <ul class="navbar-nav">
-                            <li class="nav-item"> <a class="nav-link"> Impressum </a> </li>
+                            <li class="nav-item {% if navi == 'impressum' %}active{% endif %}"> <a class="nav-link" href="{% url 'impressum' %}"> Impressum </a></li>
                             <li class="nav-item"> <a class="nav-link"> Kontakt </a> </li>
                             <li class="nav-item"> <a class="nav-link"> Presse </a> </li>
                             <li class="nav-item"> <a class="nav-link"> Unterstützer </a> </li>

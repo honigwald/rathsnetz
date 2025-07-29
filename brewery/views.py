@@ -67,6 +67,11 @@ def index(request):
     context = {"navi": "overview", "image_url": load_dynamic_bg_image()}
     return render(request, "brewery/index.html", context)
 
+def impressum(request):
+    logging.debug("impressum")
+    context = {"navi": "impressum", "image_url": load_dynamic_bg_image()}
+    return render(request, "brewery/impressum.html", context)
+
 
 @login_required
 def analyse(request):
