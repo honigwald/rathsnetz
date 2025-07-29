@@ -5,27 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}{% endblock %} B&auml;kebr&auml;u</title>
     <!-- bootstrap -->
-    {% load bootstrap4 %}
+    {% load django_bootstrap5 %}
     {% bootstrap_css %}
-    {% bootstrap_javascript jquery='full' %}
+    {% bootstrap_javascript %}
     {% block extrahead %}
     {% endblock %}
 
+    <!-- jQuery (needed for DataTables and other components) -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    
     <!-- datetimepicker -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.12.0/moment.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.7.14/js/bootstrap-datetimepicker.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.39.0/js/tempusdominus-bootstrap-4.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.39.0/css/tempusdominus-bootstrap-4.min.css">
 
     <!-- datatable -->
-    <script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.10.24/js/dataTables.bootstrap4.min.js"> </script>
-    <script src="https://cdn.datatables.net/responsive/2.2.7/js/dataTables.responsive.min.js"></script>
-    <script src="https://cdn.datatables.net/responsive/2.2.7/js/responsive.bootstrap4.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.8.4/moment.min.js"></script>
-    <script src="https://cdn.datatables.net/plug-ins/1.12.1/sorting/datetime-moment.js"></script>
+    <script src="https://cdn.datatables.net/plug-ins/1.13.6/sorting/datetime-moment.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/locale/de.js"></script>
 
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.24/css/dataTables.bootstrap4.min.css">
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.2.7/css/responsive.bootstrap4.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
 
     <script>
     $(document).ready(function() {
@@ -110,7 +114,7 @@
                     <img src="{% static 'img/logo-white-long.png' %}" alt="Logo" style="height:80px; padding-top: 10px; padding-bottom: 10px;">
                     {% endif %}
                 </a>
-                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 {% if user.is_authenticated %}
@@ -125,11 +129,11 @@
                 </div>
                 {% endif %}
                 {% if user.is_authenticated %}
-                <div class="col text-md-right">
-                    <nav class="navbar bottom-nav navbar-expand-sm navbar-dark text-md-right">
-                        <ul class="navbar-nav ml-auto">
+                <div class="col text-end">
+                    <nav class="navbar bottom-nav navbar-expand-sm navbar-dark text-end">
+                        <ul class="navbar-nav ms-auto">
                             <!-- https://fontawesome.com/v4/cheatsheet/ -->
-                            <li class="nav-item text-md-right">
+                            <li class="nav-item text-end">
                                 <a class="nav-link" href="{% url 'logout' %}" style="font-size: 1em;">
                                     {{ user.first_name|make_list|first }}
                                     {{ user.last_name|make_list|first }}
@@ -140,10 +144,10 @@
                     </nav>
                 </div>
                 {% else %}
-                <div class="col text-md-right">
-                    <nav class="navbar bottom-nav navbar-expand-sm navbar-dark text-md-right">
-                        <ul class="navbar-nav ml-auto">
-                            <li class="nav-item text-md-right"> <a class="nav-link" href="{% url 'login' %}"><i style="font-size:40px;" class="fa">&#xf2be;</i></a></li>
+                <div class="col text-end">
+                    <nav class="navbar bottom-nav navbar-expand-sm navbar-dark text-end">
+                        <ul class="navbar-nav ms-auto">
+                            <li class="nav-item text-end"> <a class="nav-link" href="{% url 'login' %}"><i style="font-size:40px;" class="fa">&#xf2be;</i></a></li>
                         </ul>
                     </nav>
                 </div>
@@ -166,9 +170,9 @@
                         </ul>
                     </nav>
                 </div>
-                <div class="col text-md-right">
-                    <nav class="navbar bottom-nav navbar-expand-sm navbar-dark text-md-right">
-                        <ul class="navbar-nav ml-auto">
+                <div class="col text-end">
+                    <nav class="navbar bottom-nav navbar-expand-sm navbar-dark text-end">
+                        <ul class="navbar-nav ms-auto">
                             <li class="nav-item"> <a class="nav-link" target="_blank" href="https://www.facebook.com/B%C3%A4kebr%C3%A4u-1672324246129194/"> <i style="font-size:30px" class="fa">&#xf082;</i> </a> </li>
                             <li class="nav-item"> <a class="nav-link" target="_blank" href="https://www.instagram.com/braurat/"> <i style="font-size:30px" class="fa">&#xf16d;</i> </a> </li>
                         </ul>
@@ -176,9 +180,9 @@
                 </div>
             </div>
             <div class="content row">
-                <div class="col text-md-right">
-                    <nav class="navbar bottom-nav navbar-expand-sm navbar-dark text-md-right">
-                        <ul class="navbar-nav ml-auto">
+                <div class="col text-end">
+                    <nav class="navbar bottom-nav navbar-expand-sm navbar-dark text-end">
+                        <ul class="navbar-nav ms-auto">
                             <li class="nav-item"> <a class="nav-link" target="_blank" href="https://github.com/honigwald/rathsnetz" style="font-size: 0.7em;"> v2.3.0 (Hefebank) </a> </li>
                         </ul>
                     </nav>

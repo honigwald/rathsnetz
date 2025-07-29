@@ -1,12 +1,13 @@
 asgiref==3.5.2
 beautifulsoup4==4.11.1
+django-bootstrap5>=23.3
+django-qr-code==3.1.13.5.2
 certifi==2022.9.24
 charset-normalizer==2.1.1
 Django>=3.2.16
 django-bootstrap-datepicker-plus==4.0.0
-django-bootstrap4==22.2
 django-crispy-forms==1.14.0
-django-qr-code==3.1.1
+crispy-bootstrap5>=0.7
 idna==3.4
 influxdb==5.3.1
 kaleido==0.2.1

@@ -65,6 +65,7 @@ body {
 .head {
     /*background: rgba(52,58,64,1);*/
     background: black;
+    padding: 15px;
     color: white;
     border-top-right-radius: 15px;
     border-top-left-radius: 15px;
@@ -96,4 +97,67 @@ body {
 }
 .warning {
     color: red;
+}
+
+a {
+    color: rgb(35, 126, 255);
+    text-decoration: none !important;
+}
+
+/* Remove Bootstrap 5 default underlines from links */
+a:hover, a:focus {
+    text-decoration: underline !important;
+}
+
+/* Navigation link styling */
+.navbar-nav .nav-link {
+    color: #6c757d !important; /* Gray color */
+    text-decoration: none !important;
+}
+
+.navbar-nav .nav-link:hover {
+    color: white !important; /* White on hover */
+    text-decoration: none !important;
+}
+
+.navbar-nav .nav-item.active .nav-link {
+    color: white !important; /* White when active */
+    text-decoration: none !important;
+}
+
+/* Remove bold from table headers */
+.table th {
+    font-weight: normal !important;
+}
+
+/* Custom table row background colors - Override Bootstrap 5 CSS variables */
+.category-wuerzekochung {
+    --bs-table-bg: #CEECF5 !important;
+    background-color: #CEECF5 !important;
+}
+
+.category-maischen {
+    --bs-table-bg: #E0F2F7 !important;
+    background-color: #E0F2F7 !important;
+}
+
+.category-anstellwuerze {
+    --bs-table-bg: #A9E2F3 !important;
+    background-color: #A9E2F3 !important;
+}
+
+/* Hover effects for colored rows */
+.category-wuerzekochung:hover {
+    --bs-table-bg: #B8E0ED !important;
+    background-color: #B8E0ED !important;
+}
+
+.category-maischen:hover {
+    --bs-table-bg: #CAE8EF !important;
+    background-color: #CAE8EF !important;
+}
+
+.category-anstellwuerze:hover {
+    --bs-table-bg: #93DAEB !important;
+    background-color: #93DAEB !important;
 }

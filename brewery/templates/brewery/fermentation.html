@@ -8,7 +8,7 @@
         {% if charge.fermentation %}
             Messpunkt eintragen oder Fermentation abschlie&szlig;en<br><br>
             <table class="table table-sm table-hover" style="vertical-align:top;">
-                <thead class="thead-dark">
+                <thead class="table-dark">
                     <tr>
                         <th>Datum</th> <th>Temperatur</th> <th>Plato</th> <th></th>
                     </tr>
@@ -38,7 +38,7 @@
                 <br>
                 {{ f_keg_select|crispy }}
                 <br>
-                <input type="submit" class="btn btn-primary btn-lg btn-block" name="save" value="Braugang abschließen">
+                <input type="submit" class="btn btn-primary btn-lg w-100" name="save" value="Braugang abschließen">
             </form>
             <br/>
         {% elif charge.ispindel %}
@@ -51,7 +51,7 @@
                 <br>
                 {{ f_keg_select|crispy }}
                 <br>
-                <input type="submit" class="btn btn-primary btn-lg btn-block" name="save" value="Braugang abschließen">
+                <input type="submit" class="btn btn-primary btn-lg w-100" name="save" value="Braugang abschließen">
             </form>
             <br/>
         {% else %}
@@ -61,7 +61,7 @@
                 {% csrf_token %}
                 {{ f_charge_wort|crispy }}
                 <br><br>
-                <input type="submit" class="btn btn-primary btn-lg btn-block" name="continue" value="Weiter">
+                <input type="submit" class="btn btn-primary btn-lg w-100" name="continue" value="Weiter">
             </form>
         {% endif %}
         </form>

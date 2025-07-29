@@ -13,7 +13,7 @@
     <style>
     </style>
     <table id="datatable" class="table table-sm table-hover display dt-responsive dataTable dtr-inline collapsed" width="100%">
-        <thead class="thead-dark">
+        <thead class="table-dark">
             <tr>
                 <th class="never"></th>
                 <th>Charge</th>
@@ -39,7 +39,7 @@
     </table>
     <br>
     <form>
-        <input type="button" class="btn btn-primary btn-lg btn-block" onclick="window.location.href = '{% url 'brewing_add' %}';" value="Neue Charge">
+        <input type="button" class="btn btn-primary btn-lg w-100" onclick="window.location.href = '{% url 'brewing_add' %}';" value="Neue Charge">
     </form>
 </div>
 {% endblock content %}

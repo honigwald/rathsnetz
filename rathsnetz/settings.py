@@ -54,13 +54,15 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "brewery",
-    "bootstrap4",
+    "django_bootstrap5",
     "bootstrap_datepicker_plus",
     "crispy_forms",
+    "crispy_bootstrap5",
     "qr_code",
 ]
 
-CRISPY_TEMPLATE_PACK = "bootstrap4"
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
+CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",

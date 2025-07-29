@@ -41,8 +41,8 @@
     </table>
     <form action="" method="post">
         {% csrf_token %}
-        <input type="submit" class="btn btn-primary btn-lg btn-block" name="add" value="Schritt hinzufügen">
-        <input type="button" class="btn btn-secondary btn-lg btn-block" value="Zurück"  onclick="window.location.href = '{% url 'recipe_detail' recipe_id=recipe.id %}';">
+        <input type="submit" class="btn btn-primary btn-lg w-100 mb-2" name="add" value="Schritt hinzufügen">
+        <input type="button" class="btn btn-secondary btn-lg w-100" value="Zurück"  onclick="window.location.href = '{% url 'recipe_detail' recipe_id=recipe.id %}';">
     </form>
 </div>
 

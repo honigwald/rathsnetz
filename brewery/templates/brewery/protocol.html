@@ -33,17 +33,17 @@
                 <div class="tabbable">
                     <ul class="nav nav-tabs" id="myTab" role="tablist">
                         <li class="nav-item">
-                            <a class="nav-link active" id="first-tab" data-toggle="tab" href="#first" role="tab" aria-controls="first" aria-selected="true">Parameter</a>
+                            <a class="nav-link active" id="first-tab" data-bs-toggle="tab" href="#first" role="tab" aria-controls="first" aria-selected="true">Parameter</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" id="second-tab" data-toggle="tab" href="#second" role="tab" aria-controls="second" aria-selected="false">Brauprotokoll</a>
+                            <a class="nav-link" id="second-tab" data-bs-toggle="tab" href="#second" role="tab" aria-controls="second" aria-selected="false">Brauprotokoll</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" id="third-tab" data-toggle="tab" href="#third" role="tab" aria-controls="third" aria-selected="false">Gärprotokoll</a>
+                            <a class="nav-link" id="third-tab" data-bs-toggle="tab" href="#third" role="tab" aria-controls="third" aria-selected="false">Gärprotokoll</a>
                         </li>
                         {% if not public %}
                         <li class="nav-item">
-                            <a class="nav-link" id="fourth-tab" data-toggle="tab" href="#fourth" role="tab" aria-controls="fourth" aria-selected="false">QR-Code</a>
+                            <a class="nav-link" id="fourth-tab" data-bs-toggle="tab" href="#fourth" role="tab" aria-controls="fourth" aria-selected="false">QR-Code</a>
                         </li>
                         {% endif %}
                     </ul>
@@ -74,7 +74,7 @@
                 <div class="tab-pane fade" id="second" role="tabpanel" aria-labelledby="second-tab">
                     <p class="card-text">
                         <table class="table table-sm table-hover" style="vertical-align:top;">
-                            <thead class="thead-dark">
+                            <thead class="table-dark">
                                 <tr>
                                     <th>Schritt</th> <th>Titel</th> <th>Beschreibung</th> <th>Zutaten</th> <th>Menge</th> <th>Dauer</th> <th>Start</th> <th>Ende</th> <th>Notizen</th>
                                 </tr>
@@ -106,7 +106,7 @@
 
                         {% elif fermentation %}
                             <table class="table table-sm table-hover" style="vertical-align:top;">
-                                <thead class="thead-dark">
+                                <thead class="table-dark">
                                     <tr>
                                         <th>Schritt</th> <th>Temperatur</th> <th>Plato</th> <th>Datum</th>
                                     </tr>
