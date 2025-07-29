@@ -233,9 +233,19 @@ class Charge(models.Model):
             for hop in hops:
                 if hop.amount == 0:
                     continue
+
+                # Check if hop was already used and calculate remaining hop amount
+                remaining_hop_amount = 0
+                for sub in calculated_substitutes:
+                    if sub.ingredient == hop:
+                        remaining_hop_amount = sub.amount
+
+                if hop.amount - remaining_hop_amount <= 0:
+                    continue
+
                 # Calculate possible IBU with available hop in stock
                 possible_ibu = self.glenn_tinseth_ibu(
-                    hop, hop.amount, hop.unit.name, est
+                    hop, hop.amount - remaining_hop_amount, hop.unit.name, est
                 )
                 if possible_ibu > remaining_ibu:
                     calc_hop_amount = self.glenn_tinseth_hop(
@@ -248,6 +258,9 @@ class Charge(models.Model):
                     calc_hop_amount = self.glenn_tinseth_hop(
                         hop, possible_ibu, hop.unit, est
                     )
+
+                if possible_ibu <= 0:
+                    continue
 
                 remaining_ibu -= possible_ibu
 
