@@ -6,7 +6,7 @@ from datetime import datetime
 # Django imports
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, HttpResponse
 from django.urls import reverse
 from django.utils import timezone
 
@@ -512,6 +512,18 @@ def recipe_edit(request, recipe_id):
 
     return render(request, "brewery/recipe_edit.html", context)
 
+@login_required
+def recipe_export(request, recipe_id):
+    r = Recipe.objects.get(pk=recipe_id)
+
+    # Get JSON content from the recipe model
+    json_content = r.export_json()
+
+    # Create HTTP response with JSON file download
+    response = HttpResponse(json_content, content_type='application/json')
+    response['Content-Disposition'] = f'attachment; filename="recipe_{r.name}_{datetime.now().strftime("%Y%m%d")}.json"'
+
+    return response
 
 @login_required
 def step_edit(request, recipe_id: int, step_id: int = None):

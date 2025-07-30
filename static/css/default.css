@@ -161,3 +161,8 @@ a:hover, a:focus {
     --bs-table-bg: #93DAEB !important;
     background-color: #93DAEB !important;
 }
+
+/* Remove underlines from buttons and all links */
+.btn, .btn:hover, .btn:focus, .btn:active {
+    text-decoration: none !important;
+}
