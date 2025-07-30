@@ -2,11 +2,13 @@
 {% block title %}{{ recipe.name }} - Rezepte -{% endblock title %}
 {% block content %}
 
-    <i class="bi bi-download"></i>
 <div class="container-sm">
-    <i class="bi bi-download">Donwload</i>
-    U+F30A
-    <h2>Rezept: {{ recipe.name }}</h2>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0">Rezept: {{ recipe.name }}</h2>
+        <a href="{% url 'recipe_export' recipe.id %}" class="btn btn-outline-primary btn-lg">
+            Export <i class="bi bi-download"></i>
+        </a>
+    </div>
     <u>Author:</u> {{ recipe.author }} <br>
     <u>Erstellt:</u> {{ recipe.creation |date:'d.M Y' }} <br>
     <u>Hauptguss:</u>{{ recipe.hg }} <br>

@@ -1,5 +1,7 @@
+from datetime import datetime
 import logging
 import sys
+import json
 
 from django.db import models
 from django.utils import timezone
@@ -158,3 +160,49 @@ class Recipe(models.Model):
         context["image_url"] = load_dynamic_bg_image()
 
         return context
+
+    def export_json(self):
+        """Export recipe data as JSON format"""
+        recipe_data = {
+            "recipe": {
+                "name": self.name,
+                "author": str(self.author) if self.author else None,
+                "creation": self.creation.isoformat() if self.creation else None,
+                "export_date": datetime.now().isoformat(),
+                "hg": float(self.hg),
+                "ng": float(self.ng),
+                "wort": float(self.wort),
+                "ibu": float(self.ibu),
+                "boiltime_seconds": self.boiltime.total_seconds() if self.boiltime else None,
+                "preparations": [],
+                "steps": []
+            }
+        }
+        # Add preparations
+        for prep in self.preparations():
+            recipe_data["recipe"]["preparations"].append({
+                "id": prep.get("id"),
+                "name": prep.get("name", ""),
+                "description": prep.get("description", "")
+            })
+
+        # Add steps
+        if self.steps():
+            for i, step in enumerate(self.steps(), 1):
+                step_data = {
+                    "position": i,
+                    "title": step.title,
+                    "description": step.description,
+                    "amount": float(step.amount) if step.amount else None,
+                    "unit": str(step.unit) if step.unit else None,
+                    "ingredient": {
+                        "name": step.ingredient.name if step.ingredient else None,
+                        "type": step.ingredient.type.name if step.ingredient and step.ingredient.type else None,
+                        "alpha": step.ingredient.alpha if step.ingredient and step.ingredient.alpha else None
+                    } if step.ingredient else None,
+                    "duration_seconds": step.duration.total_seconds() if step.duration else None,
+                    "category": step.category.name if step.category else None
+                }
+                recipe_data["recipe"]["steps"].append(step_data)
+
+        return json.dumps(recipe_data, indent=2, ensure_ascii=False)
