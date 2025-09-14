@@ -18,6 +18,7 @@ urlpatterns = [
     path("brewing/<int:cid>/", views.brewing, name="brewing"),
     path("recipe/", views.recipe, name="recipe"),
     path("recipe/add/", views.recipe_add, name="recipe_add"),
+    path("recipe/import/", views.recipe_import, name="recipe_import"),
     path("recipe/<int:recipe_id>/", views.recipe_detail, name="recipe_detail"),
     path('recipe/<int:recipe_id>/export/', views.recipe_export, name='recipe_export'),
     # path('recipe/<int:recipe_id>/edit/', views.recipe_edit, name='recipe_edit'),

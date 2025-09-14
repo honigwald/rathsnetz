@@ -4,11 +4,16 @@
 {% load crispy_forms_tags %}
 
 <div class="container-sm">
-    <h2>Neues Rezept</h2>
-    <p style="color:red">
-        <b><u>Hinweis:</u></b> Das Rezept skaliert automatisch.
-        Hiefür muss das Rezept zwingend für <u>100 Liter</u> eingepflegt werden.<br>
-    </p>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0">Neues Rezept</h2>
+        <a href="{% url 'recipe_import' %}" class="btn btn-outline-primary btn-lg">
+            Import <i class="bi bi-upload"></i>
+        </a>
+    </div>
+        <p style="background-color: red; color:white; padding: 5px; border-radius: 5px; display: inline-block;">
+            <b><u>Hinweis:</u></b> Das Rezept skaliert automatisch.
+            Hiefür muss das Rezept zwingend für <u>100 Liter</u> eingepflegt werden.<br>
+        </p>
 
     <form action="" method="post">
         {% csrf_token %}

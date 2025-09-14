@@ -1,0 +1,113 @@
+{% extends 'brewery/base.html' %}
+{% block title %}Import: Rezepte -{% endblock title %}
+{% block content %}
+{% load crispy_forms_tags %}
+
+<div class="container-sm">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0">Rezept Importieren</h2>
+        <a href="{% url 'recipe_add' %}" class="btn btn-outline-secondary btn-lg">
+            <i class="bi bi-arrow-left"></i> Zurück
+        </a>
+    </div>
+
+    {% if error %}
+        <div class="alert alert-danger" role="alert">
+            <i class="bi bi-exclamation-triangle"></i> {{ error }}
+        </div>
+    {% endif %}
+
+    {% if success %}
+        <div class="alert alert-success" role="alert">
+            <i class="bi bi-check-circle"></i> {{ success }}
+            {% if recipe %}
+                <br><br>
+                <a href="{% url 'recipe_detail' recipe.id %}" class="btn btn-primary">
+                    Rezept anzeigen <i class="bi bi-eye"></i>
+                </a>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-upload"></i> JSON Datei hochladen</h5>
+                </div>
+                <div class="card-body">
+                    <form action="" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="json_file" class="form-label">JSON Datei auswählen:</label>
+                            <input type="file" class="form-control" id="json_file" name="json_file" accept=".json" required>
+                            <div class="form-text">Nur .json Dateien sind erlaubt</div>
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="update_existing_file" name="update_existing">
+                            <label class="form-check-label" for="update_existing_file">
+                                Existierendes Rezept überschreiben (falls Name bereits existiert)
+                            </label>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-upload"></i> Datei importieren
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-code"></i> JSON Text einfügen</h5>
+                </div>
+                <div class="card-body">
+                    <form action="" method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="json_text" class="form-label">JSON Text:</label>
+                            <textarea class="form-control" id="json_text" name="json_text" rows="10"
+                                      placeholder='{"recipe": {"name": "Mein Rezept", "hg": 25, ...}}' required></textarea>
+                            <div class="form-text">JSON Daten hier einfügen</div>
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="update_existing_text" name="update_existing">
+                            <label class="form-check-label" for="update_existing_text">
+                                Existierendes Rezept überschreiben (falls Name bereits existiert)
+                            </label>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-download"></i> Text importieren
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-info-circle"></i> Import Hinweise</h5>
+                </div>
+                <div class="card-body">
+                    <ul>
+                        <li><strong>JSON Format:</strong> Die Datei muss im gleichen Format sein wie der Rezept-Export</li>
+                        <li><strong>Fehlende Zutaten:</strong> Werden automatisch im Lager angelegt (mit Menge 0)</li>
+                        <li><strong>Fehlende Kategorien/Einheiten:</strong> Werden automatisch erstellt</li>
+                        <li><strong>Vorarbeiten:</strong> Werden automatisch verknüpft oder neu erstellt</li>
+                        <li><strong>Überschreiben:</strong> Aktivieren Sie die Checkbox um existierende Rezepte zu aktualisieren</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock content %}
