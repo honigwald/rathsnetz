@@ -399,8 +399,15 @@ class Charge(models.Model):
         current_step = self.current_step
         # Update storage
         if current_step.amount:
-            # TODO_SIB: update storage
-            logging.debug("remove amount from storage")
+            if current_step.ingredient.type.name == "Hopfen":
+                # TODO_SIB: get hop calculation for this step and charge
+                logging.debug("remove amount from storage (hops)")
+                current_step.ingredient.amount -= current_step.amount
+                current_step.ingredient.save()
+            else:
+                logging.debug("remove amount from storage")
+                current_step.ingredient.amount -= current_step.amount
+                current_step.ingredient.save()
 
         # Save step to protocol
         if not self.brew_protocol:
