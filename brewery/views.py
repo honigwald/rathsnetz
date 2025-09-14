@@ -690,3 +690,74 @@ def keg_edit(request, keg_id):
                 return HttpResponseRedirect(reverse("keg"))
     context = {"form": form, "navi": "kegs", "image_url": load_dynamic_bg_image()}
     return render(request, "brewery/keg_edit.html", context)
+
+
+@login_required
+def recipe_import(request):
+    """Handle recipe import from JSON"""
+    logging.debug("recipe_import")
+    context = {
+        "navi": "recipe",
+        "image_url": load_dynamic_bg_image(),
+    }
+
+    if request.method == "POST":
+        # Check if file was uploaded
+        if 'json_file' in request.FILES:
+            json_file = request.FILES['json_file']
+
+            # Validate file type
+            if not json_file.name.endswith('.json'):
+                context['error'] = "Please upload a valid JSON file."
+                return render(request, "brewery/recipe_import.html", context)
+
+            try:
+                # Read and decode the file
+                json_content = json_file.read().decode('utf-8')
+
+                # Get update preference from form
+                update_existing = request.POST.get('update_existing') == 'on'
+
+                # Import the recipe
+                recipe = Recipe.import_json(
+                    json_content,
+                    user=request.user,
+                    update_existing=update_existing
+                )
+
+                context['success'] = f"Recipe '{recipe.name}' imported successfully!"
+                context['recipe'] = recipe
+
+            except ValueError as e:
+                context['error'] = f"Import failed: {str(e)}"
+            except Exception as e:
+                logging.error("Unexpected error during import: %s", e)
+                context['error'] = f"An unexpected error occurred: {str(e)}"
+
+        # Handle JSON text input
+        elif request.POST.get('json_text'):
+            json_text = request.POST.get('json_text')
+
+            try:
+                # Get update preference from form
+                update_existing = request.POST.get('update_existing') == 'on'
+
+                # Import the recipe
+                recipe = Recipe.import_json(
+                    json_text,
+                    user=request.user,
+                    update_existing=update_existing
+                )
+
+                context['success'] = f"Recipe '{recipe.name}' imported successfully!"
+                context['recipe'] = recipe
+
+            except ValueError as e:
+                context['error'] = f"Import failed: {str(e)}"
+            except Exception as e:
+                logging.error("Unexpected error during import: %s", e)
+                context['error'] = f"An unexpected error occurred: {str(e)}"
+        else:
+            context['error'] = "Please provide either a JSON file or JSON text."
+
+    return render(request, "brewery/recipe_import.html", context)
