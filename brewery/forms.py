@@ -36,11 +36,11 @@ class BrewingCharge(ModelForm):
         }
 
     CHOICES = [
-        ("Y", "Ja"),
-        ("N", "Nein"),
+        (True, "Ja"),
+        (False, "Nein"),
     ]
     dsud_active = forms.ChoiceField(
-        choices=CHOICES, widget=forms.RadioSelect, label="Doppelsud", initial="N"
+        choices=CHOICES, widget=forms.RadioSelect, label="Doppelsud", initial=False
     )
 
 

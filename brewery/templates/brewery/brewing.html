@@ -5,13 +5,6 @@
 {% load crispy_forms_tags %}
 
 <link rel="stylesheet" href="{% static 'css/arrow_bar.css' %}">
-{% if charge.brew_factor == 2 %}
-<style>
-    #myTab .nav-item .nav-link {
-        width: 15% !important;
-    }
-</style>
-{% endif %}
 {% endblock %}
 
 {% block content %}
@@ -56,9 +49,7 @@
                         {% if charge.brew_factor == 2 %}
                         <li class="nav-item">
                             <a  class="nav-link
-                                {% if charge.preps_finished and not charge.brewing_finished %}active{% endif %}
-                                {% if charge.preps_finished and charge.brewing_finished %}done{% endif %}
-                                {% if not charge.preps_finished %}disabled{% endif %}
+                                {% if charge.brewing_finished %}active{% else %}disabled{% endif %}"
                                 id="brew" data-bs-toggle="tab" href="#tab-brew" role="tab" aria-controls="brew" aria-selected="false">
                                 Brauen: 2. Sud
                             </a>

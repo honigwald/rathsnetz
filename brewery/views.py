@@ -315,10 +315,11 @@ def brewing_add(request):
             if f_charge.is_valid():
                 # Create charge
                 c = Charge()
-                recipe = f_charge.cleaned_data["recipe"]
-                amount = f_charge.cleaned_data["amount"]
-                brewmaster = f_charge.cleaned_data["brewmaster"]
-                double = False
+                recipe = f_charge.cleaned_data.get("recipe")
+                amount = f_charge.cleaned_data.get("amount")
+                brewmaster = f_charge.cleaned_data.get("brewmaster")
+                double = f_charge.cleaned_data.get("dsud_active") == "True"
+
                 c.init(recipe, amount, brewmaster, double)
 
                 return HttpResponseRedirect(reverse("brewing", kwargs={"cid": c.id}))
