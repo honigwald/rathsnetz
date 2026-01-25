@@ -680,12 +680,12 @@ def keg_edit(request, keg_id):
                 output.charge = keg.content
                 output.amount = keg.volume
                 output.date = datetime.now()
-                output.save()
+                #output.save()
 
                 keg.content = None
                 keg.filling = None
                 keg.notes = None
-                keg.status = "F"
+                keg.status = 'F'
                 keg.save()
                 return HttpResponseRedirect(reverse("keg"))
     context = {"form": form, "navi": "kegs", "image_url": load_dynamic_bg_image()}
