@@ -1,6 +1,6 @@
 # Rathsnetz - Brewery Management System
 
-Django web application for managing a home brewery. Specially designed for [bäkebräu.de](https://bäkebräu.de).
+Django web application for managing a home brewery. Specially designed for [braurat.de](https://braurat.de).
 
 ## Tech Stack
 
@@ -36,36 +36,36 @@ rathsnetz/
 
 Key models (see `BR_UML.txt` for full diagram):
 
-| Model | Description |
-|-------|-------------|
-| `Recipe` | Beer recipes with water calculations |
-| `RecipeBrewStep` | Individual brewing steps |
-| `Charge` | Brewing session (links to Recipe) |
-| `BrewProtocol` | Recorded brewing steps |
-| `FermentationProtocol` | Fermentation tracking |
-| `Storage` | Ingredient inventory |
-| `Keg` | Keg management |
-| `Account` | Financial tracking |
-| `HopCalculation` | Glenn Tinseth hop formula |
+| Model                  | Description                          |
+| ---------------------- | ------------------------------------ |
+| `Recipe`               | Beer recipes with water calculations |
+| `RecipeBrewStep`       | Individual brewing steps             |
+| `Charge`               | Brewing session (links to Recipe)    |
+| `BrewProtocol`         | Recorded brewing steps               |
+| `FermentationProtocol` | Fermentation tracking                |
+| `Storage`              | Ingredient inventory                 |
+| `Keg`                  | Keg management                       |
+| `Account`              | Financial tracking                   |
+| `HopCalculation`       | Glenn Tinseth hop formula            |
 
 ## URL Routes
 
-| URL | View | Description |
-|-----|------|-------------|
-| `/` | `index` | Landing page |
-| `/impressum/` | `impressum` | Legal/imprint |
-| `/analyse/` | `analyse` | Analytics dashboard |
-| `/brewing/` | `brewing_overview` | Charge list |
-| `/brewing/add/` | `brewing_add` | New brewing session |
-| `/brewing/<cid>/` | `brewing` | Brewing protocol |
-| `/recipe/` | `recipe` | Recipe list |
-| `/recipe/add/` | `recipe_add` | New recipe |
-| `/recipe/<id>/` | `recipe_detail` | Recipe details |
-| `/recipe/<id>/export/` | `recipe_export` | Export BeerXML |
-| `/recipe/import/` | `recipe_import` | Import BeerXML |
-| `/storage/` | `storage` | Inventory |
-| `/keg/` | `keg` | Keg management |
-| `/fermentation/<cid>/` | `fermentation` | Fermentation data |
+| URL                    | View               | Description         |
+| ---------------------- | ------------------ | ------------------- |
+| `/`                    | `index`            | Landing page        |
+| `/impressum/`          | `impressum`        | Legal/imprint       |
+| `/analyse/`            | `analyse`          | Analytics dashboard |
+| `/brewing/`            | `brewing_overview` | Charge list         |
+| `/brewing/add/`        | `brewing_add`      | New brewing session |
+| `/brewing/<cid>/`      | `brewing`          | Brewing protocol    |
+| `/recipe/`             | `recipe`           | Recipe list         |
+| `/recipe/add/`         | `recipe_add`       | New recipe          |
+| `/recipe/<id>/`        | `recipe_detail`    | Recipe details      |
+| `/recipe/<id>/export/` | `recipe_export`    | Export BeerXML      |
+| `/recipe/import/`      | `recipe_import`    | Import BeerXML      |
+| `/storage/`            | `storage`          | Inventory           |
+| `/keg/`                | `keg`              | Keg management      |
+| `/fermentation/<cid>/` | `fermentation`     | Fermentation data   |
 
 ## Configuration
 
@@ -101,11 +101,13 @@ python manage.py shell
 ## External Integrations
 
 ### iSpindel
+
 - Endpoint: `/spindel/` (POST)
 - Receives temperature/gravity data from iSpindel devices
 - Stores in InfluxDB
 
 ### InfluxDB
+
 - Used for time series data (temperature, gravity)
 - Configure in `static/config/config.json`
 
