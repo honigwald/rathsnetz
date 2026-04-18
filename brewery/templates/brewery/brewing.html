@@ -19,7 +19,7 @@
                     <ul class="nav nav-tabs" id="myTab" role="tablist">
                         <li class="nav-item">
                             <a  class="nav-link first {% if not charge %}active{% else %}done{% endif %}"
-                                id="create" data-bs-toggle="tab" href="#tab-create" role="tab" aria-controls="create" aria-selected="true" >
+                                id="create" data-bs-toggle="tab" href="#tab-create" role="tab" aria-controls="tab-create" aria-selected="true" >
                                 Details
                             </a>
                         </li>
@@ -28,7 +28,7 @@
                                 {% if charge and not charge.preps_finished %}active{% endif %}
                                 {% if charge and charge.preps_finished %}done{% endif %}
                                 {% if not charge%}disabled{% endif %}"
-                                id="prepare" data-bs-toggle="tab" href="#tab-prepare" role="tab" aria-controls="nav-prepare" aria-selected="false">
+                                id="prepare" data-bs-toggle="tab" href="#tab-prepare" role="tab" aria-controls="tab-prepare" aria-selected="false">
                                 Vorarbeiten
                             </a>
                         </li>
@@ -38,7 +38,7 @@
                                 {% if charge.preps_finished and charge.brewing_finished %}done{% endif %}
                                 {% if not charge.preps_finished %}disabled{% endif %}
                                 brewing"
-                                id="brew" data-bs-toggle="tab" href="#tab-brew" role="tab" aria-controls="brew" aria-selected="false">
+                                id="brew" data-bs-toggle="tab" href="#tab-brew" role="tab" aria-controls="tab-brew" aria-selected="false">
                                 {% if charge.brew_factor == 2 %}
                                 Brauen: 1. Sud
                                 {% else %}
@@ -49,8 +49,9 @@
                         {% if charge.brew_factor == 2 %}
                         <li class="nav-item">
                             <a  class="nav-link
-                                {% if charge.brewing_finished %}active{% else %}disabled{% endif %}"
-                                id="brew" data-bs-toggle="tab" href="#tab-brew" role="tab" aria-controls="brew" aria-selected="false">
+                                {% if charge.child_ready_to_go and charge.child.brewing_finished %}done{% endif %}
+                                {% if not charge.child_ready_to_go %}disabled{% endif %}"
+                                id="child" data-bs-toggle="tab" href="#tab-child" role="tab" aria-controls="tab-child" aria-selected="false">
                                 Brauen: 2. Sud
                             </a>
                         </li>
@@ -58,7 +59,7 @@
                         <li class="nav-item">
                             <a  class="nav-link
                                 {% if charge.brewing_finished %}active{% else %}disabled{% endif %}"
-                                id="ferment" data-bs-toggle="tab" href="#tab-ferment" role="tab" aria-controls="ferment" aria-selected="false">
+                                id="ferment" data-bs-toggle="tab" href="#tab-ferment" role="tab" aria-controls="tab-ferment" aria-selected="false">
                                 Fermentation
                             </a>
                         </li>
@@ -69,7 +70,7 @@
         <!-- Tabs: Content -->
         <div class="card-body">
             <div class="tab-content">
-                <div class="tab-pane fade {% if not charge %}show active{% endif %}" id="tab-create" role="tabpanel" aria-labelledby="first-tab">
+                <div class="tab-pane fade {% if not charge %}show active{% endif %}" id="tab-create" role="tabpanel" aria-labelledby="create">
                     <p class="card-text">
                         {% if charge %}
                             <u>Rezept:</u> {{ charge.recipe.name }} <br>
@@ -87,7 +88,7 @@
                         {% endif %}
                     </p>
                 </div>
-                <div class="tab-pane fade {% if charge and not charge.preps_finished %}show active{% endif %}" id="tab-prepare" role="tabpanel" aria-labelledby="second-tab">
+                <div class="tab-pane fade {% if charge and not charge.preps_finished %}show active{% endif %}" id="tab-prepare" role="tabpanel" aria-labelledby="prepare">
                     <p class="card-text">
                         {% if charge.preps_finished %}
                             <table class="table table-hover table-sm">
@@ -205,7 +206,7 @@
                         {% endif %}
                     </p>
                 </div>
-                <div class="tab-pane fade {% if charge.preps_finished and not charge.brewing_finished %}show active{% endif %}" id="tab-brew" role="tabpanel" aria-labelledby="third-tab">
+                <div class="tab-pane fade {% if charge.preps_finished and not charge.brewing_finished %}show active{% endif %}" id="tab-brew" role="tabpanel" aria-labelledby="brew">
                     <p class="card-text">
                         {% if charge.brewing_finished %}
                             <table class="table table-sm table-hover" style="vertical-align:top;">
@@ -389,7 +390,193 @@
                         {% endif %}
                     </p>
                 </div>
-                <div class="tab-pane fade {% if charge.brewing_finished %}show active{% endif %}" id="tab-ferment" role="tabpanel" aria-labelledby="fourth-tab">
+                {% if charge.brew_factor == 2 %}
+                <div class="tab-pane fade " id="tab-child" role="tabpanel" aria-labelledby="child">
+                   <p class="card-text">
+                        {% if charge.child.brewing_finished %}
+                            <table class="table table-sm table-hover" style="vertical-align:top;">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Schritt</th> <th>Titel</th> <th>Beschreibung</th> <th>Zutaten</th> <th>Menge</th> <th>Dauer</th> <th>Start</th> <th>Ende</th> <th>Notizen</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {% for p in protocol %}
+                                <tr>
+                                    <td>{{ p.pos }}</td>
+                                    <td>{{ p.title }}</td>
+                                    <td>{{ p.description }}</td>
+                                    <td>{{ p.ingredient }}</td>
+                                    <td>{{ p.amount }}</td>
+                                    <td>{{ p.duration }}</td>
+                                    <td>{{ p.tstart }}</td>
+                                    <td>{{ p.tend }}</td>
+                                    <td>{{ p.comment }}</td>
+                                </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        {% else %}
+                            <div class="boxed">
+                                <h3><u>Fortschritt:</u></h3>
+                                <div class="progress">
+                                    <div class="progress-bar progress-bar-striped progress-bar-animated progress-bar-custom"
+                                         role="progressbar"
+                                         aria-valuenow="{{ progress }}"
+                                         aria-valuemin="0"
+                                         aria-valuemax="100"
+                                         style="width: {{ progress }}%;">
+                                        {{ progress }}%
+                                    </div>
+                                </div>
+                            </div>
+
+                            <form action="" method="post">
+                                <div class="container">
+                                    <div class="row">
+                                        <div class="col boxed">
+                                            <h3><u>Aktuell:</u></h3>
+                                            {% csrf_token %}
+                                            <table class="table table-sm table-hover" style="vertical-align:top;">
+                                                <thead class="table-dark">
+                                                <tr>
+                                                    <th>Schritt</th> <th>Titel</th> <th>Beschreibung</th> <th>Zutaten</th> <th>Menge</th> <th>Dauer</th> <th>Notizen</th>
+                                                </tr>
+                                                </thead>
+                                                <tbody>
+                                                <tr style="vertical-align: top;">
+                                                    <td>{{ charge.child.current_step.pos }}</td>
+                                                    <td>{{ charge.child.current_step.title }}</td>
+                                                    <td>{{ charge.child.current_step.description }}</td>
+                                                    <td>{% if charge.child.current_step.ingredient %}{{ charge.child.current_step.ingredient }}{% endif %}</td>
+                                                    <td>{% if charge.child.current_step.amount %}{{ charge.child.current_step.amount }} {{ charge.child.current_step.unit }}{% endif %}</td>
+                                                    <td>{% if charge.child.current_step.duration %}{{ charge.child.current_step.duration }}{% endif %}</td>
+                                                    <td>{{ form.comment }}</td>
+                                                </tr>
+                                                </tbody>
+                                            </table>
+                                            {% if hint %}
+                                            <h3><u>Hinweis:</u></h3>
+                                            <ul>
+                                                {% for h in hint %}
+                                                <li>{{ h }}</li>
+                                                {% endfor %}
+                                            </ul>
+                                            <br>
+                                            {% endif %}
+                                        </div>
+
+                                        {% if charge.child.current_step.duration %}
+                                        {% load custom_tags %}
+                                        {% load static %}
+                                        <div class="col-3 boxed">
+                                            <h3><u>Timer:</u></h3>
+                                            <div id="timer"></div>
+                                            <audio id="alert" src="{% static 'misc/sc_laboratory_alert.mp3' %}" preload="auto"></audio>
+                                            <script src="{% static 'js/timer.js' %}"></script>
+                                            <script>
+                                                initTimer('{{ charge.child.current_step.duration|seconds }}');
+                                            </script>
+                                            <br>
+                                            <button type="button" class="btn btn-primary btn-sm w-100" onclick="startTimer()">Start</button>
+                                            <button type="button" class="btn btn-danger btn-sm w-100" onclick="stopTimer('{{ charge.child.current_step.duration|seconds }}')">Reset</button>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+
+                                {% if charge.child.current_step.next %}
+                                <div class="boxed" style="opacity:0.5;">
+                                    <h3><u>Nächster Schritt:</u></h3>
+                                        <table class="table table-sm table-hover" style="vertical-align:top;">
+                                            <thead class="table-dark">
+                                                <tr>
+                                                    <th>Schritt</th> <th>Titel</th> <th>Beschreibung</th> <th>Zutaten</th> <th>Menge</th> <th>Dauer</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr style="background-color:white;">
+                                                    <td>{{ charge.child.current_step.next.pos }}</td>
+                                                    <td>{{ charge.child.current_step.next.title }}</td>
+                                                    <td>{{ charge.child.current_step.next.description }}</td>
+                                                    <td>{% if charge.child.current_step.next.ingredient %}{{ charge.child.current_step.next.ingredient }}{% endif %}</td>
+                                                    <td>{% if charge.child.current_step.next.amount %}{{ charge.child.current_step.next.amount }} {{ charge.child.current_step.next.unit }}{% endif %}</td>
+                                                    <td>{% if charge.child.current_step.next.duration %}{{ charge.child.current_step.next.duration }}{% endif %}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                  <a data-bs-toggle="collapse" href="#collapseRecipe" aria-expanded="false" aria-controls="collapseRecipe">
+                                    <u>Aufklappen:</u>
+                                  </a>
+                                  <div class="collapse" id="collapseRecipe" aria-expanded="false" aria-controls="collapseProtocol">
+                                    <table class="table table-sm table-hover" style="vertical-align:top;">
+                                        <thead class="table-dark">
+                                        </thead>
+                                        <tbody>
+                                        {% for s in child_recipe %}
+                                            <!-- if forloop.counter > step.next.step -->
+                                                <tr>
+                                                    <td>{{ s.pos }}</td>
+                                                    <td>{% if s.title %}{{ s.title }}{% else %}{{ s.step.title}}{% endif %}</td>
+                                                    <td>{{ s.description }}</td>
+                                                    <td>{% if s.ingredient %}{{ s.ingredient }}{% endif %}</td>
+                                                    <td style="white-space:nowrap;">{% if s.amount %}{{ s.amount }} {{ s.unit }}{% endif %}</td>
+                                                    <td>{% if s.duration %}{{ s.duration }}{% endif %}</td>
+                                                </tr>
+                                            <!-- endif -->
+                                        {% endfor %}
+                                        </tbody>
+                                    </table>
+                                  </div>
+                                </div>
+                                {% endif %}
+
+                                <div class="boxed">
+                                  <a data-bs-toggle="collapse" href="#collapseProtocol" aria-expanded="false" aria-controls="collapseProtocol">
+                                    <h3><u>Protokoll:</u></h3>
+                                  </a>
+                                  <div class="collapse" id="collapseProtocol">
+                                        <table class="table table-sm table-hover" style="vertical-align:top;">
+                                            <thead class="table-dark">
+                                                <tr>
+                                                    <th>Schritt</th> <th>Titel</th> <th>Beschreibung</th> <th>Zutaten</th> <th>Menge</th> <th>Dauer</th> <th>Start</th> <th>Ende</th> <th>Notizen</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                            {% for p in child_protocol %}
+                                            <tr>
+                                                <td>{{ p.pos }}</td>
+                                                <td>{{ p.title }}</td>
+                                                <td>{{ p.description }}</td>
+                                                <td>{{ p.ingredient }}</td>
+                                                <td>{{ p.amount }}</td>
+                                                <td>{{ p.duration }}</td>
+                                                <td>{{ p.tstart }}</td>
+                                                <td>{{ p.tend }}</td>
+                                                <td>{{ p.comment }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                            </tbody>
+                                        </table>
+                                  </div>
+                                </div>
+                                <br/>
+                                {% if charge.child.current_step.next %}
+                                    <input type="submit" class="btn btn-primary btn-lg w-100" name="brew_next" value="Weiter">
+                                {% else %}
+                                    <input type="submit" class="btn btn-primary btn-lg w-100" name="brew_next" value="Gärung starten">
+                                {% endif %}
+
+                                <input type="hidden" name="charge" value="{{ charge.child.id }}">
+                                <input type="hidden" name="t_start" value="{{ t_start|date:'YmdHisu' }} ">
+                                <input type="hidden" name="step" value="{{ charge.child.current_step.id }} ">
+                            </form>
+                        {% endif %}
+                    </p>
+                </div>
+                {% endif %}
+                <div class="tab-pane fade {% if charge.brewing_finished %}show active{% endif %}" id="tab-ferment" role="tabpanel" aria-labelledby="ferment">
                     <p class="card-text">
                         {% if charge.brewing_finished %}
                             {% include 'brewery/fermentation.html' %}

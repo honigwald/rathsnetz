@@ -42,7 +42,6 @@ class Charge(models.Model):
         FermentationProtocol, on_delete=models.CASCADE, blank=True, null=True
     )
     # hopcalculation = models.ManyToManyField(HopCalculation, blank=True)
-    brew_factor = models.IntegerField(default=1)
     preps_finished = models.BooleanField(default=False)
     hop_calculation_finished = models.BooleanField(default=False)
     brewing_finished = models.BooleanField(default=False)
@@ -53,40 +52,79 @@ class Charge(models.Model):
     output = models.FloatField(blank=True, null=True)
     restextract = models.FloatField(blank=True, null=True)
 
+    brew_factor = models.IntegerField(default=1)
+    parent = models.ForeignKey('Charge', on_delete=models.DO_NOTHING, blank=True, null=True, related_name='children')
+    child = models.ForeignKey('Charge', on_delete=models.CASCADE, blank=True, null=True, related_name='parent_charge')
+    child_ready_to_go = models.BooleanField(default=False)
+
     def __str__(self):
         return str(self.cid)
 
     def init(self, recipe, amount, brewmaster, double):
+        """
+        Initializes a Charge instance with the given recipe, amount, and brewmaster.
+        
+        Parameters:
+            recipe (Recipe): The recipe to associate with this charge.
+            amount (int): The amount to produce in this charge.
+            brewmaster (User): The user responsible for this charge.
+            double (bool): If True, splits the charge into two child charges.
+        
+        Side Effects:
+            - Sets the charge ID and production date.
+            - Assigns the recipe, amount, brewmaster, and current step.
+            - Creates a child Charge if double is True.
+            - Creates PendingPreparation objects for each preparation in the recipe.
+            - Saves changes to the database.
+        """
         # Calculate charge ID
         current_year = datetime.now().strftime("%Y")
         yearly_production = (
-            Charge.objects.filter(production__contains=current_year + "-").count() + 1
+            Charge.objects.filter(production__contains=current_year + "-")
+            .exclude(cid__endswith="-2")
+            .count() + 1
         )
         current_year_month = datetime.now().strftime("%Y%m")
+        if not self.cid:
+            self.cid = current_year_month + "." + str(yearly_production).zfill(2)
+
         # Create new charge
-        self.cid = current_year_month + "." + str(yearly_production).zfill(2)
         self.production = datetime.now()
         self.recipe = recipe
         self.amount = amount
         self.brewmaster = brewmaster
         self.current_step = self.recipe.head
-        if double is True:
-            self.brew_factor = 2
-        else:
-            self.brew_factor = 1
+        self.brew_factor = 1
         self.save()
 
-        for prep in self.recipe.preps.all():
+        # Create child charge if requested
+        if double is True:
+            self.amount //= 2
+            self.brew_factor = 2
+            child_charge = Charge(parent=self, cid=self.cid + "-1")
+            #child_charge.save()
+            self.child = child_charge
+            self.child.init(
+                recipe=self.recipe,
+                amount=self.amount,
+                brewmaster=self.brewmaster,
+                double=False
+            )
+
+        for p in self.recipe.preps.all():
             prep = PendingPreparation.objects.create(
-                charge=self, preparation=prep, done=False
+                charge=self, preparation=p, done=False
             )
             logging.debug(prep)
             prep.save()
 
         # Create brew protocol
-        brew_protocol = BrewProtocol(pid=self.cid)
+        brew_protocol = BrewProtocol(pid=self.cid, rname=self.recipe.name, head=None, tail=None)
         brew_protocol.save()
         self.brew_protocol = brew_protocol
+
+        # Save all changes at once
+        self.save()
 
     def get_progress(self):
         steps = self.recipe.steps()
@@ -123,6 +161,12 @@ class Charge(models.Model):
             context["preps"] = None
             hint = Hint.objects.filter(step__id=self.current_step.id)
             context["hint"] = hint if hint.exists() else None
+        if self.brew_factor == 2:
+            context["progress"] = (self.get_progress() // 2) + (self.child.get_progress() // 2)
+            context["child_recipe"] = self.child.brew_steps()
+            if self.child.brew_protocol:
+                context["child_protocol"] = self.child.brew_protocol.list()
+
 
         return context
 
@@ -426,6 +470,9 @@ class Charge(models.Model):
             self.brewing_finished = True
         else:
             self.current_step = current_step.next
+            if self.brew_factor > 1 and not self.child_ready_to_go:
+                if self.current_step.category.name == "Würzekochung":
+                    self.child_ready_to_go = True
         self.save()
 
         """

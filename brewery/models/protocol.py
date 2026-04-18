@@ -42,7 +42,10 @@ class BrewProtocol(models.Model):
     )
 
     def list(self):
-        return self.head.dict().values()
+        if self.head is None:
+            return []
+        else:
+            return self.head.dict().values()
 
     def __str__(self):
         return str(self.pid) + "." + str(self.rname)

@@ -99,7 +99,7 @@
 
         /* ACTIVE STEP */
         .nav-item .nav-link.active {
-          background-image: linear-gradient(to right, rgb(0, 123, 255), rgb(0, 123, 255));
+          background-image: linear-gradient(to right, rgb(40, 143, 252), rgb(0, 123, 255));
         }
 
         .nav-item a.nav-link.active {

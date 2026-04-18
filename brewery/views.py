@@ -342,6 +342,8 @@ def protocol(request, cid):
         context = c.brew_protocol.context(c)
     if c.fermentation_protocol:
         context |= c.fermentation_protocol.context(c)
+    if c.ispindel and c.finished:
+        context["plot"] = get_plot(c)
     return render(request, "brewery/protocol.html", context)
 
 
