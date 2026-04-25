@@ -340,8 +340,7 @@ class FermentationProtocol(models.Model):
         context["navi"] = "brewing"
         context["image_url"] = load_dynamic_bg_image()
         context["protocol"] = charge.brew_protocol.list()
-        # context["preps"] = PreparationProtocol.objects.filter(charge=c)
-        context["preps"] = None
+        context["preps"] = charge.recipe.preps.all()
         return context
 
 

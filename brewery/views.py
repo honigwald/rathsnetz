@@ -411,7 +411,8 @@ def fermentation(request, cid):
     c = Charge.objects.get(pk=cid)
     
     # For Doppelsud, check if both charges are brewing_finished before allowing fermentation
-    if c.is_doppelsud():
+    is_doppelsud = c.is_doppelsud()
+    if is_doppelsud:
         parent = c.parent_charge if c.is_child_charge else c
         child = parent.get_child_charge()
         
@@ -434,6 +435,20 @@ def fermentation(request, cid):
     context["cform"] = FinishFermentationForm()
     context["f_keg_select"] = KegSelectForm()
     context["f_charge_wort"] = InitFermentationForm()
+    
+    # Add tab context for proper tab navigation in brewing.html template
+    context["fermentation_enabled"] = True
+    context["is_doppelsud"] = is_doppelsud
+    
+    # Add Doppelsud-specific context if applicable
+    if is_doppelsud:
+        parent = c.parent_charge if c.is_child_charge else c
+        child = parent.get_child_charge()
+        context["parent_charge"] = parent
+        context["child_charge"] = child
+        context["current_charge"] = c
+        context["trigger_step_reached"] = parent.is_trigger_step_reached() if parent and hasattr(parent, 'is_trigger_step_reached') else True
+        context["progress"] = c.get_doppelsud_progress()
 
     if request.POST:
         if request.POST.get("continue"):

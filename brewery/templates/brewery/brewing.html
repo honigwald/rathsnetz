@@ -34,8 +34,9 @@
                             <a  class="nav-link
                                 {% if charge and not charge.preps_finished %}active{% endif %}
                                 {% if charge and charge.preps_finished %}done{% endif %}
-                                {% if not charge%}disabled{% endif %}"
-                                id="prepare" data-bs-toggle="tab" href="#tab-prepare" role="tab" aria-controls="nav-prepare" aria-selected="false">
+                                {% if not charge %}disabled{% endif %}"
+                                id="prepare" data-bs-toggle="tab" href="#tab-prepare" role="tab" aria-controls="nav-prepare" aria-selected="false"
+                                {% if not charge %}tabindex="-1" aria-disabled="true"{% endif %}>
                                 Vorarbeiten
                             </a>
                         </li>
@@ -48,8 +49,9 @@
                                 {% if not parent_charge.preps_finished %}disabled{% endif %}
                                 brewing"
                                 id="brew-parent" 
-                                onclick="window.location.href='{% url 'brewing' parent_charge.id %}'"
-                                role="tab">
+                                {% if parent_charge.preps_finished %}onclick="window.location.href='{% url 'brewing' parent_charge.id %}'"{% endif %}
+                                role="tab"
+                                {% if not parent_charge.preps_finished %}tabindex="-1" aria-disabled="true"{% endif %}>
                                 Brauen: 1. Sud
                             </a>
                         </li>
@@ -60,10 +62,9 @@
                                 {% if not trigger_step_reached %}disabled{% endif %}
                                 brewing"
                                 id="brew-child"
-                                {% if trigger_step_reached %}
-                                onclick="window.location.href='{% url 'brewing' child_charge.id %}'"
-                                {% endif %}
-                                role="tab">
+                                {% if trigger_step_reached %}onclick="window.location.href='{% url 'brewing' child_charge.id %}'"{% endif %}
+                                role="tab"
+                                {% if not trigger_step_reached %}tabindex="-1" aria-disabled="true"{% endif %}>
                                 Brauen: 2. Sud
                             </a>
                         </li>
@@ -75,15 +76,19 @@
                                 {% if charge.preps_finished and charge.brewing_finished %}done{% endif %}
                                 {% if not charge.preps_finished %}disabled{% endif %}
                                 brewing"
-                                id="brew" data-bs-toggle="tab" href="#tab-brew" role="tab" aria-controls="brew" aria-selected="false">
+                                id="brew" data-bs-toggle="tab" href="#tab-brew" role="tab" aria-controls="brew" aria-selected="false"
+                                {% if not charge.preps_finished %}tabindex="-1" aria-disabled="true"{% endif %}>
                                 Brauen
                             </a>
                         </li>
                         {% endif %}
                         <li class="nav-item">
                             <a  class="nav-link
-                                {% if fermentation_enabled %}active{% else %}disabled{% endif %}"
-                                id="ferment" data-bs-toggle="tab" href="#tab-ferment" role="tab" aria-controls="ferment" aria-selected="false">
+                                {% if fermentation_enabled and not charge.finished %}active{% endif %}
+                                {% if charge.finished %}done{% endif %}
+                                {% if not fermentation_enabled %}disabled{% endif %}"
+                                id="ferment" data-bs-toggle="tab" href="#tab-ferment" role="tab" aria-controls="ferment" aria-selected="false"
+                                {% if not fermentation_enabled %}tabindex="-1" aria-disabled="true"{% endif %}>
                                 Fermentation
                             </a>
                         </li>
@@ -450,7 +455,7 @@
                         {% endif %}
                     </p>
                 </div>
-                <div class="tab-pane fade {% if charge.brewing_finished %}show active{% endif %}" id="tab-ferment" role="tabpanel" aria-labelledby="fourth-tab">
+                <div class="tab-pane fade {% if fermentation_enabled and not charge.finished %}show active{% endif %}" id="tab-ferment" role="tabpanel" aria-labelledby="fourth-tab">
                     <p class="card-text">
                         {% if charge.brewing_finished %}
                             {% include 'brewery/fermentation.html' %}
