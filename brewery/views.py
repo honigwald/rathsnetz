@@ -189,8 +189,9 @@ def analyse(request):
 
 @login_required
 def brewing_overview(request):
-    c = Charge.objects.filter(finished=True)
-    active = Charge.objects.filter(finished=False)
+    # Only show parent charges (hide child charges from Doppelsud)
+    c = Charge.objects.filter(finished=True, is_child_charge=False)
+    active = Charge.objects.filter(finished=False, is_child_charge=False)
     context = {
         "charge": c,
         "active": active,
@@ -205,15 +206,49 @@ def brewing(request, cid):
     c = get_object_or_404(Charge, pk=cid)
     context = c.context()
     context["form"] = BrewingProtocol()
+    
+    # Add Doppelsud-specific context
+    is_doppelsud = c.is_doppelsud()
+    context["is_doppelsud"] = is_doppelsud
+    
+    if is_doppelsud:
+        # Get parent and child charges
+        parent = c.parent_charge if c.is_child_charge else c
+        child = parent.get_child_charge()
+        
+        context["parent_charge"] = parent
+        context["child_charge"] = child
+        context["current_charge"] = c
+        context["trigger_step_reached"] = parent.is_trigger_step_reached() if parent and hasattr(parent, 'is_trigger_step_reached') else True
+        
+        # Override progress with combined progress
+        context["progress"] = c.get_doppelsud_progress()
+        
+        # Fermentation enabled when both charges complete brewing
+        both_brewing_finished = parent.brewing_finished and (child.brewing_finished if child else True)
+        context["fermentation_enabled"] = both_brewing_finished
+    else:
+        # Normal brewing - keep existing behavior
+        context["fermentation_enabled"] = c.brewing_finished
 
     # Charge finished: Goto Protocol
     if c.finished:
         return HttpResponseRedirect(reverse("protocol", kwargs={"cid": c.id}))
 
-    # Preparation and Brewing finished: Goto Fermentation
+    # Preparation and Brewing finished: Check what to do next
     elif c.preps_finished and c.brewing_finished:
-        c.init_fermentation()
-        return HttpResponseRedirect(reverse("fermentation", kwargs={"cid": c.id}))
+        # For Doppelsud: check if sibling still needs to finish
+        unfinished_sibling = c.get_unfinished_sibling()
+        if unfinished_sibling:
+            # Redirect to the unfinished sibling charge
+            logging.info("brewing: Charge %s finished, redirecting to unfinished sibling %s", 
+                        c.cid, unfinished_sibling.cid)
+            return HttpResponseRedirect(reverse("brewing", kwargs={"cid": unfinished_sibling.id}))
+        elif context.get("fermentation_enabled", True):
+            # Both charges finished (or normal brewing): go to fermentation
+            logging.info("brewing: All charges finished, charge %s going to fermentation", c.cid)
+            c.init_fermentation()
+            return HttpResponseRedirect(reverse("fermentation", kwargs={"cid": c.id}))
 
     # Brew is ongoing: restore session
     elif c.preps_finished and not request.POST:
@@ -318,8 +353,13 @@ def brewing_add(request):
                 recipe = f_charge.cleaned_data["recipe"]
                 amount = f_charge.cleaned_data["amount"]
                 brewmaster = f_charge.cleaned_data["brewmaster"]
-                double = False
-                c.init(recipe, amount, brewmaster, double)
+                
+                # Check if Doppelsud is enabled
+                is_doppelsud = f_charge.cleaned_data.get("dsud_active") == "Y"
+                trigger_step = f_charge.cleaned_data.get("trigger_step") if is_doppelsud else None
+                
+                # Initialize charge with Doppelsud support
+                c.init(recipe, amount, brewmaster, is_doppelsud=is_doppelsud, trigger_step=trigger_step)
 
                 return HttpResponseRedirect(reverse("brewing", kwargs={"cid": c.id}))
 
@@ -369,7 +409,24 @@ def create_pdf_protocol(request, cid):
 def fermentation(request, cid):
     logging.debug("fermentation: starting")
     c = Charge.objects.get(pk=cid)
+    
+    # For Doppelsud, check if both charges are brewing_finished before allowing fermentation
+    if c.is_doppelsud():
+        parent = c.parent_charge if c.is_child_charge else c
+        child = parent.get_child_charge()
+        
+        if not (parent.brewing_finished and (child.brewing_finished if child else True)):
+            # Redirect back to brewing if not both finished
+            logging.debug("fermentation: Doppelsud charges not both finished, redirecting to brewing")
+            return HttpResponseRedirect(reverse("brewing", kwargs={"cid": c.id}))
+        
+        # Use parent charge for fermentation
+        c = parent
 
+    # Initialize fermentation protocol if it doesn't exist
+    if not c.fermentation_protocol:
+        c.init_fermentation()
+    
     protocol = c.fermentation_protocol
 
     context = protocol.context(c)

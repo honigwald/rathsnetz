@@ -23,7 +23,7 @@ class BrewingCharge(ModelForm):
         model = Charge
         fields = ["brewmaster", "amount", "recipe"]
         widgets = {
-            "recipe": Select(attrs={"class": "custom-select mr-sm"}),
+            "recipe": Select(attrs={"class": "custom-select mr-sm", "id": "id_recipe"}),
             "amount": NumberInput(
                 attrs={"class": "form-control mr-sm", "placeholder": "Menge in Liter"}
             ),
@@ -36,12 +36,44 @@ class BrewingCharge(ModelForm):
         }
 
     CHOICES = [
-        ("Y", "Ja"),
         ("N", "Nein"),
+        ("Y", "Ja"),
     ]
     dsud_active = forms.ChoiceField(
-        choices=CHOICES, widget=forms.RadioSelect, label="Doppelsud", initial="N"
+        choices=CHOICES,
+        widget=forms.RadioSelect(attrs={"id": "id_dsud_active"}),
+        label="Doppelsud",
+        initial="N"
     )
+    
+    trigger_step = forms.ModelChoiceField(
+        queryset=RecipeBrewStep.objects.none(),
+        required=False,
+        label="Trigger-Schritt für 2. Sud",
+        help_text="Wähle den Schritt, bei dem der 2. Sud gestartet werden soll",
+        widget=Select(attrs={"class": "custom-select mr-sm", "id": "id_trigger_step"})
+    )
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Dynamically populate trigger_step based on selected recipe
+        if 'recipe' in self.data:
+            try:
+                recipe_id = int(self.data.get('recipe'))
+                recipe = Recipe.objects.get(pk=recipe_id)
+                if recipe.steps():
+                    self.fields['trigger_step'].queryset = RecipeBrewStep.objects.filter(
+                        rname=recipe
+                    ).order_by('pos')
+            except (ValueError, TypeError, Recipe.DoesNotExist):
+                pass
+        else:
+            # On initial load, show all steps from all recipes
+            # JavaScript will filter based on selected recipe
+            self.fields['trigger_step'].queryset = RecipeBrewStep.objects.all().order_by('rname', 'pos')
+        
+        # Customize the label to show recipe name
+        self.fields['trigger_step'].label_from_instance = lambda obj: f"{obj.rname} - {obj.pos}. {obj.title}"
 
 
 class BrewingProtocol(forms.Form):

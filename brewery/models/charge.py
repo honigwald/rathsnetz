@@ -52,41 +52,109 @@ class Charge(models.Model):
     reached_wort = models.FloatField(blank=True, null=True)
     output = models.FloatField(blank=True, null=True)
     restextract = models.FloatField(blank=True, null=True)
+    # Doppelsud fields
+    is_child_charge = models.BooleanField(default=False)
+    parent_charge = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        related_name='child_charges'
+    )
+    trigger_step = models.ForeignKey(
+        RecipeBrewStep,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='trigger_charges'
+    )
 
     def __str__(self):
         return str(self.cid)
 
-    def init(self, recipe, amount, brewmaster, double):
-        # Calculate charge ID
+    def init(self, recipe, amount, brewmaster, double=False, is_doppelsud=None, trigger_step=None):
+        """
+        Initialize a new charge.
+        
+        Args:
+            recipe: Recipe object
+            amount: Amount in liters
+            brewmaster: User object
+            double: DEPRECATED - kept for backward compatibility
+            is_doppelsud: Boolean, True to create Doppelsud with child charge
+            trigger_step: RecipeBrewStep object, step that triggers 2. Sud
+        """
+        # Backward compatibility: if double is set, use it
+        if is_doppelsud is None:
+            is_doppelsud = double
+        
+        # Calculate charge ID (parent only)
         current_year = datetime.now().strftime("%Y")
         yearly_production = (
-            Charge.objects.filter(production__contains=current_year + "-").count() + 1
+            Charge.objects.filter(
+                production__contains=current_year + "-",
+                is_child_charge=False  # Only count parent charges
+            ).count() + 1
         )
         current_year_month = datetime.now().strftime("%Y%m")
-        # Create new charge
+        
+        # Create parent charge
         self.cid = current_year_month + "." + str(yearly_production).zfill(2)
         self.production = datetime.now()
         self.recipe = recipe
         self.amount = amount
         self.brewmaster = brewmaster
         self.current_step = self.recipe.head
-        if double is True:
-            self.brew_factor = 2
-        else:
-            self.brew_factor = 1
+        self.is_child_charge = False
         self.save()
-
+        
+        # Create preparations for parent
         for prep in self.recipe.preps.all():
             prep = PendingPreparation.objects.create(
                 charge=self, preparation=prep, done=False
             )
             logging.debug(prep)
             prep.save()
-
-        # Create brew protocol
+        
+        # Create brew protocol for parent
         brew_protocol = BrewProtocol(pid=self.cid)
         brew_protocol.save()
         self.brew_protocol = brew_protocol
+        
+        # If Doppelsud, create child charge
+        if is_doppelsud:
+            # Set brew_factor to 2 for Doppelsud parent
+            self.brew_factor = 2
+            
+            if not trigger_step:
+                logging.warning("Doppelsud enabled but no trigger_step provided. 2. Sud will be accessible immediately.")
+            
+            child = Charge()
+            child.cid = self.cid + "-1"
+            child.production = datetime.now()
+            child.recipe = recipe
+            child.amount = amount
+            child.brewmaster = brewmaster
+            child.current_step = recipe.head
+            child.is_child_charge = True
+            child.parent_charge = self
+            child.save()
+            
+            # Child charge skips preparations (parent already completed them)
+            child.preps_finished = True
+            logging.debug("Child charge %s: Skipping preparations (parent completed)", child.cid)
+            
+            # Create brew protocol for child
+            child_protocol = BrewProtocol(pid=child.cid)
+            child_protocol.save()
+            child.brew_protocol = child_protocol
+            child.save()
+            
+            # Store trigger step on parent
+            if trigger_step:
+                self.trigger_step = trigger_step
+        
+        self.save()
 
     def get_progress(self):
         steps = self.recipe.steps()
@@ -541,6 +609,97 @@ class Charge(models.Model):
             c.save()
             return render(request, "brewery/brewing.html", context)
         """
+
+    def get_child_charge(self):
+        """Get the child charge if this is a Doppelsud parent"""
+        if self.is_child_charge:
+            return None
+        try:
+            return self.child_charges.first() if self.child_charges.exists() else None
+        except AttributeError:
+            # Handle case where child_charges relation doesn't exist
+            return None
+
+    def is_doppelsud(self):
+        """Check if this is a Doppelsud charge (parent or child)"""
+        try:
+            return bool(self.parent_charge or self.child_charges.exists())
+        except AttributeError:
+            # Handle case where relations don't exist
+            return False
+
+    def is_trigger_step_reached(self):
+        """Check if trigger step has been reached in parent charge"""
+        if not hasattr(self, 'trigger_step') or not self.trigger_step:
+            return True  # If no trigger step defined, consider it always reached
+        
+        if not self.brew_protocol:
+            return False
+        
+        # Check if trigger step is in the protocol (meaning it's been completed)
+        try:
+            protocol_steps = list(self.brew_protocol.list())
+            for p_step in protocol_steps:
+                if p_step.pos == self.trigger_step.pos:
+                    return True
+        except:
+            pass
+        
+        return False
+
+    def get_doppelsud_progress(self):
+        """Calculate combined progress for Doppelsud (both parent and child)"""
+        if not self.is_doppelsud():
+            return self.get_progress()  # Fall back to regular progress
+        
+        # If this is a child, get parent
+        try:
+            parent = self.parent_charge if self.is_child_charge else self
+            child = parent.get_child_charge()
+            
+            if not child:
+                return parent.get_progress()
+            
+            # Calculate combined progress (average of both)
+            parent_progress = parent.get_progress()
+            child_progress = child.get_progress()
+            
+            return int((parent_progress + child_progress) / 2)
+        except:
+            return self.get_progress()  # Fall back on error
+
+    def get_unfinished_sibling(self):
+        """
+        For Doppelsud: Get the sibling charge if it's not finished yet.
+        Returns: Charge object of unfinished sibling, or None
+        """
+        if not self.is_doppelsud():
+            return None
+        
+        try:
+            # Get parent and child
+            parent = self.parent_charge if self.is_child_charge else self
+            child = parent.get_child_charge()
+            
+            if not child:
+                return None
+            
+            # If I'm the parent and child isn't finished, return child
+            if self == parent and not child.brewing_finished:
+                logging.debug("Charge %s: Sibling %s (child) is unfinished", self.cid, child.cid)
+                return child
+            
+            # If I'm the child and parent isn't finished, return parent
+            if self == child and not parent.brewing_finished:
+                logging.debug("Charge %s: Sibling %s (parent) is unfinished", self.cid, parent.cid)
+                return parent
+            
+            # Both finished
+            logging.debug("Charge %s: Both charges finished", self.cid)
+            return None
+        except Exception as e:
+            logging.error("Error checking unfinished sibling for charge %s: %s", self.cid, e)
+            return None
 
     def init_fermentation(self):
         if not self.fermentation_protocol:

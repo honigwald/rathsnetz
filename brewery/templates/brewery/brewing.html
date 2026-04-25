@@ -39,6 +39,36 @@
                                 Vorarbeiten
                             </a>
                         </li>
+                        {% if is_doppelsud and parent_charge and child_charge %}
+                        <!-- Doppelsud: Two separate Brauen tabs -->
+                        <li class="nav-item">
+                            <a  class="nav-link
+                                {% if current_charge.id == parent_charge.id and parent_charge.preps_finished and not parent_charge.brewing_finished %}active{% endif %}
+                                {% if parent_charge.brewing_finished %}done{% endif %}
+                                {% if not parent_charge.preps_finished %}disabled{% endif %}
+                                brewing"
+                                id="brew-parent" 
+                                onclick="window.location.href='{% url 'brewing' parent_charge.id %}'"
+                                role="tab">
+                                Brauen: 1. Sud
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a  class="nav-link
+                                {% if current_charge.id == child_charge.id and child_charge.preps_finished and not child_charge.brewing_finished %}active{% endif %}
+                                {% if child_charge.brewing_finished %}done{% endif %}
+                                {% if not trigger_step_reached %}disabled{% endif %}
+                                brewing"
+                                id="brew-child"
+                                {% if trigger_step_reached %}
+                                onclick="window.location.href='{% url 'brewing' child_charge.id %}'"
+                                {% endif %}
+                                role="tab">
+                                Brauen: 2. Sud
+                            </a>
+                        </li>
+                        {% else %}
+                        <!-- Normal brewing: Single Brauen tab -->
                         <li class="nav-item">
                             <a  class="nav-link
                                 {% if charge.preps_finished and not charge.brewing_finished %}active{% endif %}
@@ -46,27 +76,13 @@
                                 {% if not charge.preps_finished %}disabled{% endif %}
                                 brewing"
                                 id="brew" data-bs-toggle="tab" href="#tab-brew" role="tab" aria-controls="brew" aria-selected="false">
-                                {% if charge.brew_factor == 2 %}
-                                Brauen: 1. Sud
-                                {% else %}
                                 Brauen
-                                {% endif %}
-                            </a>
-                        </li>
-                        {% if charge.brew_factor == 2 %}
-                        <li class="nav-item">
-                            <a  class="nav-link
-                                {% if charge.preps_finished and not charge.brewing_finished %}active{% endif %}
-                                {% if charge.preps_finished and charge.brewing_finished %}done{% endif %}
-                                {% if not charge.preps_finished %}disabled{% endif %}
-                                id="brew" data-bs-toggle="tab" href="#tab-brew" role="tab" aria-controls="brew" aria-selected="false">
-                                Brauen: 2. Sud
                             </a>
                         </li>
                         {% endif %}
                         <li class="nav-item">
                             <a  class="nav-link
-                                {% if charge.brewing_finished %}active{% else %}disabled{% endif %}"
+                                {% if fermentation_enabled %}active{% else %}disabled{% endif %}"
                                 id="ferment" data-bs-toggle="tab" href="#tab-ferment" role="tab" aria-controls="ferment" aria-selected="false">
                                 Fermentation
                             </a>
@@ -252,6 +268,11 @@
                                         {{ progress }}%
                                     </div>
                                 </div>
+                                {% if is_doppelsud and parent_charge and child_charge %}
+                                <small class="text-muted mt-2 d-block">
+                                    Kombinierter Fortschritt: 1. Sud ({{ parent_charge.get_progress }}%) + 2. Sud ({{ child_charge.get_progress }}%)
+                                </small>
+                                {% endif %}
                             </div>
 
                             <form action="" method="post">
@@ -386,9 +407,40 @@
                                 </div>
                                 <br/>
                                 {% if step.next %}
+                                    {# Has next step: always "Weiter" #}
                                     <input type="submit" class="btn btn-primary btn-lg w-100" name="brew_next" value="Weiter">
                                 {% else %}
-                                    <input type="submit" class="btn btn-primary btn-lg w-100" name="brew_next" value="Gärung starten">
+                                    {# Last step: determine button text based on what's next #}
+                                    {% if is_doppelsud and current_charge %}
+                                        {% if current_charge.id == parent_charge.id and child_charge and not child_charge.brewing_finished %}
+                                            {# Parent's last step, child not finished #}
+                                            <input type="submit" 
+                                                   class="btn btn-primary btn-lg w-100" 
+                                                   name="brew_next" 
+                                                   value="Weiter"
+                                                   title="Weiter zu 2. Sud ({{ child_charge.cid }})"
+                                                   data-bs-toggle="tooltip">
+                                        {% elif current_charge.id == child_charge.id and parent_charge and not parent_charge.brewing_finished %}
+                                            {# Child's last step, parent not finished (symmetric behavior) #}
+                                            <input type="submit" 
+                                                   class="btn btn-primary btn-lg w-100" 
+                                                   name="brew_next" 
+                                                   value="Weiter"
+                                                   title="Weiter zu 1. Sud ({{ parent_charge.cid }})"
+                                                   data-bs-toggle="tooltip">
+                                        {% else %}
+                                            {# Both finished: go to fermentation #}
+                                            <input type="submit" 
+                                                   class="btn btn-primary btn-lg w-100" 
+                                                   name="brew_next" 
+                                                   value="Gärung starten"
+                                                   title="Beide Süde abgeschlossen - Fermentation starten"
+                                                   data-bs-toggle="tooltip">
+                                        {% endif %}
+                                    {% else %}
+                                        {# Normal brewing: last step goes to fermentation #}
+                                        <input type="submit" class="btn btn-primary btn-lg w-100" name="brew_next" value="Gärung starten">
+                                    {% endif %}
                                 {% endif %}
 
                                 <input type="hidden" name="charge" value="{{ charge.id }}">
@@ -409,5 +461,85 @@
         </div>
     </div>
 </div>
+
+<script>
+    // Show/hide trigger step field based on Doppelsud selection
+    document.addEventListener('DOMContentLoaded', function() {
+        const doppelsudRadios = document.querySelectorAll('input[name="dsud_active"]');
+        const triggerStepDiv = document.getElementById('div_id_trigger_step');
+        const recipeSelect = document.getElementById('id_recipe');
+        const triggerStepSelect = document.getElementById('id_trigger_step');
+        
+        // Only run if we're on the charge creation form
+        if (!doppelsudRadios.length || !triggerStepDiv) {
+            return;
+        }
+        
+        // Store all trigger step options for filtering
+        const allOptions = Array.from(triggerStepSelect.options).slice(1); // Skip the first "----" option
+        
+        function toggleTriggerStep() {
+            const isDoppelsud = document.querySelector('input[name="dsud_active"]:checked').value === 'Y';
+            triggerStepDiv.style.display = isDoppelsud ? 'block' : 'none';
+        }
+        
+        function filterTriggerSteps() {
+            const selectedRecipeId = recipeSelect.value;
+            
+            if (!selectedRecipeId) {
+                // No recipe selected, clear the dropdown
+                triggerStepSelect.innerHTML = '<option value="">---------</option>';
+                return;
+            }
+            
+            // Get the selected recipe name from the option text
+            const selectedRecipeName = recipeSelect.options[recipeSelect.selectedIndex].text;
+            
+            // Clear and rebuild the dropdown
+            triggerStepSelect.innerHTML = '<option value="">---------</option>';
+            
+            // Filter options by checking if the option text starts with the recipe name
+            allOptions.forEach(option => {
+                const optionText = option.text;
+                // Options are formatted as "RecipeName - Pos. Title" or similar
+                if (optionText.includes(selectedRecipeName) || optionText.startsWith(selectedRecipeName)) {
+                    triggerStepSelect.appendChild(option.cloneNode(true));
+                }
+            });
+            
+            // If no steps found, show a message
+            if (triggerStepSelect.options.length === 1) {
+                const noStepsOption = document.createElement('option');
+                noStepsOption.value = '';
+                noStepsOption.text = 'Keine Schritte für dieses Rezept';
+                noStepsOption.disabled = true;
+                triggerStepSelect.appendChild(noStepsOption);
+            }
+        }
+        
+        // Listen for Doppelsud radio button changes
+        doppelsudRadios.forEach(radio => {
+            radio.addEventListener('change', toggleTriggerStep);
+        });
+        
+        // Listen for recipe changes to filter trigger steps
+        if (recipeSelect && triggerStepSelect) {
+            recipeSelect.addEventListener('change', filterTriggerSteps);
+            // Also filter on initial load if a recipe is already selected
+            if (recipeSelect.value) {
+                filterTriggerSteps();
+            }
+        }
+        
+        // Initial state
+        toggleTriggerStep();
+    });
+    
+    // Initialize Bootstrap tooltips for button hints
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+</script>
 
 {% endblock content %}
