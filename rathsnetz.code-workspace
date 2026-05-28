@@ -1,7 +1,27 @@
 {
+<<<<<<< HEAD
     "folders": [
         {
             "path": "."
         }
     ]
 }
+=======
+  "folders": [
+    {
+      "path": ".",
+    },
+  ],
+  "settings": {},
+  "extensions": {
+    "recommendations": [
+      "esbenp.prettier-vscode",
+      "batisteo.vscode-django",
+      "ms-python.python",
+      "ms-python.vscode-pylance",
+      "eamodio.gitlens",
+      "evenbetter.toml",
+    ],
+  },
+}
+>>>>>>> 8597d35 (chore(house): proudly using prettier)
