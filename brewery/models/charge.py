@@ -620,7 +620,7 @@ class Charge(models.Model):
             # Handle case where child_charges relation doesn't exist
             return None
 
-    def is_doppelsud(self):
+    def is_doppelsud(self) -> bool:
         """Check if this is a Doppelsud charge (parent or child)"""
         try:
             return bool(self.parent_charge or self.child_charges.exists())

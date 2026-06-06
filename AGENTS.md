@@ -118,6 +118,22 @@ python manage.py shell
 - **Testing**: `python manage.py test`
 - **i18n**: German (`LANGUAGE_CODE = "de"`)
 
+## Brewing Feature Notes
+
+There are two brewing modes in this project:
+
+- **Simplesud**: standard single-charge brewing flow
+- **Doppelsud**: advanced two-charge flow with a parent charge and a child charge, including `trigger_step` and `brew_factor` handling
+
+When changing anything related to brewing, brewing views, charge creation, or fermentation logic, make sure both modes still work and that the default simplesud path stays stable.
+
+If you touch the charge model or brewing UI, keep the Doppelsud-specific fields in mind:
+
+- `is_child_charge`
+- `parent_charge`
+- `trigger_step`
+- `brew_factor`
+
 ## Known Features
 
 - BeerXML import/export for recipes

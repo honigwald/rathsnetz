@@ -6,7 +6,7 @@ from datetime import datetime
 # Django imports
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponseRedirect, HttpResponse
+from django.http import HttpRequest, HttpResponseRedirect, HttpResponse
 from django.urls import reverse
 from django.utils import timezone
 
@@ -374,7 +374,7 @@ def brewing_add(request):
 
 
 @login_required
-def protocol(request, cid):
+def protocol(request: HttpRequest, cid: int) -> HttpResponse:
     c = Charge.objects.get(pk=cid)
     context = {}
     if c.brew_protocol:
@@ -384,7 +384,7 @@ def protocol(request, cid):
     return render(request, "brewery/protocol.html", context)
 
 
-def public_protocol(request, riddle_id):
+def public_protocol(request: HttpRequest, riddle_id: str) -> HttpResponse:
     try:
         unriddle_id = b64d(riddle_id.encode()).decode().replace("braurat", "")
         context = get_protocol_context(request, int(unriddle_id))
@@ -406,7 +406,7 @@ def create_pdf_protocol(request, cid):
 
 
 @login_required
-def fermentation(request, cid):
+def fermentation(request: HttpRequest, cid: int) -> HttpResponse:
     logging.debug("fermentation: starting")
     c = Charge.objects.get(pk=cid)
     
@@ -414,6 +414,9 @@ def fermentation(request, cid):
     is_doppelsud = c.is_doppelsud()
     if is_doppelsud:
         parent = c.parent_charge if c.is_child_charge else c
+        if parent is None:
+            logging.error("fermentation: Charge %s is marked as Doppelsud but has no parent charge", c.cid)
+            return HttpResponseRedirect(reverse("brewing", kwargs={"cid": c.id}))
         child = parent.get_child_charge()
         
         if not (parent.brewing_finished and (child.brewing_finished if child else True)):
@@ -429,6 +432,9 @@ def fermentation(request, cid):
         c.init_fermentation()
     
     protocol = c.fermentation_protocol
+    if protocol is None:
+        logging.error("fermentation: Failed to initialize fermentation protocol for charge %s", c.cid)
+        return HttpResponseRedirect(reverse("brewing", kwargs={"cid": c.id}))
 
     context = protocol.context(c)
     context["form"] = FermentationProtocolForm()
@@ -443,6 +449,9 @@ def fermentation(request, cid):
     # Add Doppelsud-specific context if applicable
     if is_doppelsud:
         parent = c.parent_charge if c.is_child_charge else c
+        if parent is None:
+            logging.error("fermentation: Charge %s is marked as Doppelsud but has no parent charge", c.cid)
+            return HttpResponseRedirect(reverse("brewing", kwargs={"cid": c.id}))
         child = parent.get_child_charge()
         context["parent_charge"] = parent
         context["child_charge"] = child
